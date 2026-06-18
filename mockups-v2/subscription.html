@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подписка — BScout Cloud</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="cloud-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="header-logo">
+        <span class="logo-icon">B</span>
+        BScout
+      </a>
+      <nav class="header-nav">
+        <a href="search.html">Поиск</a>
+        <a href="tariffs.html">Тарифы</a>
+        <a href="faq.html">FAQ</a>
+        <a href="contacts.html">Контакты</a>
+      </nav>
+      <div class="header-actions">
+        <a href="account.html" class="header-icon-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+        <a href="login.html" class="btn btn-ghost btn-sm">Выйти</a>
+        <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="account-layout">
+      <aside class="account-nav">
+        <div class="card card-glass" style="padding: var(--space-20);">
+          <div class="sidebar-section-title" style="margin-top: 0;">Аккаунт</div>
+          <div class="sidebar-nav">
+            <a href="account.html" class="sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Профиль
+            </a>
+            <a href="subscription.html" class="sidebar-item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 9v6"/><path d="M9 12h6"/></svg>
+              Подписка
+            </a>
+            <a href="#" class="sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Поиск
+            </a>
+            <a href="#" class="sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              История
+            </a>
+          </div>
+          <div class="sidebar-section-title">Настройки</div>
+          <div class="sidebar-nav">
+            <a href="#" class="sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Настройки
+            </a>
+            <a href="#" class="sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              API
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <main class="account-content">
+        <div class="account-section">
+          <h2>Управление подпиской</h2>
+
+          <div class="card card-glass" style="margin-bottom: var(--space-32);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-16);">
+              <div>
+                <p class="section-eyebrow" style="margin-bottom: 8px;">Текущий тариф</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span class="subscription-badge basic">Basic</span>
+                  <span class="caption">990 ₽ / месяц</span>
+                </div>
+                <p class="text-sm mt-8">Действует до 15.07.2026 · Автопродление включено</p>
+              </div>
+              <div style="text-align: right;">
+                <p class="caption" style="margin-bottom: 4px;">Использовано</p>
+                <p style="font-size: 24px; font-weight: 700;">42 / 100</p>
+                <p class="caption">товара</p>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="margin-bottom: var(--space-16);">Сменить тариф</h3>
+          <div class="pricing-grid" style="margin-bottom: var(--space-32);">
+            <div class="pricing-card">
+              <span class="pricing-label">Trial</span>
+              <div class="pricing-price">0 ₽</div>
+              <ul class="pricing-features">
+                <li>До 10 товаров</li>
+                <li>2 поставщика</li>
+                <li>Обновление 24ч</li>
+              </ul>
+              <button class="btn btn-ghost w-full" disabled style="opacity: 0.5;">Недоступно</button>
+            </div>
+            <div class="pricing-card popular">
+              <span class="pricing-label popular-label">Ваш план</span>
+              <div class="pricing-price">990 ₽ <span>/ мес</span></div>
+              <div class="discount-badge">−20% при годовой оплате</div>
+              <ul class="pricing-features">
+                <li>До 100 товаров</li>
+                <li>15+ поставщиков</li>
+                <li>Обновление 6ч</li>
+                <li>Экспорт PDF/CSV</li>
+                <li>Поддержка 24/7</li>
+              </ul>
+              <button class="btn btn-gradient w-full">Текущий тариф</button>
+            </div>
+            <div class="pricing-card">
+              <span class="pricing-label">Pro</span>
+              <div class="pricing-price">2 490 ₽ <span>/ мес</span></div>
+              <div class="discount-badge">−20% на первый месяц</div>
+              <ul class="pricing-features">
+                <li>Безлимитный поиск</li>
+                <li>50+ поставщиков</li>
+                <li>Real-time обновление</li>
+                <li>Нечёткий поиск</li>
+                <li>API-доступ</li>
+                <li>Персональный менеджер</li>
+              </ul>
+              <a href="#" class="btn btn-secondary w-full" style="text-decoration: none; text-align: center;">Перейти на Pro</a>
+            </div>
+          </div>
+
+          <div class="account-section">
+            <h3>Способ оплаты</h3>
+            <div class="card card-glass" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-16);">
+              <div style="display: flex; align-items: center; gap: var(--space-16);">
+                <div style="width: 48px; height: 32px; background: linear-gradient(135deg, #2563EB, #1D4ED8); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 800;">VISA</div>
+                <div>
+                  <div style="font-weight: 600; color: var(--text-primary);">Visa ···· 4242</div>
+                  <p class="caption" style="margin-bottom: 0;">Истекает 12/27</p>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm">Изменить</button>
+            </div>
+          </div>
+
+          <div class="card card-glass" style="border-color: rgba(239, 68, 68, 0.2); margin-top: var(--space-32);">
+            <h4 style="color: var(--danger);">Отмена подписки</h4>
+            <p class="text-sm">После отмены ваш тариф будет действовать до конца оплаченного периода.</p>
+            <button class="btn btn-danger btn-sm mt-16">Отменить подписку</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет — BScout</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="header-logo">
+      <span class="logo-icon">B</span>
+      BScout
+    </a>
+    <nav class="header-nav">
+      <a href="search.html">Поиск</a>
+      <a href="tariffs.html">Тарифы</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contacts.html">Контакты</a>
+    </nav>
+    <div class="header-actions">
+      <a href="account.html" class="header-icon-btn" aria-label="Личный кабинет">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+      <a href="login.html" class="btn btn-secondary btn-sm">Выйти</a>
+      <button class="mobile-menu-btn" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="account-layout">
+    <!-- Навигация аккаунта -->
+    <aside class="account-nav">
+      <div class="sidebar" style="border-right: none; width: 100%; min-width: 0;">
+        <div class="sidebar-nav" style="padding: 0;">
+          <div class="sidebar-section-title">Аккаунт</div>
+          <a href="account.html" class="sidebar-item active">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Профиль
+          </a>
+          <a href="subscription.html" class="sidebar-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 9v6"/><path d="M9 12h6"/></svg>
+            Подписка
+          </a>
+          <a href="account-history.html" class="sidebar-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            История поиска
+          </a>
+          <div class="sidebar-section-title" style="margin-top: var(--space-24);">Настройки</div>
+          <a href="account-settings.html" class="sidebar-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Настройки
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Контент -->
+    <main class="account-content">
+      <div class="account-section">
+        <h2>Профиль</h2>
+        <div class="profile-card">
+          <div class="profile-avatar">ИП</div>
+          <div class="profile-info">
+            <h3>Иван Петров</h3>
+            <p>ivan@example.com · +7 (999) 123-45-67</p>
+            <p style="font-size: 14px; margin-top: 4px;">Сервисный центр «РемонтПро»</p>
+          </div>
+          <a href="account-settings.html" class="btn btn-secondary btn-sm" style="margin-left: auto;">Редактировать</a>
+        </div>
+      </div>
+
+      <div class="account-section">
+        <h2>Текущий тариф</h2>
+        <div class="card card-light" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-16);">
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-12); margin-bottom: var(--space-8);">
+              <span class="subscription-badge basic">Базовый</span>
+              <span class="caption">Активен до 15.07.2026</span>
+            </div>
+            <p class="text-sm" style="margin-bottom: 0;">
+              100 товаров · 15+ поставщиков · Обновление каждые 6ч · Экспорт PDF/CSV
+            </p>
+          </div>
+          <a href="subscription.html" class="btn btn-secondary btn-sm">Управлять</a>
+        </div>
+      </div>
+
+      <div class="account-section">
+        <h2>История поиска</h2>
+        <div class="card card-light" style="padding: 0; border-radius: var(--radius-24); overflow: hidden;">
+          <div class="product-card" style="padding: var(--space-16) var(--space-24);">
+            <div class="product-info">
+              <div style="font-size: 15px; font-weight: 500; color: var(--slate);">Дисплей iPhone 13</div>
+              <div class="product-meta">24 результата · 12.06.2026</div>
+            </div>
+            <a href="search.html?q=Дисплей+iPhone+13" class="btn-arrow" style="flex-shrink: 0;">Повторить</a>
+          </div>
+          <div class="product-card" style="padding: var(--space-16) var(--space-24);">
+            <div class="product-info">
+              <div style="font-size: 15px; font-weight: 500; color: var(--slate);">Аккумулятор Samsung Galaxy S23</div>
+              <div class="product-meta">18 результатов · 10.06.2026</div>
+            </div>
+            <a href="search.html?q=Аккумулятор+Samsung+S23" class="btn-arrow" style="flex-shrink: 0;">Повторить</a>
+          </div>
+          <div class="product-card" style="padding: var(--space-16) var(--space-24);">
+            <div class="product-info">
+              <div style="font-size: 15px; font-weight: 500; color: var(--slate);">Материнская плата Xiaomi Redmi Note 12</div>
+              <div class="product-meta">7 результатов · 08.06.2026</div>
+            </div>
+            <a href="search.html?q=Материнская+плата+Xiaomi" class="btn-arrow" style="flex-shrink: 0;">Повторить</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="account-section">
+        <h2>Недавно просмотренные</h2>
+        <div class="card card-light" style="padding: 0; border-radius: var(--radius-24); overflow: hidden;">
+          <div class="product-card" style="padding: var(--space-16) var(--space-24);">
+            <div class="product-image" style="width: 48px; height: 48px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+            <div class="product-info">
+              <div style="font-size: 15px; font-weight: 500; color: var(--slate);">Дисплей iPhone 13 Pro Max</div>
+              <div class="product-meta">от 6 800 ₽ · 3 магазина</div>
+            </div>
+            <a href="product.html" class="btn-arrow">Открыть</a>
+          </div>
+          <div class="product-card" style="padding: var(--space-16) var(--space-24);">
+            <div class="product-image" style="width: 48px; height: 48px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+            <div class="product-info">
+              <div style="font-size: 15px; font-weight: 500; color: var(--slate);">Шлейф зарядки Huawei P30</div>
+              <div class="product-meta">от 650 ₽ · 5 магазинов</div>
+            </div>
+            <a href="product.html" class="btn-arrow">Открыть</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  const header = document.getElementById('header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  });
+</script>
+</body>
+</html>

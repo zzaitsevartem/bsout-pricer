@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация — BScout</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="header-logo">
+      <span class="logo-icon">B</span>
+      BScout
+    </a>
+    <nav class="header-nav">
+      <a href="search.html">Поиск</a>
+      <a href="tariffs.html">Тарифы</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contacts.html">Контакты</a>
+    </nav>
+    <div class="header-actions">
+      <a href="login.html" class="btn btn-secondary btn-sm">Войти</a>
+      <button class="mobile-menu-btn" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Регистрация</h1>
+    <p class="subheading">Создайте аккаунт и получите 10 дней бесплатного доступа</p>
+
+    <form>
+      <div class="input-group">
+        <label for="name">Имя и фамилия</label>
+        <input type="text" id="name" class="input" placeholder="Иван Петров">
+      </div>
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" class="input" placeholder="example@email.com">
+        <p class="hint">На этот адрес придёт подтверждение</p>
+      </div>
+      <div class="input-group">
+        <label for="phone">Телефон</label>
+        <input type="tel" id="phone" class="input" placeholder="+7 (999) 123-45-67">
+      </div>
+      <div class="input-group">
+        <label for="company">Название сервисного центра (необязательно)</label>
+        <input type="text" id="company" class="input" placeholder="ИП Иванов">
+      </div>
+      <div class="input-group">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" class="input" placeholder="Не менее 8 символов">
+      </div>
+      <div class="input-group">
+        <label for="password2">Подтвердите пароль</label>
+        <input type="password" id="password2" class="input" placeholder="Введите пароль ещё раз">
+      </div>
+
+      <div style="margin-bottom: var(--space-24);">
+        <label class="checkbox">
+          <input type="checkbox">
+          <span class="checkbox-box"></span>
+          <span style="font-size: 14px;">Я принимаю <a href="#">условия использования</a> и <a href="#">политику конфиденциальности</a></span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" style="text-decoration: none;">Создать аккаунт</button>
+    </form>
+
+    <p class="caption text-center" style="margin-top: var(--space-24);">
+      Уже есть аккаунт? <a href="login.html" style="color: var(--slate); font-weight: 500;">Войти</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  const header = document.getElementById('header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  });
+</script>
+</body>
+</html>

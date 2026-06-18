@@ -1,0 +1,382 @@
+.prices {
+  width: 100vw;
+  min-height: 1110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 100%;
+}
+
+.title {
+  margin-bottom: 60px;
+  
+  & h1 {
+    background: linear-gradient(#000000, #001354);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    font-size: 54px;
+    font-weight: 700;
+    padding: 30px 0;
+    line-height: 1.2;
+    font-family: 'Raleway', sans-serif;
+  }
+    
+  & h2 {
+    color: #010D3E;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.6;
+    font-family: 'Raleway', sans-serif;
+  }
+}
+
+.pricePlan {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 60px;
+  align-items: end;
+  max-width: 1400px;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.pricePlanItem {
+  width: 19.19vw;
+  max-width: 435px;
+  border-radius: 24px;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0px 4px 24px 0px #14142B33;
+  border: none;
+  max-width: 100%;
+  
+  &.light {
+    background-color: #FFFFFF;
+    
+    h2 {
+      color: #6F6C90;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: -0.031em;
+      margin-bottom: 20px;
+      align-self: flex-start;
+    }
+  }
+  
+  &.dark {
+    background-color: #000000;
+    
+    h2 {
+      color: #FFFFFF99;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: -0.031em;
+      margin-bottom: 20px;
+      align-self: flex-start;
+    }
+  }
+}
+
+.price {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  font-size: 54px;
+  line-height: 60px;
+  letter-spacing: -0.06em;
+  margin: 20px 0;
+  align-self: flex-start;
+  max-width: 100%;
+
+  .period {
+    font-size: 16px;
+    color: #666;
+    font-weight: 400; 
+    letter-spacing: normal;
+    font-family: 'Raleway', sans-serif;
+    max-width: 100%;
+  }
+  
+  .dark & {
+    color: #FFFFFF;
+    
+    .period {
+      color: #CCCCCC;
+    }
+  }
+  
+  .light & {
+    color: #000000;
+  }
+}
+
+.registerButton {
+  width: 100%;
+  padding: 16px 0;
+  border: none;
+  border-radius: 12px;
+  max-width: 100%;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 30px;
+  font-family: 'Raleway', sans-serif;
+  
+  .light & {
+    background-color: #000000;
+    color: #FFFFFF;
+    
+    &:hover {
+      background-color: #333;
+    }
+  }
+  
+  .dark & {
+    background-color: #FFFFFF;
+    color: #000000;
+    
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+}
+
+.features {
+  list-style: none;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 30px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 0%;
+  }
+  
+  .light & {
+    color: #000000;
+  }
+  
+  .dark & {
+    color: #FFFFFF;
+  }
+}
+
+/* Prices.module.scss - только медиа-запросы */
+@media (max-width: 1200px) {
+  .prices {
+    padding: 50px 20px;
+    min-height: auto;
+  }
+  
+  .title {
+    margin-bottom: 50px;
+    
+    & h1 {
+      font-size: 42px;
+    }
+    
+    & h2 {
+      font-size: 20px;
+    }
+  }
+  
+  .pricePlan {
+    gap: 40px;
+  }
+  
+  .pricePlanItem {
+    width: 22vw;
+    padding: 30px 25px;
+  }
+  
+  .price {
+    font-size: 46px;
+  }
+}
+
+@media (max-width: 992px) {
+  .prices {
+    padding: 40px 20px;
+  }
+  
+  .title {
+    margin-bottom: 40px;
+    
+    & h1 {
+      font-size: 36px;
+    }
+    
+    & h2 {
+      font-size: 18px;
+    }
+  }
+  
+  .pricePlan {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+  
+  .pricePlanItem {
+    width: 100%;
+    max-width: 100%;
+    
+    &:last-child {
+      grid-column: span 2;
+      max-width: 500px;
+      justify-self: center;
+    }
+  }
+  
+  .price {
+    font-size: 42px;
+  }
+  
+  .features li {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .prices {
+    padding: 30px 15px;
+  }
+  
+  .title {
+    margin-bottom: 30px;
+    
+    & h1 {
+      font-size: 32px;
+      padding: 20px 0;
+    }
+    
+    & h2 {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+  }
+  
+  .pricePlan {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .pricePlanItem {
+    padding: 25px 20px;
+    
+    &:last-child {
+      grid-column: span 1;
+      max-width: 100%;
+    }
+  }
+  
+  .price {
+    font-size: 38px;
+    line-height: 50px;
+    margin: 15px 0;
+  }
+  
+  .registerButton {
+    padding: 14px 0;
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+  
+  .features li {
+    margin-bottom: 15px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .prices {
+    padding: 20px 10px 0 10px;
+  }
+  
+  .title {
+    margin-bottom: 25px;
+    
+    & h1 {
+      font-size: 28px;
+    }
+    
+    & h2 {
+      font-size: 14px;
+    }
+  }
+  
+  .pricePlanItem {
+    padding: 20px 15px;
+    border-radius: 16px;
+  }
+  
+  .price {
+    font-size: 34px;
+    line-height: 45px;
+  }
+  
+  .registerButton {
+    padding: 12px 0;
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .features li {
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  .title {
+    & h1 {
+      font-size: 18px;
+    }
+    
+    & h2 {
+      font-size: 12px;
+    }
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .title {
+    & h1 {
+      font-size: 16px;
+    }
+    
+    & h2 {
+      font-size: 10px;
+    }
+  }
+}
+
+@media (max-width: 480px) and (orientation: landscape) {
+  .title {
+    & h1 {
+      font-size: 16px;
+    }
+    
+    & h2 {
+      font-size: 8px;
+    }
+  }
+}

@@ -1,0 +1,533 @@
+.hero {
+  background: linear-gradient(190deg,#EAEEFE 60%, #001ED5 100%);
+  height: 100vh;
+  min-height: 56.25rem;
+  display: flex;
+  flex-direction: column;
+  padding-top: 2.5rem;
+  max-width: 100vw;
+}
+
+.prewew {
+  background-color: white;
+  border-radius: 4.375rem;
+  width: min(37.5rem, 90vw);
+  font-size: 1.5625rem;
+  font-weight: 400;
+  padding: 0.5rem 3.125rem;
+  line-height: 122%;
+  margin: 6vh 0 0 6vw;
+  box-shadow: 0 0 0 0.0813rem #b8007b; 
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 220%;
+  margin: 6vh 0 0 6vw;
+  background: linear-gradient( #000000, #001354 150%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  margin: 6vh 0 0 6vw;
+  font-size: 1.5rem;
+}
+
+.buttons {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  margin: 10vh 0 0 6vw;
+}
+
+.primaryButton {
+  background-color: #000000;
+  color: white;
+  border-radius: 0.625rem;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  font-size: 1.125rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #b8007b;
+  }
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  color: #ffffff;
+  border: none;
+  padding: 0.625rem 0;
+  font-size: 1.125rem;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #b8007b;
+    
+    .arrowIcon {
+      path {
+        fill: currentColor; 
+      }
+    }
+  }
+}
+
+.arrowIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  
+  path {
+    fill: currentColor; 
+    transition: fill 0.2s;
+  }
+}
+.images {
+  & .figureCylinder{
+      position: absolute;
+      top: 10vh;
+      left: 46.5vw;
+      width: 9vw;
+  }
+
+  & .figurePiramid {
+      position: absolute;
+      top: 9vh;
+      left: 62vw;
+      width: 31vw;
+      transform: rotate(220deg);
+  }
+
+  & .figureHaifTorus {
+      position: absolute;
+      top: 64vh;
+      left: 82vw;
+      width: 16vw;
+  }
+}
+
+/* Большие планшеты и маленькие ноутбуки (1440px и меньше) */
+@media (max-width: 1440px) {
+  .hero {
+    min-height: 50rem;
+  }
+
+  .prewew {
+    width: 35rem;
+    font-size: 1.4rem;
+    padding: 0.4rem 2.5rem;
+    margin: 5vh 0 0 6vw;
+    background: linear-gradient( #000000, #001354 150%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .title {
+    font-size: 2.7rem;
+    margin: 5vh 0 0 6vw;
+  }
+
+  .content {
+    font-size: 1.3rem;
+    margin: 5vh 0 0 6vw;
+  }
+
+  .buttons {
+    margin: 8vh 0 0 6vw;
+  }
+
+  .images {
+    & .figureCylinder {
+      width: 10vw;
+      left: 55vw;
+    }
+
+    & .figurePiramid {
+      width: 30vw;
+      left: 68vw;
+    }
+
+    & .figureHaifTorus {
+      width: 15vw;
+      left: 80vw;
+    }
+  }
+}
+
+/* Планшеты (1024px и меньше) */
+@media (max-width: 1024px) {
+  .hero {
+    min-height: 45rem;
+    height: 57vh;
+    background: linear-gradient(190deg, #EAEEFE 60%, #001ED5 120%);
+  }
+
+  .prewew {
+    width: 32rem;
+    font-size: 1.2rem;
+    padding: 0.4rem 2rem;
+    margin: 10vh 0 0 5vw;
+  }
+
+  .title {
+    font-size: 2.2rem;
+    margin: 3vh 0 0 5vw;
+    background: linear-gradient( #000000, #001354 150%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    
+    h1 {
+      line-height: 1.1;
+    }
+  }
+
+  .content {
+    font-size: 1.1rem;
+    margin: 4vh 0 0 5vw;
+    
+    p {
+      br {
+        display: none;
+      }
+    }
+  }
+
+  .buttons {
+    margin: 6vh 0 0 5vw;
+    gap: 1rem;
+  }
+
+  .primaryButton {
+    font-size: 1rem;
+    padding: 0.5rem 1.2rem;
+  }
+
+  .secondaryButton {
+    font-size: 1rem;
+  }
+
+  .images {
+    & .figureCylinder {
+      width: 10vw;
+      left: 2vw;
+      top: 5vh;
+    }
+
+    & .figurePiramid {
+      width: 25vw;
+      left: 68vw;
+      top: 8vh;
+    }
+
+    & .figureHaifTorus {
+      width: 16vw;
+      left: 78vw;
+      top: 45vh;
+    }
+  }
+}
+
+/* Мобильные устройства (768px и меньше) */
+@media (max-width: 768px) {
+  .hero {
+    min-height: 40rem;
+    height: 50vh;
+    padding-top: 2.5rem;
+    text-align: center;
+  }
+
+  .prewew {
+    width: 90%;
+    max-width: 30rem;
+    font-size: 1.1rem;
+    padding: 0.4rem 1.5rem;
+    margin: 3vh auto 0;
+  }
+
+  .title {
+    font-size: 1.8rem;
+    margin: 3vh auto 0;
+    width: 90%;
+    background: linear-gradient( #000000, #001354 150%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    
+    h1 {
+      line-height: 1.5;
+    }
+  }
+
+  .content {
+    font-size: 1rem;
+    margin: 3vh auto 0;
+    width: 90%;
+    
+    p {
+      br {
+        display: none;
+      }
+    }
+  }
+
+  .buttons {
+    margin: 5vh auto 0;
+    justify-content: center;
+    flex-wrap: wrap;
+    & .secondaryButton {
+      color: #b8007b;
+    }
+  }
+
+  .images {
+    & .figureCylinder {
+      width: 15vw;
+      top: 48vh;
+      left: 75vw;
+    }
+    & .figurePiramid {
+      display: none;
+    }
+    & .figureHaifTorus {
+      width: 25vw;
+      top: 10vh;
+      left: -8vw;
+      transform: rotate(130deg);
+    }
+  }
+}
+
+/* Маленькие мобильные (480px и меньше) */
+@media (max-width: 480px) {
+  .hero {
+    padding-top: 3rem;
+    min-height: 35rem;
+    height: 37rem;
+  }
+
+  .prewew {
+    font-size: 0.8rem;
+    padding: 0.3rem 1rem;
+    margin: 3vh auto 0;
+  }
+
+  .title {
+    font-size: 1.3rem;
+    margin: 2vh auto 0;
+    background: linear-gradient( #000000, #001354 150%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    
+    h1 {
+      line-height: 1.3;
+    }
+  }
+
+  .content {
+    font-size: 0.9rem;
+    margin: 2vh auto 0;
+  }
+
+  .buttons {
+    margin: 4vh auto 0;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .primaryButton {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .secondaryButton {
+    width: 100%;
+    max-width: 250px;
+    justify-content: center;
+  }
+  .images {
+    display: none;
+  }
+}
+
+/* Ландшафтная ориентация на мобильных */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    min-height: 35rem;
+    padding-top: 1rem;
+  }
+
+  .prewew {
+    margin: 1vh auto 0;
+    font-size: 0.9rem;
+  }
+
+  .title {
+    margin: 1vh auto 0;
+    font-size: 1.4rem;
+  }
+
+  .content {
+    margin: 1vh auto 0;
+    font-size: 0.8rem;
+  }
+
+  .buttons {
+    margin: 2vh auto 0;
+  }
+}
+
+/* Ландшафтная ориентация на мобильных - с увеличенными отступами */
+@media (max-height: 500px) and (orientation: landscape),
+       (max-width: 1024px) and (orientation: landscape) and (max-height: 600px) {
+  .hero {
+    min-height: 100vh;
+    height: 100vh;
+    padding-top: 0; 
+    background: white;
+    justify-content: center;
+  }
+
+  .prewew {
+    margin: 4vh auto 0; 
+    font-size: 0.9rem;
+    padding: 0.8rem 1.8rem; 
+    width: 90%;
+    max-width: 400px;
+    border-radius: 2rem;
+  }
+
+  .title {
+    font-size: 1.8rem;
+    line-height: 140%;
+    width: 90%;
+    text-align: center;
+  }
+
+  .content {
+    margin: 4vh auto 0; 
+    font-size: 0.9rem;
+    width: 90%;
+    text-align: center;
+    
+    p {
+      br {
+        display: none;
+      }
+    }
+  }
+
+  .buttons {
+    margin: 7vh auto 0; 
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 1.8rem; 
+    
+    .secondaryButton {
+      color: #b8007b;
+    }
+  }
+
+  .primaryButton {
+    font-size: 0.9rem;
+    padding: 0.8rem 1.4rem; 
+    white-space: nowrap;
+  }
+
+  .secondaryButton {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .images {
+    display: none !important;
+  }
+}
+
+/* Дополнительные адаптации для очень маленькой высоты */
+@media (max-height: 400px) and (orientation: landscape) {
+  .hero {
+    padding-top: 0; 
+    background: white;
+  }
+
+  .prewew {
+    font-size: 0.8rem;
+    padding: 0.8rem 1.5rem; 
+    margin: 1vh auto 0; 
+  }
+
+  .title {
+    font-size: 1.4rem;
+    margin: 3vh auto 0; 
+  }
+
+  .content {
+    font-size: 0.8rem;
+    margin: 3vh auto 0; 
+  }
+
+  .buttons {
+    margin: 5vh auto 0; 
+    gap: 1.4rem; 
+  }
+
+  .primaryButton {
+    font-size: 0.8rem;
+    padding: 0.8rem 1.2rem; 
+  }
+
+  .secondaryButton {
+    font-size: 0.8rem;
+  }
+}
+
+/* Адаптация для очень широких лендскейпов */
+@media (min-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .hero {
+    padding-top: 0; 
+    background: white;
+  }
+
+  .prewew {
+    font-size: 1rem;
+    padding: 0.5rem 2.2rem; 
+    width: 80%;
+    max-width: 500px;
+    margin: 6vh auto 0; 
+  }
+
+  .title {
+    font-size: 1.8rem;
+    margin: 7vh auto 0; 
+  }
+
+  .content {
+    font-size: 1rem;
+    margin: 5vh auto 0; 
+  }
+
+  .buttons {
+    margin: 7vh auto 0; 
+  }
+}

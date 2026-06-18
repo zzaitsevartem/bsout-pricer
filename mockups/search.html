@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поиск — BScout</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="header-logo">
+      <span class="logo-icon">B</span>
+      BScout
+    </a>
+    <nav class="header-nav">
+      <a href="search.html">Поиск</a>
+      <a href="tariffs.html">Тарифы</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contacts.html">Контакты</a>
+    </nav>
+    <div class="header-actions">
+      <a href="account.html" class="header-icon-btn" aria-label="Личный кабинет">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+      <a href="login.html" class="btn btn-secondary btn-sm">Войти</a>
+      <button class="mobile-menu-btn" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="search-layout">
+    <!-- Фильтры (сайдбар) -->
+    <aside class="search-filters">
+      <div class="filter-section">
+        <h4 class="filter-title">Магазин</h4>
+        <div class="filter-options">
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Все магазины</label>
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>ТГСМ</label>
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Профи</label>
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Либерти</label>
+          <label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span>ГринСпарк</label>
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Дивизион</label>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-title">Цена</h4>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" class="input" placeholder="от" style="width: 80px;">
+          <input type="text" class="input" placeholder="до" style="width: 80px;">
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-title">Категория</h4>
+        <div class="filter-options">
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Дисплеи</label>
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Аккумуляторы</label>
+          <label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span>Материнские платы</label>
+          <label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span>Шлейфы</label>
+          <label class="checkbox"><input type="checkbox"><span class="checkbox-box"></span>Корпуса</label>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-title">Наличие</h4>
+        <div class="filter-options">
+          <label class="checkbox"><input type="checkbox" checked><span class="checkbox-box"></span>Только в наличии</label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary w-full mt-16" style="text-decoration: none;">Применить</button>
+      <button class="btn btn-ghost w-full mt-8" style="text-decoration: none;">Сбросить</button>
+    </aside>
+
+    <!-- Результаты -->
+    <main>
+      <div class="breadcrumbs">
+        <a href="index.html">Главная</a>
+        <span class="sep">/</span>
+        <span>Поиск</span>
+      </div>
+
+      <div class="search-bar">
+        <div class="input-wrapper">
+          <svg class="input-icon start" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" class="input" value="Дисплей iPhone 13" placeholder="Поиск запчастей...">
+        </div>
+        <button class="btn btn-primary">Найти</button>
+      </div>
+
+      <div class="search-header">
+        <span class="search-results-count">Найдено: 24 товара</span>
+        <div class="search-sort">
+          <span class="text-sm">Сортировка:</span>
+          <div class="select-wrapper">
+            <select class="input" style="width: auto; padding: 8px 36px 8px 12px;">
+              <option>Сначала дешёвые</option>
+              <option>Сначала дорогие</option>
+              <option>По дате обновления</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product cards -->
+      <div class="card card-light" style="padding: 0; border-radius: var(--radius-24); overflow: hidden;">
+        <div class="product-card">
+          <div class="product-image">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div class="product-info">
+            <a href="product.html" class="product-name">Дисплей iPhone 13 (оригинал)</a>
+            <div class="product-meta">
+              <span class="product-store-badge">ТГСМ</span>
+              <span>В наличии</span>
+            </div>
+          </div>
+          <div class="product-pricing">
+            <div class="product-price">4 500 ₽</div>
+            <div class="product-old-price">5 200 ₽</div>
+            <div class="product-cheapest">— Самый дешёвый</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-image">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div class="product-info">
+            <a href="product.html" class="product-name">Дисплей iPhone 13 (аналог)</a>
+            <div class="product-meta">
+              <span class="product-store-badge">Профи</span>
+              <span>В наличии</span>
+            </div>
+          </div>
+          <div class="product-pricing">
+            <div class="product-price">3 200 ₽</div>
+            <div class="product-cheapest">— Самый дешёвый</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-image">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div class="product-info">
+            <a href="product.html" class="product-name">Дисплей iPhone 13 Pro (оригинал)</a>
+            <div class="product-meta">
+              <span class="product-store-badge">Либерти</span>
+              <span>В наличии</span>
+            </div>
+          </div>
+          <div class="product-pricing">
+            <div class="product-price">6 800 ₽</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-image">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div class="product-info">
+            <a href="product.html" class="product-name">Дисплей iPhone 13 mini</a>
+            <div class="product-meta">
+              <span class="product-store-badge">ГринСпарк</span>
+              <span>В наличии</span>
+            </div>
+          </div>
+          <div class="product-pricing">
+            <div class="product-price">3 900 ₽</div>
+            <div class="product-old-price">4 500 ₽</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-image">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div class="product-info">
+            <a href="product.html" class="product-name">Дисплей iPhone 13 (оригинал)</a>
+            <div class="product-meta">
+              <span class="product-store-badge">Дивизион</span>
+              <span>Под заказ</span>
+            </div>
+          </div>
+          <div class="product-pricing">
+            <div class="product-price">5 100 ₽</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: center; margin-top: var(--space-32);">
+        <div class="pagination">
+          <a href="#" class="page-item disabled">←</a>
+          <a href="#" class="page-item active">1</a>
+          <a href="#" class="page-item">2</a>
+          <a href="#" class="page-item">3</a>
+          <a href="#" class="page-item">…</a>
+          <a href="#" class="page-item">12</a>
+          <a href="#" class="page-item">→</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  const header = document.getElementById('header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  });
+</script>
+</body>
+</html>
