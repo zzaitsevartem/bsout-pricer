@@ -4,10 +4,10 @@ import { HomeWidget } from '../widgets/homeWidget/ui';
 
 export default function Home() {
   return (
-    <>
+    <div className="relative z-10">
       <Header />
       <HomeWidget />
       <Footer />
-    </>
+    </div>
   );
 }

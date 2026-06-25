@@ -4,18 +4,21 @@ backend/__pycache__
 backend/*.pyc
 backend/.venv
 backend/venv
+frontend/mockups3
 
 # testing
 frontend/coverage
 
 # production
 frontend/build
+frontend/.next/
 
 # misc
 .DS_Store
 .env
 .env.local
 .env.*.local
+.env.example
 
 # IDE
 .idea/

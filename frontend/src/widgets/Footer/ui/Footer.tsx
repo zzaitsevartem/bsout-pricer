@@ -1,47 +1,66 @@
-import React from "react";
-import Link from "next/link";
-import styles from './Footer.module.scss';
-import { LogoB, TgIcon, VkIcon } from '../../../shared/ui/IconSVG';
+import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 const Footer: React.FC = () => {
   return (
-    <footer className={styles.footer}>
-      <div className={styles.logo}>
-        <Link href="/"><LogoB /></Link>
-        <p>Мгновенный поиск по тысячам<br />предложений от проверенных<br />магазинов</p>
-      </div>
-      <div className={styles.links}>
-        <div>
-          <h3>Продукт</h3>
-          <Link href="/integration">Интеграция</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/pricing">Тарифы</Link>
+    <footer className="bg-ivory border-t border-border-light-subtle py-[61px] pb-8 max-md:py-12 max-md:pb-6">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-12 max-md:grid-cols-2 max-md:gap-8 max-[480px]:grid-cols-1">
+          <div className="max-md:col-span-2 max-[480px]:col-span-1">
+            <Link href="/" className="flex items-center gap-2 no-underline text-slate">
+              <Image
+                src="/Logo.svg"
+                alt="BScout"
+                width={140}
+                height={48}
+                className="h-12 w-auto"
+                style={{ filter: 'brightness(0) contrast(100)' }}
+              />
+            </Link>
+            <p className="text-[15px] text-body-subtle max-w-[40ch] mt-3">
+              Единая платформа для поиска и сравнения цен на запчасти для электроники среди магазинов Ставрополя.
+            </p>
+          </div>
+          {[
+            { title: 'Продукт', links: [
+              { href: '/search', label: 'Поиск' },
+              { href: '/tariffs', label: 'Тарифы' },
+              { href: '/faq', label: 'FAQ' },
+            ]},
+            { title: 'Компания', links: [
+              { href: '/contacts', label: 'Контакты' },
+              { href: '/about', label: 'О проекте' },
+            ]},
+            { title: 'Юридическая', links: [
+              { href: '/privacy', label: 'Политика данных' },
+              { href: '/terms', label: 'Условия использования' },
+            ]},
+          ].map((col) => (
+            <div key={col.title}>
+              <h5 className="text-[15px] font-semibold text-slate mb-4">{col.title}</h5>
+              {col.links.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-[15px] text-body-subtle no-underline py-1 transition-colors hover:text-slate">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          ))}
         </div>
-        <div>
-          <h3>Компания</h3>
-          <Link href="/about">О нас</Link>
-          <Link href="/blog">Блог</Link>
-          <Link href="/careers">Вакансии</Link>
-          <Link href="/contacts">Контакты</Link>
-        </div>
-        <div>
-          <h3>Правовая информация</h3>
-          <Link href="/privacy">Политика конфиденциальности</Link>
-          <Link href="/terms">Условия пользования</Link>
-          <Link href="/security">Безопасность данных</Link>
-        </div>
-      </div>
-      <div className={styles.contacts}>
-        <div className={styles.social}>
-          <a href="https://t.me/ssaxharniyy" target="_blank" rel="noopener noreferrer"><TgIcon /></a>
-          <a href="https://vk.com/ssaxharniyy" target="_blank" rel="noopener noreferrer"><VkIcon /></a>
-        </div>
-        <div className={styles.contactInfo}>
-          <a href="tel:+79188613561">+7 (918) 861-35-61</a>
-          <a href="mailto:bscout.pricer@yandex.ru">bscout.pricer@yandex.ru</a>
+        <div className="mt-12 pt-6 border-t border-border-light-subtle flex justify-between items-center text-[15px] text-body-muted max-md:flex-col max-md:gap-4 max-md:text-center">
+          <span>&copy; 2026 BScout. Все права защищены.</span>
+          <div className="flex gap-3">
+            <a href="#" aria-label="Telegram" className="w-9 h-9 flex items-center justify-center border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
+              TG
+            </a>
+            <a href="#" aria-label="VK" className="w-9 h-9 flex items-center justify-center border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
+              VK
+            </a>
+          </div>
         </div>
       </div>
     </footer>
   );
 };
+
 export { Footer };
