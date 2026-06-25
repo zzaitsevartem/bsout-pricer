@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация — BScout</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .auth-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .auth-image {
+      flex: 0 0 37.5%;
+      background: url('../img/auth.webp') center/cover no-repeat;
+      border-right: 1px solid var(--border-light);
+      display: none;
+    }
+
+    @media (min-width: 769px) {
+      .auth-image {
+        display: block;
+      }
+    }
+
+    .auth-form-side {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-48) var(--space-40);
+      background: var(--ivory);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .auth-card h1 {
+      font-size: 32px;
+      margin-bottom: var(--space-8);
+    }
+
+    .auth-card .subheading {
+      margin-bottom: var(--space-32);
+    }
+
+    @media (max-width: 768px) {
+      .auth-form-side {
+        flex: 1;
+        padding: var(--space-32) var(--space-20);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="header-logo">
+      <img src="../img/Logo.svg" alt="BScout" style="height: 48px; width: auto; filter: brightness(0) contrast(100);">
+    </a>
+    <nav class="header-nav">
+      <a href="search.html">Поиск</a>
+      <a href="tariffs.html">Тарифы</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contacts.html">Контакты</a>
+    </nav>
+    <div class="header-actions">
+      <a href="login.html" class="btn btn-secondary btn-sm">Войти</a>
+      <button class="mobile-menu-btn" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="auth-layout">
+  <div class="auth-image"></div>
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <h1>Регистрация</h1>
+      <p class="subheading">Создайте аккаунт и получите 10 дней бесплатного доступа</p>
+
+      <form>
+        <div class="input-group">
+          <label for="name">Имя и фамилия</label>
+          <input type="text" id="name" class="input" placeholder="Иван Петров">
+        </div>
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" class="input" placeholder="example@email.com">
+          <p class="hint">На этот адрес придёт подтверждение</p>
+        </div>
+        <div class="input-group">
+          <label for="phone">Телефон</label>
+          <input type="tel" id="phone" class="input" placeholder="+7 (999) 123-45-67">
+        </div>
+        <div class="input-group">
+          <label for="company">Название сервисного центра (необязательно)</label>
+          <input type="text" id="company" class="input" placeholder="ИП Иванов">
+        </div>
+        <div class="input-group">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" class="input" placeholder="Не менее 8 символов">
+        </div>
+        <div class="input-group">
+          <label for="password2">Подтвердите пароль</label>
+          <input type="password" id="password2" class="input" placeholder="Введите пароль ещё раз">
+        </div>
+
+        <div style="margin-bottom: var(--space-24);">
+          <label class="checkbox">
+            <input type="checkbox">
+            <span class="checkbox-box"></span>
+            <span style="font-size: 14px;">Я принимаю <a href="#">условия использования</a> и <a href="#">политику конфиденциальности</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" style="text-decoration: none;">Создать аккаунт</button>
+      </form>
+
+      <p class="caption text-center" style="margin-top: var(--space-24);">
+        Уже есть аккаунт? <a href="login.html" style="color: var(--slate); font-weight: 500;">Войти</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const header = document.getElementById('header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  });
+</script>
+</body>
+</html>

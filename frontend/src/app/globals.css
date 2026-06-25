@@ -45,7 +45,7 @@
   }
 
   .btn-secondary:hover {
-    @apply bg-ivory-elevated text-slate;
+    @apply bg-[#F4EBD7] text-slate;
   }
 
   .btn-ghost {

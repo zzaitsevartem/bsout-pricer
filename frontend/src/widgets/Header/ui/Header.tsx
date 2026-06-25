@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PersonIcon } from '../../../shared/ui/IconSVG';
 
 interface HeaderProps {
   navCta?: 'login' | 'register' | 'logout' | 'profile';
@@ -12,18 +11,11 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  navCta = 'login',
+  navCta = 'both',
   showProfileIcon = false,
   adminBadge = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -33,13 +25,18 @@ const Header: React.FC<HeaderProps> = ({
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full bg-ivory transition-shadow
-        ${isScrolled ? 'shadow-[0_1px_0_0_#E8E6DC]' : ''}`}
-    >
+    <header className="sticky top-0 z-50 w-full bg-ivory border-b border-border-light-subtle">
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between max-md:px-5">
-        <Link href="/" className="flex items-center no-underline text-slate hover:text-slate">
-          <Image src="/Logo.svg" alt="BScout" width={140} height={70} className="h-7 w-auto" priority />
+        <Link href="/" className="flex items-center no-underline">
+          <Image
+            src="/Logo.svg"
+            alt="BScout"
+            width={140}
+            height={48}
+            className="h-12 w-auto"
+            priority
+            style={{ filter: 'brightness(0) contrast(100)' }}
+          />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -52,40 +49,32 @@ const Header: React.FC<HeaderProps> = ({
             <Link
               key={item.href}
               href={item.href}
-              className="px-3 py-2 text-[15px] text-body no-underline rounded-none transition-colors hover:bg-ivory-elevated hover:text-slate"
+              className="relative px-3 py-2 text-[15px] text-body no-underline rounded-none transition-colors hover:text-slate group"
             >
               {item.label}
+              <span className="absolute left-3 right-3 bottom-0.5 h-0.5 bg-[#C6993F] scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
           ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          {showProfileIcon && (
-            <Link href="/account" className="w-10 h-10 flex items-center justify-center text-body-subtle rounded-none hover:bg-ivory-elevated hover:text-slate transition-colors" aria-label="Личный кабинет">
-              <PersonIcon width="20" height="20" />
-            </Link>
-          )}
-          {adminBadge && (
-            <span className="text-xs font-mono uppercase tracking-wider px-2 py-0.5 text-clay border border-clay bg-transparent">
-              Админ
-            </span>
-          )}
           {navCta === 'login' && (
-            <Link href="/login" className="btn-secondary">Войти</Link>
+            <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
           )}
           {navCta === 'register' && (
-            <Link href="/register" className="btn-primary">Регистрация</Link>
+            <Link href="/register" className="btn-primary btn-sm">Регистрация</Link>
+          )}
+          {navCta === 'both' && (
+            <>
+              <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
+              <Link href="/register" className="btn-primary btn-sm">Регистрация</Link>
+            </>
           )}
           {navCta === 'logout' && (
-            <Link href="/login" className="btn-secondary">Выйти</Link>
+            <Link href="/login" className="btn-secondary btn-sm">Выйти</Link>
           )}
           {navCta === 'profile' && (
-            <>
-              <Link href="/account" className="w-10 h-10 flex items-center justify-center text-body-subtle rounded-none hover:bg-ivory-elevated hover:text-slate transition-colors" aria-label="Личный кабинет">
-                <PersonIcon width="20" height="20" />
-              </Link>
-              <Link href="/login" className="btn-secondary">Выйти</Link>
-            </>
+            <Link href="/login" className="btn-secondary btn-sm">Выйти</Link>
           )}
         </div>
 

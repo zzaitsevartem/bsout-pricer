@@ -4,8 +4,7 @@ backend/__pycache__
 backend/*.pyc
 backend/.venv
 backend/venv
-frontend/mockups
-frontend/mockups2
+frontend/mockups3
 
 # testing
 frontend/coverage
