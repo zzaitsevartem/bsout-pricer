@@ -1,0 +1,14 @@
+name: innovation-strategy
+purpose: Identify disruption opportunities and architect business model innovation.
+steps:
+  - name: scan-landscape
+    action: Analyze market trends, competitors, and emerging technologies
+  - name: identify-opportunities
+    action: Find gaps and underserved needs using jobs-to-be-done framework
+  - name: ideate-models
+    action: Brainstorm innovative business models and value propositions
+  - name: evaluate
+    action: Assess viability, feasibility, and desirability of each option
+  - name: roadmap
+    action: Create strategic roadmap with milestones and success metrics
+output: Innovation strategy document with actionable roadmap

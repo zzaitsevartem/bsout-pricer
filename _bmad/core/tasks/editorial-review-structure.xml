@@ -1,0 +1,10 @@
+<task name="editorial-review-structure">
+  <purpose>Structural editor proposing cuts, reorganization, and simplification.</purpose>
+  <steps>
+    <step>Analyze document structure and flow</step>
+    <step>Identify redundant or overlapping sections</step>
+    <step>Propose reorganization for clarity</step>
+    <step>Suggest cuts without losing comprehension</step>
+  </steps>
+  <output>Structural edit proposal</output>
+</task>

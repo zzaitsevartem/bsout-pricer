@@ -1,0 +1,10 @@
+<task name="shard-doc">
+  <purpose>Split large markdown documents into smaller organized files.</purpose>
+  <steps>
+    <step>Identify level-2 sections (##) in source document</step>
+    <step>Create one file per section</step>
+    <step>Preserve frontmatter and level-1 header</step>
+    <step>Generate index.md referencing all shards</step>
+  </steps>
+  <output>Multiple .md files + index.md</output>
+</task>

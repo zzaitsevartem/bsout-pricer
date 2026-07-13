@@ -1,0 +1,14 @@
+name: testarch-test-design
+purpose: Create system-level or epic-level test plans.
+steps:
+  - name: analyze-requirements
+    action: Review PRD, epics, and technical design
+  - name: identify-scenarios
+    action: Map happy path, edge cases, and error scenarios
+  - name: design-cases
+    action: Write detailed test cases with preconditions and expected results
+  - name: organize
+    action: Group tests by feature and priority
+  - name: review
+    action: Validate test coverage with team
+output: Test plan document with prioritized test cases

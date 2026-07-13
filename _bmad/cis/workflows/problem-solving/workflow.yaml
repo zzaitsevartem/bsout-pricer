@@ -1,0 +1,14 @@
+name: problem-solving
+purpose: Apply systematic problem-solving methodologies to complex challenges.
+steps:
+  - name: define-problem
+    action: Clarify and frame the problem statement with context and constraints
+  - name: analyze-root-causes
+    action: Identify underlying causes using 5 Whys, fishbone, or causal mapping
+  - name: generate-solutions
+    action: Brainstorm potential solutions using lateral thinking techniques
+  - name: evaluate
+    action: Assess solutions against criteria (feasibility, impact, effort)
+  - name: recommend
+    action: Select best solution and define action plan
+output: Problem analysis and solution recommendation

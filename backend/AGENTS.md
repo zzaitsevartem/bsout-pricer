@@ -5,56 +5,56 @@
 ## Команды
 
 ```bash
-uvicorn src.main:app --reload     # Dev server на :8000
+uvicorn src.main:app --reload          # Dev server на :8000
 alembic revision --autogenerate -m "msg"  # Создать миграцию
-alembic upgrade head              # Применить миграции
+alembic upgrade head                   # Применить миграции
+poetry run uvicorn src.main:app --reload  # Через Poetry
 ```
 
 ## Стек
 
 - Python 3.11+, FastAPI, SQLAlchemy 2.0 (async), Alembic
 - PostgreSQL 16, Redis 7
-- Pydantic v2 (schemas), python-dotenv / pydantic-settings
+- Pydantic v2, passlib (bcrypt), python-jose (JWT)
+- Poetry для зависимостей
 
-## Планируемая структура
+## Структура (модульная MVC)
 
 ```
 src/
-├── main.py           # FastAPI app, CORS, роутеры
-├── config.py         # pydantic-settings из .env
-├── database.py       # async engine + sessionmaker
-├── models/           # SQLAlchemy модели
-│   ├── user.py       # User, Subscription
-│   ├── product.py    # Product, PriceHistory, Store
-│   └── search.py     # SearchHistory, SavedSearch
-├── schemas/          # Pydantic request/response
-│   ├── user.py
-│   ├── product.py
-│   ├── auth.py
-│   └── subscription.py
-├── api/              # Роутеры
-│   ├── health.py     # GET /api/health
-│   ├── auth.py       # register, login, refresh, logout
-│   ├── users.py      # profile, subscription
-│   ├── products.py   # search, details, price-history
-│   ├── stores.py     # stores list
-│   └── admin.py      # admin endpoints
-├── services/         # Бизнес-логика
-│   ├── auth.py       # JWT, bcrypt
-│   ├── search.py     # exact + fuzzy поиск
-│   ├── subscription.py # лимиты, проверка
-│   ├── parser.py     # управление парсерами
-│   └── cache.py      # Redis кэш
-├── parsers/          # Парсеры магазинов
-│   ├── base.py       # ABC Parser
-│   ├── tgssm.py
-│   ├── profi.py
-│   ├── liberty.py
-│   ├── greenspark.py
-│   └── divizion.py
-└── utils/
-    └── text.py       # нормализация, транслит
+├── main.py                    # FastAPI app, CORS, подключение роутеров
+├── config.py                  # pydantic-settings из .env
+├── database.py                # async engine + sessionmaker + Base + get_db
+└── modules/
+    ├── shared/                # Общие зависимости
+    │   └── deps.py            # get_current_user, get_current_admin
+    ├── health/
+    │   └── controller/
+    │       └── health.py      # GET /api/health
+    ├── auth/                  # Модуль аутентификации
+    │   ├── model/
+    │   │   └── user.py        # User, Subscription (SQLAlchemy)
+    │   ├── schema/
+    │   │   ├── auth.py        # RegisterRequest, LoginRequest, TokenResponse
+    │   │   └── user.py        # UserResponse, SubscriptionResponse
+    │   ├── service/
+    │   │   └── auth.py        # bcrypt, JWT (create/decode), DB queries
+    │   └── controller/
+    │       └── auth.py        # POST /api/auth/register, /login, /refresh
+    ├── users/                 # Модуль пользователей
+    │   └── controller/
+    │       └── users.py       # GET/PATCH /api/users/me, /subscription
+    ├── admin/                 # Модуль админ-панели
+    │   └── controller/        # (TODO)
+    └── products/              # Модуль товаров и поиска
+        └── controller/        # (TODO)
 ```
+
+Каждый модуль содержит:
+- **model/** — SQLAlchemy модели
+- **schema/** — Pydantic v2 схемы request/response
+- **service/** — бизнес-логика
+- **controller/** — FastAPI роутеры
 
 ## Модели данных (ключевые)
 
@@ -65,43 +65,31 @@ src/
 - **PriceHistory** — product_id, price, recorded_at
 - **SearchHistory** — user_id, query, filters, results_count
 
-## API (планируемые эндпоинты)
+## API (текущие эндпоинты)
 
 | Method | Path | Доступ |
 |--------|------|--------|
+| GET | /api/health | Public |
 | POST | /api/auth/register | Public |
 | POST | /api/auth/login | Public |
 | POST | /api/auth/refresh | Public |
-| POST | /api/auth/logout | Auth |
 | GET | /api/users/me | Auth |
 | PATCH | /api/users/me | Auth |
 | GET | /api/users/me/subscription | Auth |
 | POST | /api/users/me/subscription | Auth |
-| GET | /api/products?q=... | Auth |
-| GET | /api/stores | Public |
-| GET | /api/categories | Public |
-| GET/PATCH/DELETE | /api/admin/users | Admin |
 
 ## Аутентификация
 
-- JWT: access token (15 мин) + refresh token (30 дней, httpOnly cookie)
+- JWT: access token (15 мин) + refresh token (30 дней)
 - bcrypt (passlib) для хеширования паролей
-- Проверка тарифа на поисковых маршрутах
+- Bearer token через HTTPAuthorizationCredentials
 - Public endpoints: /api/health, /api/auth/*, /api/stores, /api/categories
-
-## Парсинг
-
-- Базовый класс `Parser` (ABC): `parse_product()`, `search()`, `update_catalog()`
-- Парсеры для 5 магазинов: ТГСМ, Профи, Либерти, Гринспарк, Дивизион
-- Асинхронные (httpx / aiohttp)
-- Расписание: каталог — ежедневно 03:00, цены — каждые 6ч / real-time
 
 ## Соглашения
 
-- Все модели SQLAlchemy — async (selectinload, joinedload)
+- Все модели SQLAlchemy — async
 - Все endpoint'ы — async def
 - Миграции через Alembic (autogenerate)
 - .env — в .gitignore, шаблон в .env.example
-- Pydantic v2 для валидации входа/выхода
-- Redis: кэш поиска (TTL 5 мин), очередь задач (arq/RQ)
-- Имена атрибутов — snake_case в Python, camelCase в JSON (через Pydantic)
+- snake_case в Python, camelCase в JSON (через Pydantic model_config)
+- Никаких docstring'ов и комментариев в коде
