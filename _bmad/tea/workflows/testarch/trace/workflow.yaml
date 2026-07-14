@@ -1,0 +1,14 @@
+name: testarch-trace
+purpose: Generate traceability matrix and quality gate decision.
+steps:
+  - name: collect-requirements
+    action: Gather all requirements, stories, and ACs
+  - name: map-tests
+    action: Link each test case to specific requirements
+  - name: identify-gaps
+    action: Find requirements without test coverage
+  - name: assess-quality
+    action: Evaluate pass/fail status per requirement
+  - name: report
+    action: Generate traceability matrix with coverage metrics
+output: Traceability matrix and coverage report

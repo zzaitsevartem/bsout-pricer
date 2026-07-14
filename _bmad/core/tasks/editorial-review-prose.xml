@@ -1,0 +1,10 @@
+<task name="editorial-review-prose">
+  <purpose>Clinical copy-editor reviewing text for communication issues.</purpose>
+  <steps>
+    <step>Check clarity and conciseness</step>
+    <step>Identify ambiguous phrasing</step>
+    <step>Review tone consistency</step>
+    <step>Flag passive voice and jargon</step>
+  </steps>
+  <output>Prose improvement suggestions</output>
+</task>

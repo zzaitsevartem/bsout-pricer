@@ -1,0 +1,14 @@
+name: testarch-framework
+purpose: Initialize test framework with Playwright or Cypress.
+steps:
+  - name: select-framework
+    action: Evaluate options (Playwright, Cypress, Vitest) based on project needs
+  - name: scaffold
+    action: Initialize framework with recommended configuration
+  - name: configure
+    action: Set up reporters, fixtures, and environment
+  - name: write-first-test
+    action: Create example test to verify setup
+  - name: integrate-ci
+    action: Add test execution to CI pipeline
+output: Working test framework with example tests

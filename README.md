@@ -1,46 +1,101 @@
-# Getting Started with Create React App
+# BScout
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Веб-платформа для поиска и сравнения цен на запчасти для мобильных телефонов, ноутбуков и электроники среди локальных магазинов г. Ставрополя.
 
-## Available Scripts
+## Стек
 
-In the project directory, you can run:
+| Компонент | Технология |
+|-----------|-----------|
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui, FSD |
+| Backend | Python 3.11+, FastAPI, SQLAlchemy 2.0 (async), Alembic |
+| Database | PostgreSQL 16 |
+| Cache | Redis 7 |
+| Инфраструктура | Docker, docker-compose, Poetry |
 
-### `npm start`
+## Структура проекта
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```
+bscout/
+├── frontend/          # Next.js 14 + Tailwind + shadcn/ui + FSD
+│   └── src/
+│       ├── app/       # App Router (layout, pages)
+│       ├── widgets/   # FSD виджеты (Header, Footer, homeWidget)
+│       ├── components/ui/  # shadcn/ui компоненты
+│       └── shared/    # Иконки, изображения, утилиты
+├── backend/           # FastAPI + SQLAlchemy + Alembic
+│   └── src/
+│       ├── main.py    # Точка входа
+│       ├── config.py  # Настройки из .env
+│       ├── database.py # Engine + session
+│       └── modules/   # Модульная MVC-архитектура
+│           ├── auth/      # Регистрация, логин, JWT
+│           ├── users/     # Профиль, подписка
+│           ├── health/    # Health check
+│           ├── admin/     # Админ-панель (TODO)
+│           └── products/  # Поиск товаров (TODO)
+├── docker/            # docker-compose.yml (PostgreSQL + Redis)
+└── docs/              # ТЗ и бизнес-план
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Быстрый старт
 
-### `npm test`
+### 1. Запустить базы данных
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
 
-### `npm run build`
+### 2. Backend
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+cd backend
+cp .env.example .env
+poetry install
+poetry run uvicorn src.main:app --reload
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 3. Frontend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### `npm run eject`
+### 4. Открыть
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API docs: http://localhost:8000/docs
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## API Endpoints
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+| Method | Path | Описание | Доступ |
+|--------|------|----------|--------|
+| GET | `/api/health` | Health check | Public |
+| POST | `/api/auth/register` | Регистрация | Public |
+| POST | `/api/auth/login` | Вход | Public |
+| POST | `/api/auth/refresh` | Обновление токена | Public |
+| GET | `/api/users/me` | Профиль | Auth |
+| PATCH | `/api/users/me` | Обновление профиля | Auth |
+| GET | `/api/users/me/subscription` | Текущая подписка | Auth |
+| POST | `/api/users/me/subscription` | Оформление подписки | Auth |
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Текущий статус
 
-## Learn More
+- ✅ **MVP (Этап 1)** — лендинг, backend skeleton, Docker
+- ✅ **User + Auth (Этап 2, частично)** — модели, JWT, регистрация, логин, профиль, подписка
+- 🔄 **Этап 2** — SQLAlchemy модели, Alembic, API (в процессе)
+- ⏳ **Этап 3** — Парсеры магазинов
+- ⏳ **Этап 4** — Страницы поиска, товара, аккаунта
+- ⏳ **Этап 5-7** — Интеграция, premium-фичи, production
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Тарифы
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Тариф | Цена | Товары | Поставщики | Обновление |
+|-------|------|--------|------------|------------|
+| Пробный | 0₽ / 10 дн | до 10 | 2 | 24ч |
+| Базовый | 399₽ / мес | до 100 | 15+ | 6ч |
+| Продвинутый | 499₽ / мес | безлимит | 50+ | real-time |
+
+Скидка 20% на первый платёж любого платного тарифа.

@@ -1,0 +1,14 @@
+name: design-thinking
+purpose: Guide human-centered design processes using empathy-driven methodologies.
+steps:
+  - name: empathize
+    action: Conduct user research to understand needs and pain points
+  - name: define
+    action: Synthesize findings into clear problem statement
+  - name: ideate
+    action: Generate wide range of solutions without judgment
+  - name: prototype
+    action: Build low-fidelity prototypes for testing
+  - name: test
+    action: Validate with users and iterate based on feedback
+output: Validated solution concept with user feedback

@@ -1,0 +1,16 @@
+name: nfr-assess
+purpose: Assess Non-Functional Requirements including performance, security, and reliability.
+steps:
+  - name: identify-nfrs
+    action: Gather NFRs from stakeholders and system requirements
+  - name: prioritize
+    action: Rank NFRs by business impact and technical risk
+  - name: define-metrics
+    action: Establish measurable targets for each NFR
+  - name: plan-tests
+    action: Design test scenarios for performance, security, reliability
+  - name: execute
+    action: Run tests and collect measurements
+  - name: report
+    action: Compare results against targets and document gaps
+output: NFR assessment report with gap analysis

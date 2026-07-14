@@ -1,0 +1,14 @@
+name: testarch-atdd
+purpose: Generate failing acceptance tests using TDD cycle.
+steps:
+  - name: understand-story
+    action: Review user story and acceptance criteria
+  - name: write-acceptance-test
+    action: Create failing acceptance test that defines expected behavior
+  - name: implement-feature
+    action: Write minimum code to pass the acceptance test
+  - name: verify
+    action: Run tests and confirm all pass
+  - name: refactor
+    action: Clean up code while keeping tests green
+output: Acceptance tests + passing implementation
