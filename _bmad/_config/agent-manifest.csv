@@ -1,0 +1,8 @@
+agent_id;name;description;phase;input_from;output_to;contract_ref;status
+DIS-01;discovery-agent;Агент discovery — уточнение цели, границ, ограничений, критериев успеха;discovery;-;PRO-01;docs/agents/agent-output-contracts.md#discovery;active
+PRO-01;product-agent;Агент product/UX — формализация требований, сценариев и UX-решений;product;DIS-01;ARC-01;docs/agents/agent-output-contracts.md#product;active
+ARC-01;architecture-agent;Агент архитектуры — технические решения, контракты, нефункциональные требования;architecture;PRO-01;STO-01;docs/agents/agent-output-contracts.md#architecture;active
+STO-01;story-agent;Агент story prep — разбиение на stories с критериями приёмки;story-prep;ARC-01;IMP-01;docs/agents/agent-output-contracts.md#story-prep;active
+IMP-01;implementation-agent;Агент реализации — код + тесты + обновление документации;implementation;STO-01;QA-01;docs/agents/agent-output-contracts.md#implementation;active
+QA-01;qa-agent;Агент QA — верификация AC, smoke/regression, отчёт о качестве;qa;IMP-01;HAN-01;docs/agents/agent-output-contracts.md#qa;active
+HAN-01;handoff-agent;Агент handoff — итог, что сделано, осталось, риски;handoff;QA-01;-;docs/agents/agent-output-contracts.md#handoff;active

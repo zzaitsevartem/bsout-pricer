@@ -18,7 +18,7 @@ frontend/.next/
 .env
 .env.local
 .env.*.local
-.env.example
+# .env.example intentionally NOT ignored — it's a template
 
 # IDE
 .idea/

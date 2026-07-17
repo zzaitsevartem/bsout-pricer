@@ -1,0 +1,14 @@
+name: testarch-test-review
+purpose: Review test quality using best practices validation.
+steps:
+  - name: check-structure
+    action: Verify test organization and naming conventions
+  - name: assess-coverage
+    action: Check edge cases and scenario completeness
+  - name: validate-assertions
+    action: Ensure assertions are meaningful and non-brittle
+  - name: review-maintainability
+    action: Check for duplication, flakiness, and test isolation
+  - name: report
+    action: Document findings with severity and recommendations
+output: Test quality report with improvement suggestions

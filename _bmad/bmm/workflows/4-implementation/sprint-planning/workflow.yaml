@@ -1,0 +1,41 @@
+name: Планирование спринта
+description: Отбор эпиков и задач из Product Backlog в спринт
+purpose: Сформировать обязательства команды на спринт
+triggers:
+  - Начало нового спринта
+inputs:
+  - Product Backlog (приоритезированный)
+  - Velocity команды
+  - Результаты предыдущего спринта
+outputs:
+  - Sprint Backlog
+  - Цели спринта
+  - Риски и допущения
+roles:
+  scrum_master: Фасилитатор
+  product_manager: Приоритизация целей
+  development_team: Оценка и commitment
+steps:
+  - name: Подготовка (Sprint Refinement)
+    action: За 2-3 дня до планирования — убедиться, что top stories имеют оценки и AC
+    description: Product Manager и Tech Lead актуализируют бэклог
+
+  - name: Определение цели спринта
+    action: Product Manager формулирует цель спринта на основе приоритетов бизнеса
+    description: Цель должна быть конкретной и измеримой
+
+  - name: Отбор задач
+    action: Команда отбирает stories из бэклога в sprint, основываясь на velocity
+    description: Учесть capacity и доступность участников
+
+  - name: Оценка и декомпозиция
+    action: Разбить крупные stories на subtasks. Уточнить оценки при необходимости
+    description: Каждая subtask не более 1-2 дней
+
+  - name: Утверждение обязательств
+    action: Команда даёт commitment на выполнение Sprint Backlog
+    description: Зафиксировать цели и согласовать с Product Manager
+
+  - name: Фиксация
+    action: Записать Sprint Backlog, цели, риски. Запустить таск-трекер
+    description: Отправить уведомления стейкхолдерам

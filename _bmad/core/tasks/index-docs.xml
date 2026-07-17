@@ -1,0 +1,10 @@
+<task name="index-docs">
+  <purpose>Generate or update an index.md referencing all docs in a folder.</purpose>
+  <steps>
+    <step>Scan all .md files in target folder</step>
+    <step>Extract title from first H1 or filename</step>
+    <step>Group by category if applicable</step>
+    <step>Generate index.md with links and descriptions</step>
+  </steps>
+  <output>index.md in the target folder</output>
+</task>

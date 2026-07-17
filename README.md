@@ -231,7 +231,7 @@ npm run format:check # ✨ Проверка форматирования
 cd backend
 poetry run uvicorn src.main:app --reload          # 🏃 Dev-сервер на :8000
 poetry run alembic revision --autogenerate -m "msg"  # ➕ Создать миграцию
-poetry run alembic upgrade head                   # ⬆️ Применить мигр  ции
+poetry run alembic upgrade head                   # ⬆️ Применить мигр��ции
 ```
 
 ### Docker

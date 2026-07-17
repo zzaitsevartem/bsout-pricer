@@ -1,0 +1,14 @@
+name: storytelling
+purpose: Craft compelling narratives using story frameworks.
+steps:
+  - name: define-audience
+    action: Identify audience, context, and desired outcome
+  - name: choose-structure
+    action: Select narrative arc (hero's journey, three-act, problem-solution)
+  - name: craft-story
+    action: Develop characters, conflict, resolution aligned to message
+  - name: refine
+    action: Polish language, pacing, and emotional beats
+  - name: review
+    action: Test narrative clarity and impact
+output: Polished narrative document

@@ -1,0 +1,10 @@
+<task name="review-adversarial-general">
+  <purpose>Perform cynical review and produce findings report.</purpose>
+  <steps>
+    <step>Analyze document for logical gaps and inconsistencies</step>
+    <step>Identify unstated assumptions</step>
+    <step>Check for missing edge cases</step>
+    <step>Assess risk level of each finding</step>
+  </steps>
+  <output>Findings report with severity ratings</output>
+</task>

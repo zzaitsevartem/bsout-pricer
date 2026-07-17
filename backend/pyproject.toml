@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "bscout-backend"
+version = "0.1.0"
+description = "BScout API — search and compare prices for electronics parts"
+authors = ["BScout Team"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = { version = "^0.30.0", extras = ["standard"] }
+sqlalchemy = "^2.0.35"
+asyncpg = "^0.30.0"
+redis = "^5.1.0"
+alembic = "^1.13.0"
+python-dotenv = "^1.0.1"
+pydantic = "^2.9.0"
+pydantic-settings = "^2.5.0"
+passlib = { version = "^1.7.4", extras = ["bcrypt"] }
+python-jose = { version = "^3.3.0", extras = ["cryptography"] }
+httpx = "^0.27.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
