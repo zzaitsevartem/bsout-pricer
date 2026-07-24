@@ -12,7 +12,7 @@ const BannerAccount: React.FC = () => {
           <p className="text-lg leading-[1.4] text-body max-w-[50ch] mx-auto mb-8">
             Зарегистрируйтесь бесплатно и начните экономить время на поиске запчастей уже сегодня.
           </p>
-          <Link href="/register" className="btn-primary btn-lg">Создать аккаунт</Link>
+          <Link href="/register" className="btn-primary btn-lg">Начать экономить своё время</Link>
         </div>
       </div>
     </section>
