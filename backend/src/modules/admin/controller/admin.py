@@ -5,8 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.modules.admin.schema.admin import AdminStatsResponse, UserBriefResponse
+from src.modules.admin.schema.moderation import (
+    CandidateDecisionResponse,
+    MatchCandidateListResponse,
+    OfferLinkRequest,
+    OfferLinkResponse,
+)
 from src.modules.admin.schema.offer_import import OfferImportItem, OfferImportResponse
 from src.modules.admin.service.admin_service import AdminService
+from src.modules.admin.service.moderation_service import ModerationError, ModerationService
 from src.modules.admin.service.offer_import_service import OfferImportService
 from src.modules.shared import get_current_admin
 
@@ -68,3 +75,75 @@ async def import_offers(
     admin=Depends(get_current_admin),
 ):
     return await OfferImportService.import_offers(db, rows)
+
+
+@router.get("/match-candidates", response_model=MatchCandidateListResponse)
+async def list_match_candidates(
+    status_filter: str = Query(
+        default="pending", alias="status", pattern="^(pending|approved|rejected|all)$"
+    ),
+    offer_id: int | None = Query(default=None, ge=1),
+    product_id: int | None = Query(default=None, ge=1),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    results, total = await ModerationService.list_candidates(
+        db,
+        status=status_filter,
+        offer_id=offer_id,
+        product_id=product_id,
+        page=page,
+        per_page=per_page,
+    )
+    return MatchCandidateListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.post("/match-candidates/{candidate_id}/approve", response_model=CandidateDecisionResponse)
+async def approve_match_candidate(
+    candidate_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    try:
+        return await ModerationService.approve(db, candidate_id, admin.id)
+    except ModerationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.post("/match-candidates/{candidate_id}/reject", response_model=CandidateDecisionResponse)
+async def reject_match_candidate(
+    candidate_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    try:
+        return await ModerationService.reject(db, candidate_id, admin.id)
+    except ModerationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.post("/offers/{offer_id}/link", response_model=OfferLinkResponse)
+async def link_offer(
+    offer_id: int,
+    payload: OfferLinkRequest,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    try:
+        return await ModerationService.link_offer(db, offer_id, payload.product_id, admin.id)
+    except ModerationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.post("/offers/{offer_id}/unlink", response_model=OfferLinkResponse)
+async def unlink_offer(
+    offer_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    try:
+        return await ModerationService.unlink_offer(db, offer_id, admin.id)
+    except ModerationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
