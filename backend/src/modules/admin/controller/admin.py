@@ -1,12 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from typing import Any
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.modules.admin.schema.admin import AdminStatsResponse, UserBriefResponse
+from src.modules.admin.schema.offer_import import OfferImportItem, OfferImportResponse
 from src.modules.admin.service.admin_service import AdminService
+from src.modules.admin.service.offer_import_service import OfferImportService
 from src.modules.shared import get_current_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+OFFER_IMPORT_OPENAPI = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "application/json": {
+                "schema": {"type": "array", "items": OfferImportItem.model_json_schema()}
+            }
+        },
+    }
+}
 
 
 @router.get("/stats", response_model=AdminStatsResponse)
@@ -42,3 +57,14 @@ async def toggle_user_active(
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return await AdminService.toggle_user_active(db, user)
+
+
+@router.post(
+    "/offers/import", response_model=OfferImportResponse, openapi_extra=OFFER_IMPORT_OPENAPI
+)
+async def import_offers(
+    rows: list[Any] = Body(...),
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    return await OfferImportService.import_offers(db, rows)
