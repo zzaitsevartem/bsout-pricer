@@ -102,7 +102,7 @@ async def test_register_same_email_twice_returns_409(client):
     )
 
     assert second.status_code == 409, second.text
-    assert second.json()["detail"] == "Email already registered"
+    assert second.json()["detail"] == "Registration could not be completed"
 
 
 @pytest.mark.parametrize(
