@@ -15,7 +15,7 @@ paths: ["backend/**/*.py"]
 
 ## Обязательные правила
 - **Всё async**: модели, сессии (`get_db`), эндпоинты (`async def`).
-- **snake_case в Python, camelCase в JSON** — через `model_config` в Pydantic-схемах.
+- **snake_case и в Python, и в JSON.** `alias_generator`/`populate_by_name` не настроены ни в одной схеме — API отдаёт `website_url`, `is_active`, `created_at`, и фронтовые Zod-схемы ждут того же. Не вводи camelCase в отдельном модуле: получится остров, ломающий фронт.
 - **Никаких docstring и комментариев в коде** (конвенция проекта).
 - Зависимость БД — `db: AsyncSession = Depends(get_db)`.
 - Авторизация — `Depends(get_current_user)` / `get_current_admin` из `src/modules/shared/deps.py`.
