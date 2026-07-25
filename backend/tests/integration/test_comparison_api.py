@@ -17,29 +17,6 @@ from src.modules.stores.model.store import Store
 pytestmark = pytest.mark.integration
 
 
-def _reset_rate_limit() -> None:
-    from src.main import app
-    from src.middleware.rate_limit import RateLimitMiddleware
-
-    if app.middleware_stack is None:
-        app.middleware_stack = app.build_middleware_stack()
-
-    node = app.middleware_stack
-    while node is not None:
-        if isinstance(node, RateLimitMiddleware):
-            node._requests.clear()
-            node._since_sweep = 0
-            return
-        node = getattr(node, "app", None)
-
-
-@pytest.fixture(autouse=True)
-def isolate_rate_limit():
-    _reset_rate_limit()
-    yield
-    _reset_rate_limit()
-
-
 def _auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 

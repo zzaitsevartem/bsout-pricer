@@ -48,6 +48,26 @@ async def reset_redis_singleton():
     await close_redis()
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    from src.main import app
+    from src.middleware.rate_limit import RateLimitMiddleware
+
+    if app.middleware_stack is None:
+        app.middleware_stack = app.build_middleware_stack()
+
+    node = app.middleware_stack
+    seen: set[int] = set()
+    while node is not None and id(node) not in seen:
+        seen.add(id(node))
+        if isinstance(node, RateLimitMiddleware):
+            node._requests.clear()
+            node._since_sweep = 0
+            break
+        node = getattr(node, "app", None)
+    yield
+
+
 @pytest_asyncio.fixture
 async def db_session(db_engine):
     factory = async_sessionmaker(db_engine, expire_on_commit=False)

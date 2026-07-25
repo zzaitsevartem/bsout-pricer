@@ -145,7 +145,8 @@ def test_longest_device_alias_wins(title: str, expected: str, dicts: Dictionarie
 def test_similar_model_names_are_not_confused(dicts: Dictionaries) -> None:
     assert _codes("Аккумулятор Honor X8 копия", dicts)[0] == "honor-x8"
     assert _codes("Аккумулятор Honor 9X копия", dicts)[0] == "honor-9x"
-    assert extract("Аккумулятор Honor 8X копия", dicts).device_id is None
+    assert _codes("Аккумулятор Honor 8X копия", dicts)[0] == "honor-8x"
+    assert _codes("Дисплей Хонор 8Х в сборе копия", dicts)[0] == "honor-8x"
 
 
 def test_cyrillic_and_latin_spellings_agree(dicts: Dictionaries) -> None:
@@ -282,12 +283,11 @@ def test_extraction_coverage_on_demo_fixture(dicts: Dictionaries) -> None:
         if result.quality_tier_id is not None and result.quality_tier_id not in unknown_ids:
             quality_hits += 1
 
-    assert both / len(titles) >= 0.95
+    assert both == len(titles)
     assert part_type_hits == len(titles)
     assert quality_hits == len(titles)
 
 
-def test_unmatched_devices_are_limited_to_absent_catalog_entries(dicts: Dictionaries) -> None:
+def test_every_fixture_title_resolves_to_a_device(dicts: Dictionaries) -> None:
     missing = [title for title in _fixture_titles() if extract(title, dicts).device_id is None]
-    assert len(missing) == 12
-    assert all("8x" in normalize(title) for title in missing)
+    assert missing == []

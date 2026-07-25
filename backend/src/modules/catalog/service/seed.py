@@ -378,6 +378,7 @@ DEVICES: list[tuple[str, str, str, list[str]]] = [
     ("Huawei", "Nova 9", "huawei-nova-9", ["nova 9", "хуавей nova 9", "huawei nova 9"]),
     ("Honor", "Honor 50", "honor-50", ["honor 50", "хонор 50", "honor 50 5g"]),
     ("Honor", "Honor X8", "honor-x8", ["honor x8", "хонор x8", "honor x8 2022"]),
+    ("Honor", "Honor 8X", "honor-8x", ["honor 8x", "хонор 8x", "jsn-l21", "honor 8x jsn"]),
     ("Honor", "Honor 9X", "honor-9x", ["honor 9x", "хонор 9x", "honor 9x premium"]),
     ("Realme", "Realme C25", "realme-c25", ["realme c25", "реалми c25", "рилми c25"]),
     ("Realme", "Realme 9 Pro", "realme-9-pro", ["realme 9 pro", "реалми 9 про", "рилми 9 pro"]),
