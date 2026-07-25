@@ -16,10 +16,10 @@ async def _make_user(db, email: str = "pay@example.com") -> User:
     return user
 
 
-async def test_trial_lasts_10_days(db_session):
+async def test_trial_lasts_seven_days_per_spec(db_session):
     user = await _make_user(db_session)
     sub = await PaymentService.create_subscription(db_session, user.id, PlanEnum.trial)
-    assert sub.end_date - sub.start_date == timedelta(days=10)
+    assert sub.end_date - sub.start_date == timedelta(days=7)
     assert sub.is_active is True
 
 

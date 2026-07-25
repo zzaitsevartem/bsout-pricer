@@ -171,7 +171,7 @@ class PaymentService:
     @staticmethod
     async def create_subscription(db: AsyncSession, user_id: int, plan: PlanEnum) -> Subscription:
         now = datetime.now(timezone.utc)
-        duration_days = 10 if plan == PlanEnum.trial else get_plan(plan).duration_days
+        duration_days = get_plan(plan).duration_days
 
         result = await db.execute(
             select(Subscription).where(

@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     rate_limit_window: int = 60
     rate_limit_trust_forwarded_for: bool = False
 
+    yookassa_webhook_secret: str | None = None
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
