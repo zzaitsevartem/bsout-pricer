@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -10,8 +11,20 @@ from src.modules.auth.model.user import PlanEnum, Subscription, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+MAX_PASSWORD_BYTES = 72
+
+
+def password_byte_length(password: str) -> int:
+    return len(password.encode("utf-8"))
+
+
+def password_exceeds_bcrypt_limit(password: str) -> bool:
+    return password_byte_length(password) > MAX_PASSWORD_BYTES
+
 
 def hash_password(password: str) -> str:
+    if password_exceeds_bcrypt_limit(password):
+        raise ValueError(f"password must not exceed {MAX_PASSWORD_BYTES} bytes in utf-8")
     return pwd_context.hash(password)
 
 
@@ -25,9 +38,26 @@ def create_access_token(user_id: int) -> str:
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
-def create_refresh_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
-    payload = {"sub": str(user_id), "exp": expire, "type": "refresh"}
+def refresh_token_expires_at(issued_at: datetime | None = None) -> datetime:
+    base = issued_at or datetime.now(timezone.utc)
+    return base + timedelta(days=settings.refresh_token_expire_days)
+
+
+def create_refresh_token(
+    user_id: int,
+    jti: str | None = None,
+    family_id: str | None = None,
+    expires_at: datetime | None = None,
+) -> str:
+    token_jti = jti or uuid4().hex
+    expire = expires_at or refresh_token_expires_at()
+    payload = {
+        "sub": str(user_id),
+        "exp": expire,
+        "type": "refresh",
+        "jti": token_jti,
+        "family_id": family_id or token_jti,
+    }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
