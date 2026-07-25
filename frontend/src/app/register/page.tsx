@@ -8,6 +8,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Header } from '@/widgets/Header/ui/Header';
 import { registerRequestSchema, useRegister } from '@/models/auth';
+import { usePlans } from '@/models/payment';
+
+function formatDays(days: number): string {
+  const tail = days % 10;
+  const teen = days % 100;
+  if (teen >= 11 && teen <= 14) {
+    return `${days} дней`;
+  }
+  if (tail === 1) {
+    return `${days} день`;
+  }
+  if (tail >= 2 && tail <= 4) {
+    return `${days} дня`;
+  }
+  return `${days} дней`;
+}
 
 const registerFormSchema = registerRequestSchema
   .extend({
@@ -24,6 +40,8 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const registerMutation = useRegister();
+  const plans = usePlans();
+  const trialDays = plans.data?.find((plan) => plan.plan === 'trial')?.durationDays ?? 7;
   const {
     register,
     handleSubmit,
@@ -55,7 +73,7 @@ export default function RegisterPage() {
         <div className="flex-1 flex items-center justify-center px-10 py-12 bg-ivory max-md:flex-none max-md:w-full max-md:px-5">
           <div className="w-full max-w-[480px] bg-ivory border border-border-light rounded-[24px] p-12 max-md:p-8">
             <h1 className="text-[32px] font-bold text-slate mb-2">Регистрация</h1>
-            <p className="text-lg text-body mb-8">Создайте аккаунт и получите 10 дней бесплатного доступа</p>
+            <p className="text-lg text-body mb-8">Создайте аккаунт и получите {formatDays(trialDays)} бесплатного доступа</p>
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="mb-4">
