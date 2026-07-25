@@ -465,3 +465,33 @@ async def test_access_token_still_carries_sub_and_type(client, db_session):
     assert payload["sub"] == str(user.id)
     assert payload["type"] == "access"
     assert "jti" not in payload
+
+
+async def test_reuse_detection_survives_the_401_rollback(client, db_session):
+    resp = await client.post(
+        "/api/auth/register",
+        json={"email": "reuse-durable@example.com", "password": PASSWORD, "full_name": "Reuse"},
+    )
+    stolen = resp.json()["refresh_token"]
+
+    rotated = await client.post("/api/auth/refresh", json={"refresh_token": stolen})
+    fresh = rotated.json()["refresh_token"]
+
+    replayed = await client.post("/api/auth/refresh", json={"refresh_token": stolen})
+    assert replayed.status_code == 401
+
+    after = await client.post("/api/auth/refresh", json={"refresh_token": fresh})
+    assert (
+        after.status_code == 401
+    ), "вся семья обязана быть отозвана, а не только предъявленный токен"
+
+    rows = (
+        (
+            await db_session.execute(
+                select(RefreshToken).where(RefreshToken.revoked_reason == "reuse_detected")
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert rows, "отзыв семьи должен пережить откат транзакции при 401"

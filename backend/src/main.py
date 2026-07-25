@@ -7,6 +7,7 @@ from src.config import settings
 from src.middleware.rate_limit import RateLimitMiddleware
 from src.modules.admin.controller import admin_router
 from src.modules.auth.controller import auth_router
+from src.modules.auth.service.security import validate_security_settings
 from src.modules.cache.service.redis_cache import close_redis
 from src.modules.categories.controller import categories_router
 from src.modules.health.controller import health_router
@@ -24,6 +25,8 @@ async def lifespan(app: FastAPI):
     yield
     await close_redis()
 
+
+validate_security_settings(settings)
 
 app = FastAPI(title="BScout API", lifespan=lifespan)
 
