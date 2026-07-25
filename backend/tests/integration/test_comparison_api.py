@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.modules.auth.model.user import User
+from src.modules.auth.model.user import PlanEnum, Subscription, User
 from src.modules.auth.service.auth import create_access_token, hash_password
 from src.modules.catalog.model.catalog import Brand, Device, PartType, QualityTier
 from src.modules.products.model.product import (
@@ -30,6 +30,19 @@ async def _make_user(db, email: str = "cmp@example.com") -> tuple[User, str]:
     )
     db.add(user)
     await db.flush()
+
+    now = datetime.now(timezone.utc)
+    db.add(
+        Subscription(
+            user_id=user.id,
+            plan=PlanEnum.advanced,
+            start_date=now,
+            end_date=now + timedelta(days=30),
+            is_active=True,
+        )
+    )
+    await db.flush()
+
     return user, create_access_token(user.id)
 
 

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +19,12 @@ from src.modules.auth.service.auth import (
     decode_token,
     get_user_by_email,
     get_user_by_id,
+    grant_trial_subscription,
 )
 from src.modules.cache import RedisCache
 from src.modules.shared import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -38,6 +43,12 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         phone=body.phone,
         company=body.company,
     )
+
+    try:
+        async with db.begin_nested():
+            await grant_trial_subscription(db, user)
+    except Exception:
+        logger.exception("failed to grant trial subscription for user %s", user.id)
 
     return TokenResponse(
         access_token=create_access_token(user.id),
