@@ -1,9 +1,13 @@
 # dependencies
 frontend/node_modules
-backend/__pycache__
-backend/*.pyc
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
 backend/.venv
 backend/venv
+.venv
+venv/
 frontend/mockups3
 
 # testing
@@ -24,6 +28,9 @@ frontend/.next/
 .idea/
 *.swp
 *.swo
+
+# Claude Code — личные оверрайды (шаблон: .claude/settings.local.json.example)
+.claude/settings.local.json
 
 # logs
 npm-debug.log*

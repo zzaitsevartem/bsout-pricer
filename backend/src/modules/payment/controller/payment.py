@@ -39,10 +39,13 @@ async def cancel_subscription(
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Subscription).where(
+        select(Subscription)
+        .where(
             Subscription.user_id == current_user.id,
             Subscription.is_active.is_(True),
-        ).order_by(Subscription.created_at.desc()).limit(1)
+        )
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
     )
     subscription = result.scalar_one_or_none()
     if subscription is None:

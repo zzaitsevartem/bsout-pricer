@@ -1,3 +1,9 @@
-from src.modules.products.model.product import PriceHistory, Product
+from src.modules.products.model.product import (
+    Cluster,
+    MatchCandidate,
+    OfferPriceHistory,
+    Product,
+    StoreOffer,
+)
 
-__all__ = ["Product", "PriceHistory"]
+__all__ = ["Cluster", "MatchCandidate", "OfferPriceHistory", "Product", "StoreOffer"]

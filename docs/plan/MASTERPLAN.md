@@ -10,9 +10,11 @@
 
 | Поле | Значение |
 |------|----------|
-| Активный блок | 01 — Интеграция фронтенда с бэкендом (auth, кабинет, подписка) |
-| Режим | разработка · ветка `feature/frontend-integration` |
-| Фаза дорожной карты | Блок 01: Фазы 1–4 реализованы + отревьюированы; **остался DoD — `npm run build && npm run lint`** (заблокирован: нет `node_modules`) |
+| Активный блок | — (автономный проход по 02–08 завершён) |
+| Режим | разработка · ветки: фронт `feature/frontend-integration`, бэкенд `feature/backend-core` |
+| Готово (проверено) | **02** ядро данных, **05** fuzzy, **06** каркас парсеров, **03** тесты (бэкенд); **тесты: 156 зелёных** |
+| Частично/блокировано | **01** [~] фронт (код готов, `npm run build` без сети), **04** [~] Docker (порты параметризованы; `docker build` без сети), **08** [~] arq-worker (написан, `arq` без сети), **03** фронт-Vitest (без node_modules) |
+| Пропущено (решение владельца) | **07** [!] 5 парсеров — отложены |
 | Обновлено | 2026-07-25 |
 
 ## Легенда статусов
@@ -90,68 +92,71 @@
 
 ## БЛОК 04 — Docker бэкенда и финализация деплоя
 
-**Статус:** [ ] · **Заведён:** 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §1.7
+**Статус:** [~] 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §1.7 · **Код написан, сборка НЕ проверена (нет сети для `docker build`/pip).**
 
-**Проблема.** Спринт 1 фактически закрыт, но остаток из 1.7 не сделан: у бэкенда нет `Dockerfile`, сервис `backend` не добавлен в `docker-compose.yml` (сейчас там только postgres + redis), эндпоинты не прогнаны вручную.
+- [x] `backend/Dockerfile` — `python:3.11-slim` + **pip install requirements.txt** (не poetry: poetry в проекте не используется, см. CLAUDE.md) + `alembic upgrade head && uvicorn`. Плюс `backend/.dockerignore`.
+- [x] Сервис `backend` в `docker-compose.yml` (`depends_on` с healthcheck postgres, env `POSTGRES_HOST=postgres`/`REDIS_HOST=redis`, порт `8000:8000`).
+- [x] **Порты параметризованы (решение владельца: прод = 8000, локально — свободный).** В `docker-compose.yml` host-порты через env с прод-дефолтами: `${BACKEND_PORT:-8000}`, `${POSTGRES_HOST_PORT:-5432}`, `${REDIS_HOST_PORT:-6379}`; плюс `JWT_SECRET_KEY`/`DEBUG` из окружения (не хардкод). Локальные значения — в gitignored `bsout-pricer/.env` (**BACKEND_PORT=8010**, POSTGRES_HOST_PORT=5434); шаблон — `.env.example`. Проверено `docker compose config`: локально резолвится 8010/5434/6379, без `.env` — 8000/5432/6379.
+- [x] Фронт-прокси синхронизирован: `next.config.mjs` → `process.env.BACKEND_URL ?? 'http://localhost:8000'`; локальный `frontend/.env.local` = `http://localhost:8010` (+ `frontend/.env.example`).
+- [!] `docker build` + `docker compose up` — **НЕ запускались**: sandbox без сети (нельзя тянуть базовый образ и pip-пакеты). Прогнать при доступной сети.
+- [ ] Прогон эндпоинтов в контейнере → `MANUAL_VERIFICATION.md` (после сборки).
 
-- [ ] `backend/Dockerfile` — `python:3.11-slim` + poetry install + `uvicorn src.main:app`
-- [ ] Добавить сервис `backend` в `docker-compose.yml` (`depends_on: postgres, redis`, env из `.env`, порт 8000)
-- [ ] Прогнать все эндпоинты вручную (curl/httpx) → зафиксировать в `MANUAL_VERIFICATION.md`
-- [ ] Проверить сборку и подъём всё-вместе: `docker build` + `docker compose up` (pg + redis + backend)
+**Заметки:** отклонение от плана: `poetry install` → `pip` (осознанно, poetry не установлен). Порт 8000 на хосте занят проектом `axidi` — поэтому локальный дефолт 8010; в проде маппинг остаётся 8000.
 
 ## БЛОК 05 — Fuzzy-поиск (pg_trgm) для тарифа advanced
 
-**Статус:** [ ] · **Заведён:** 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §1.5 (остаток)
+**Статус:** [x] 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §1.5 (остаток) · **Ветка:** `feature/frontend-integration`
 
-**Проблема.** Поиск в `products/service/product_service.py` умеет только точное + `ILIKE`-совпадение по `normalized_name`. Обещанный тарифу `advanced` fuzzy-поиск (pg_trgm) не реализован.
+**Итог:** реализовано и проверено (42 теста, +2 новых).
 
-- [ ] Миграция alembic: `CREATE EXTENSION pg_trgm`
-- [ ] GIN-индекс по `Product.normalized_name` (`gin_trgm_ops`)
-- [ ] `similarity()`-поиск в `product_service` для плана `advanced` (fallback на ILIKE для `basic`/`trial`)
-- [ ] Гейтить fuzzy по подписке через `middleware/subscription_guard`
-- [ ] Проверить релевантность на реальных данных → `MANUAL_VERIFICATION.md`
+- [x] `CREATE EXTENSION pg_trgm` — заведено в Блоке 02.
+- [x] GIN-trgm индекс — `ix_store_offers_normalized_title_trgm` (Блок 02).
+- [x] `similarity()`-поиск в `product_service.search(fuzzy=True)`: фильтр оператором `%` (index-backed), сортировка по `similarity()` desc; fallback ILIKE для не-advanced.
+- [x] Гейтинг: `subscription_guard.is_fuzzy_enabled(db, user_id)` → fuzzy только при активной подписке `advanced`; контроллер `/api/products` вычисляет `fuzzy` и передаёт в сервис.
+- [x] Тесты: fuzzy находит опечатку («дислей iphone 13»), ILIKE — нет; `is_fuzzy_enabled` True только для advanced. Релевантность на больших реальных данных — в `MANUAL_VERIFICATION.md` (нужны спарсенные данные).
 
 ## БЛОК 06 — Каркас парсеров: утилиты, исключения, ParserService
 
-**Статус:** [ ] · **Заведён:** 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §2.1, §2.7
+**Статус:** [x] 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §2.1, §2.7 · **Ветка:** `feature/frontend-integration`
 
-**Проблема.** В `modules/parser/service/` есть только `base.py`; отдельных утилит/исключений нет, а контроллер (`GET ""`, `POST /run`) — заглушка без реальной логики upsert и записи истории цен.
+**Итог:** реализовано и проверено (40 тестов зелёные, +18 новых). Схема-цели актуализированы под Блок 02 (`(store_id, source_sku)`, `OfferPriceHistory`).
 
-- [ ] `parser/service/exceptions.py` — `ParserError` / `ParserConnectionError` / `ParserParseError` / `ParserAuthError`
-- [ ] `parser/service/utils.py` — `normalize_name`, `parse_price` («4 500 ₽» → Decimal), `safe_request` (retry + backoff), `compare_products`
-- [ ] `ParserService` — `register` / `get` / `list_parsers` / `run_all` (asyncio.gather) / `run_one`
-- [ ] Upsert по `(store_id, external_id)`; при изменении цены — запись в `PriceHistory`
-- [ ] Заменить заглушки контроллера парсера на реальную логику (статус + запуск)
-- [ ] Redis: `parser:status:{slug}`, `parser:lock:{slug}` (анти-двойной-запуск)
+- [x] `parser/service/exceptions.py` — `ParserError`/`ParserConnectionError`/`ParserParseError`/`ParserAuthError`.
+- [x] `parser/service/utils.py` — `normalize_name`, `parse_price` («4 500 ₽»→Decimal, запятая-десятичная, отбраковка нечисловых), `safe_request` (httpx + экспон. backoff, без tenacity), `compare_products` (difflib) — **16 unit-тестов** (в т.ч. retry через httpx.MockTransport).
+- [x] `ParserService` — `register`/`get`/`list_parsers`/`get_statuses`/`run_one`/`run_all` (asyncio.gather, **отдельная сессия на парсер** — concurrency-safe, изоляция ошибок).
+- [x] Upsert по `(store_id, source_sku)`; при изменении `price_retail` — запись в `OfferPriceHistory` + `price_changed_at` — **2 integration-теста** (создание→обновление→смена цены; run_one).
+- [x] Контроллер парсера: реальная логика (`get_statuses`, `run_one` с 404/502).
+- [x] Redis: `parser:status:{slug}`, `parser:lock:{slug}` (SET NX EX анти-двойной-запуск) — `RedisCache.acquire_lock/release_lock`.
+- [x] `ParseResult` расширён под новую схему (`source_sku, title, price_retail, price_opt, stock_status, stock_qty, url`).
 
 ## БЛОК 07 — Пять парсеров магазинов
 
-**Статус:** [ ] · **Заведён:** 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §2.2–2.6
+**Статус:** [!] ПРОПУЩЕН (заблокирован средой) · **Источник:** `docs/sprints/sprint-001-backend-api.md` §2.2–2.6
 
-**Проблема.** Ни один из 5 магазинных парсеров не реализован; в зависимостях есть только `httpx` (нет `beautifulsoup4`, `lxml`, `tenacity`). Зависит от БЛОКА 06.
+**Почему пропущен (осознанно):** реализация требует (а) установки `beautifulsoup4`/`lxml`/`tenacity` — **нет сети** (`pip install` заблокирован); (б) **живых скрейпов** реальных сайтов, чтобы подобрать и проверить CSS-селекторы — тоже нет сети и нет доступа к HTML. Писать 5 парсеров «вслепую» (селекторы-догадки, без запуска и тестов) = гарантированно неверный, непроверяемый код. По твоей инструкции «если в чём-то не уверен — пометить и оставить вопрос».
 
-- [ ] Зависимости: `beautifulsoup4`, `lxml`, `tenacity` в `requirements.txt` + `pyproject.toml`
-- [ ] ТГСМ — `taggsm.ru` (HTML/bs4)
-- [ ] Профи — `siriust.ru` (XHR/JSON API, иначе HTML)
-- [ ] Либерти — `liberti.ru` (JSON API/HTML, sitemap.xml)
-- [ ] Гринспарк — `green-spark.ru` (HTML)
-- [ ] Дивизион — `divizion126.ru` (HTML)
-- [ ] CSS-селекторы вынести в конфиг парсера; реальный скрейп каждого магазина → `MANUAL_VERIFICATION.md`
+- [x] Зависимости `beautifulsoup4`, `lxml`, `tenacity` добавлены в `requirements.txt` (подготовка; установятся при доступной сети).
+- [!] Пять парсеров (ТГСМ/Профи/Либерти/Гринспарк/Дивизион) — НЕ написаны. Каркас (`BaseParser`, `ParseResult`, `ParserService`, upsert, `safe_request`) готов в Блоке 06 — остаётся реализовать `update_catalog()`/`search()` под каждый сайт.
+
+**Вопрос:** дать доступ к сети (или примеры HTML/структуру ответов каждого магазина), чтобы реализовать и проверить парсеры отдельной сессией?
 
 ## БЛОК 08 — Планировщик и очередь (arq worker)
 
 **Статус:** [ ] · **Заведён:** 2026-07-25 · **Источник:** `docs/sprints/sprint-001-backend-api.md` §2.8
 
-**Проблема.** Нет фонового запуска парсеров: отсутствуют `scheduler`/`worker`, `arq` не в зависимостях. Зависит от БЛОКОВ 06–07.
+**Статус:** [~] 2026-07-25 · **Код написан, запуск НЕ проверен (нет сети для установки `arq`).**
 
-- [ ] Зависимость `arq`; `backend/src/worker.py` — arq worker на Redis
-- [ ] Расписание: каталог ежедневно 03:00; цены каждые 6 ч; приоритетные товары — раз в час
-- [ ] Локи `parser:lock:{slug}` от параллельного запуска
-- [ ] Изоляция ошибок: падение одного парсера не роняет остальные
+- [x] Зависимость `arq` в `requirements.txt`; `backend/src/worker.py` — `WorkerSettings` (RedisSettings из `settings`), функции `sync_catalog`/`sync_prices` → `parser_service.run_all()`.
+- [x] Расписание: каталог ежедневно 03:00 (`cron hour=3`), цены каждые 6 ч (`cron hour={0,6,12,18}`). Приоритетные-почасовые — отложено (нет флага приоритета у offers).
+- [x] Локи `parser:lock:{slug}` — наследуются из `run_one` (Блок 06).
+- [x] Изоляция ошибок — `run_all` через `_run_isolated` (Блок 06): падение одного парсера не роняет остальные.
+- [!] `arq worker` не запускался: `arq` не установлен (нет сети). `worker.py` не импортируется приложением/тестами → на рабочий бэкенд не влияет. Проверить `arq worker src.worker.WorkerSettings` при доступной сети (+ реальные парсеры Блока 07).
 
 ## БЛОК 02 — Ядро данных: канон, offers, справочники, матчинг
 
-**Статус:** [ ] · **Заведён:** 2026-07-25 · **Ветка:** `feature/db-core` (создать)
+**Статус:** [x] 2026-07-25 · **Ветка:** `feature/frontend-integration` (выполнено в текущей автономной сессии, не в отдельной `feature/db-core`)
+
+**Итог:** реализовано и **проверено на живой БД**: миграция `336d8cc4267a` round-trip up→down→up без ошибок; 20 доменных таблиц + extensions `citext`/`pg_trgm` + 6 GIN-trgm/partial индексов + CHECK/uniq на месте; `uvicorn`/`/api/health` → 200; 22 теста зелёные (в т.ч. 4 новых: uniq(store_id,source_sku), CHECK stock_status, opt-цена/наличие, seed-идемпотентность). Файлы ruff-clean.
 
 **Проблема.** Текущее ядро (`products`) — плоское: одна таблица смешивает предложение магазина и идентичность товара, связь между магазинами — только через строку `normalized_name`. Нет оптовой цены (а опт есть у всех источников: Розница/Опт, Столичный/опт), наличие — только `bool` (теряем «Мало»/«2 шт.»/«Предзаказ»), нет `uniq(store_id, external_id)` (повторный парсинг плодит дубли), нет канона, справочников, очереди модерации. Это не даёт корректно сравнивать цены и матчить товары между магазинами. Таблицы `products`/`price_history` **пусты** (проверено: 0 строк) — реструктуризацию делаем сейчас, ДО того как парсеры (Этап 3) начнут писать данные, чтобы не рефакторить ядро повторно.
 
@@ -163,39 +168,38 @@
 - `categories` (публичный `/api/categories`) — **оставляем как есть**; таксономию парсинга вводим отдельной `part_types`, конвергенцию откладываем.
 
 ### Фаза 0 — Инфраструктура схемы и техдолг
-- [ ] `naming_convention` в `Base.metadata` (`src/database.py`) — стабильные имена констрейнтов для будущих autogenerate.
-- [ ] Расширения PG в миграции (`op.execute`): `pg_trgm`, `citext`.
-- [ ] `search_history.filters` → `JSONB` (модель + миграция).
-- [ ] `planenum` в этом блоке НЕ трогаем (замена нативного enum — отдельным блоком).
+- [x] `naming_convention` в `Base.metadata` (`src/database.py`).
+- [x] Расширения PG в миграции (`op.execute`): `pg_trgm`, `citext`.
+- [x] `search_history.filters` → `JSONB`.
+- [x] `planenum` не трогали.
 
 ### Фаза 1 — Справочники (reference data)
-- [ ] Модели `brands, devices, device_aliases, part_types, part_type_synonyms, quality_tiers, quality_tier_synonyms, colors, stopwords` (модуль `src/modules/catalog/model/`).
-- [ ] Регистрация всех новых моделей в `alembic/env.py`.
-- [ ] Идемпотентный сид: типы деталей (display/battery/…), классы качества (original/oem_hq/copy/service/unknown) + синонимы, топ-бренды/устройства.
+- [x] Модели `brands, devices, device_aliases, part_types, part_type_synonyms, quality_tiers, quality_tier_synonyms, colors, color_synonyms, stopwords` (`src/modules/catalog/model/catalog.py`).
+- [x] Регистрация моделей — через реестр `src/db_metadata.py` (импортируется из `env.py` и тест-conftest; DRY, устраняет дрейф).
+- [x] Идемпотентный сид `catalog/service/seed.py` (10 part_types + синонимы, 5 quality_tiers + синонимы, 5 брендов, 4 устройства) — тест идемпотентности зелёный.
 
 ### Фаза 2 — Ядро (offers / канон / история / модерация)
-- [ ] `products` → переименовать в `store_offers`; добавить `price_opt, price_old, stock_status(varchar+CHECK), stock_qty, raw jsonb, is_active, match_status, match_confidence, first_seen_at/last_seen_at/price_changed_at, product_id(FK канон, SET NULL)`; **`uniq(store_id, source_sku)`**.
-- [ ] Новая `products` (КАНОН): `cluster_id, quality_tier_id, brand_id, key_attrs jsonb, canonical_key(uniq), canonical_name`.
-- [ ] `clusters` (`device_id`, `part_type_id`, uniq, кэш-агрегаты `offers_count/min_price_*`).
-- [ ] `price_history` → `offer_price_history` (+`price_opt`, `stock_status`, FK на offer).
-- [ ] `match_candidates` (очередь модерации: offer↔product, `score`, `features` jsonb, `status`, `decided_by/at`).
-- [ ] Индексы: GIN trgm (`store_offers.normalized_title`, `products.canonical_name`, синонимы), partial `price_retail WHERE is_active`, FK-индексы.
+- [x] `store_offers` (бывш. `products`): `price_opt, price_old, stock_status(CHECK), stock_qty, raw jsonb, is_active, match_status(CHECK), match_confidence, first/last_seen_at, price_changed_at, product_id(SET NULL)`; **`uniq(store_id, source_sku)`**.
+- [x] Канон `products`: `cluster_id, quality_tier_id, brand_id, key_attrs jsonb, canonical_key(uniq), canonical_name`.
+- [x] `clusters` (`device_id`, `part_type_id`, uniq, `offers_count/min_price_*`).
+- [x] `offer_price_history` (+`price_opt`, `stock_status`, FK на offer).
+- [x] `match_candidates` (offer↔product, `score`, `features` jsonb, `status(CHECK)`, `decided_by/at`).
+- [x] Индексы: GIN trgm (`normalized_title`, `canonical_name`, синонимы/alias через `::text`), partial `price_retail WHERE is_active`, FK-индексы.
 
 ### Фаза 3 — Миграция Alembic
-- [ ] Переопределить модели, обновить импорты в `env.py`.
-- [ ] `python -m alembic revision --autogenerate -m "core: offers/canonical/dictionaries/matching"` (down_revision = `fb0762d20565`).
-- [ ] **Дописать руками то, что autogenerate не видит:** `CREATE EXTENSION`, `CHECK`-констрейнты статусов, GIN trgm, partial-индексы.
-- [ ] `upgrade head` → `downgrade base` → `upgrade head` — проходит чисто.
+- [x] Модели переопределены, `env.py` через `db_metadata`.
+- [x] Миграция `336d8cc4267a` (autogenerate + ручная дописка extensions/GIN/partial).
+- [x] `upgrade head` → `downgrade -1` → `upgrade head` — чисто.
 
-### Фаза 4 — Адаптация существующих модулей (чтобы бэкенд компилировался)
-- [ ] Перевести модули `products`/`search` (service/schema/controller) на `store_offers`+канон — только чтобы `uvicorn` стартовал (полноценные эндпоинты каталога/сравнения — отдельным блоком).
-- [ ] НЕ здесь: `ParseResult`, upsert-логика, запись истории цен — это Блок 06 (использует схему из этого блока).
+### Фаза 4 — Адаптация существующих модулей
+- [x] `products` (service/schema/controller) + `admin_service` переведены на `StoreOffer`; `uvicorn` стартует, `/api/products` защищён (403 без токена).
+- [ ] (отложено в Блок 06) `ParseResult`, upsert по `(store_id, source_sku)`, запись истории цен.
 
 ### Проверка/DoD
-- [ ] `python -m alembic upgrade head` на чистой БД + round-trip down/up — без ошибок.
-- [ ] Модели импортируются, `uvicorn src.main:app` стартует, `/api/health` → 200.
-- [ ] Ручная вставка offer с `price_opt` и `stock_status='low'`; вставка дубля `(store_id, source_sku)` → нарушение uniq (констрейнт работает).
-- [ ] Ручные проверки → `MANUAL_VERIFICATION.md`.
+- [x] `alembic upgrade head` + round-trip down/up — без ошибок.
+- [x] Модели импортируются, app стартует, `/api/health` → 200.
+- [x] uniq `(store_id, source_sku)`, CHECK `stock_status`, opt-цена/наличие — покрыты integration-тестами (зелёные).
+- [x] Ручные проверки занесены в `MANUAL_VERIFICATION.md`.
 
 **Известные риски/заметки:**
 - autogenerate НЕ генерирует extensions/CHECK/GIN-trgm/partial — обязательны ревью и ручная дописка ревизии.
@@ -205,7 +209,19 @@
 
 ## БЛОК 03 — Покрытие тестами (pytest: unit + integration, TDD)
 
-**Статус:** [~] · **Заведён:** 2026-07-25
+**Статус:** [x] 2026-07-25 (бэкенд) · **17 → 156 тестов** зелёные. Осталась только фронт-фаза (Vitest) — заблокирована отсутствием `node_modules`.
+
+**Сделано TDD-ом по ходу блоков 02/05/06:** unit — `parse_price`/`normalize_name`/`compare_products`, `safe_request` (retry через httpx.MockTransport), `ParseResult`/`ParserManager`. Integration — `store_offers` uniq+CHECK+opt-цена, catalog seed идемпотентность, `ParserService` upsert+история+run_one, fuzzy `%`/`similarity` + gating, `PaymentService`. Починен баг тест-инфры (conftest: импорт моделей до create_all + extensions).
+
+**Добор (5 агентов параллельно, каждый на своей БД `bscout_test_1..5`, +111 тестов):**
+- `tests/unit/test_rate_limit.py` (20) — окно/границы/изоляция по IP/сброс, Retry-After, свип, e2e через ASGI.
+- `tests/integration/test_auth_service.py` (18) — хэш в БД, uniq email (регистронезависимый), authenticate_user (успех/пароль/нет юзера).
+- `tests/integration/test_search_history_and_cache.py` (17) — record/get_by_user (порядок, лимит, JSONB), `RedisCache` TTL/round-trip/инвалидация (ключи с уникальным префиксом).
+- `tests/integration/test_deps_guards.py` (20) — `get_current_user` (нет/битый/refresh-токен/неактивный), `get_current_admin` 403/200, `require_active_subscription` (нет/активная/истёкшая).
+- `tests/integration/test_api_contracts.py` (28) — health, register/login/me, 409 дубль, 422 невалидное тело, 401 неверные креды, пустой каталог, 404, admin 403, публичные эндпоинты.
+- `tests/integration/test_regressions.py` (7, мои) — на исправленные баги (см. ниже).
+
+**Фронт-фаза (не сделана):** Vitest + Testing Library + MSW — требует `npm install` (нет сети).
 
 **Проблема.** У проекта нет тестового набора (см. `CLAUDE.md`), поэтому вся регрессия ловится руками через `MANUAL_VERIFICATION.md`. Нужен базовый каркас автотестов и дисциплина TDD для нового кода, чтобы бизнес-логику (auth/JWT, цены/подписки, гейтинг, нормализация парсеров, кэш) можно было проверять быстро и повторяемо.
 
@@ -253,17 +269,41 @@
 - [ ] MSW для мока API в хуках React Query (без реального бэка).
 
 ### Фаза 5 — Покрытие и CI-гейт
-- [ ] `pytest --cov=src --cov-report=term-missing`; зафиксировать стартовый порог (ориентир ≥60% по `service/` и `middleware/`, не гнаться за 100%).
-- [ ] Документировать команды запуска (unit / integration / coverage) — короткий раздел, куда решим (не плодить README без нужды).
-- [ ] (Опционально) CI-workflow: поднять postgres+redis сервисами, `pytest tests/unit` всегда + `tests/integration` при доступной БД.
+- [!] `pytest --cov` **локально не запустить**: `pytest-cov` есть в `requirements-dev.txt`, но не установлен в venv, а `pip install` заблокирован (нет сети). В CI ставится и считается. Порог осознанно НЕ фиксировали — сначала нужна реальная цифра с CI.
+- [x] Команды запуска задокументированы в корневом `CLAUDE.md` (заменено устаревшее «нет тестов»): `pytest tests/unit` (без внешних сервисов) / полный `pytest` (нужны Postgres+Redis + БД `bscout_test`) / `TEST_DATABASE_URL` для изоляции.
+- [x] CI-workflow `.github/workflows/ci.yml`: сервисы postgres:16 + redis:7 с healthcheck, python 3.11, **`alembic upgrade head` с нуля** (этот шаг поймал бы HIGH-баг миграции), `pytest tests/unit`, затем полный прогон с `--cov`. Job `lint` (ruff check + format --check) — **блокирующая**: легаси-долг вычищен, бэкенд ruff-clean целиком (118 файлов, 0 замечаний).
 
 ### Проверка/DoD
-- [ ] `pytest tests/unit` — зелено без внешних сервисов; `pytest` целиком — зелено при поднятых Postgres/Redis (`docker compose up -d` + БД `bscout_test`).
-- [ ] Новый код добавляется по TDD (red → green → refactor); каждый новый сервис/утилита приходит с тестом в том же PR.
-- [ ] То, что автотестом не подтвердить (реальные скрейпы, «цена показана == списана» на живом флоу), — синхронно отражается в `MANUAL_VERIFICATION.md`.
+- [x] `pytest tests/unit` — зелено без внешних сервисов; полный `pytest` — **156 passed** при поднятых Postgres/Redis.
+- [x] Новый код добавлялся по TDD; каждый новый сервис/утилита пришли с тестом.
+- [x] Неавтоматизируемое — в `MANUAL_VERIFICATION.md`.
+
+### 🐞 Найдено тестами и ИСПРАВЛЕНО (главная ценность блока)
+Тесты писались против реального поведения, поэтому вскрыли 6 настоящих багов прод-кода:
+- **CRITICAL** `rate_limit.py` — троттлинг отдавал **500 вместо 429**: `HTTPException`, брошенный внутри `BaseHTTPMiddleware.dispatch`, не конвертируется (middleware стоит выше `ExceptionMiddleware`). Подтверждено эмпирически 3 независимыми агентами. Исправлено: возвращаем `JSONResponse(429)` + заголовок `Retry-After`. Заодно: убран `defaultdict` и добавлен периодический свип пустых бакетов (был вектор неограниченного роста памяти по IP).
+- **HIGH** `user.py` — email регистрозависим: `Ivan@x.com` и `ivan@x.com` = разные аккаунты, вход не работает. Исправлено: колонка → `CITEXT` (миграция `c4115bee8c5e`, round-trip проверен), uniq теперь регистронезависимый.
+- **HIGH** `search_history_service.record()` **не вызывался нигде** → `/api/search/history` всегда пустой, хотя кабинет (Блок 01) его показывает. Исправлено: запись в `search_products` при непустом `q` (фильтры + `results_count`).
+- **HIGH** `users.py` — `GET/POST /me/subscription` смотрели только `is_active` без `end_date`: истёкшая подписка показывалась активной и **блокировала повторную оплату 409-м**. Исправлено: общий `get_active_subscription`.
+- **MEDIUM** `payment_service.create_subscription` — `scalar_one_or_none()` без `limit(1)`: две активные подписки → `MultipleResultsFound` → 500. Исправлено: деактивируем все активные.
+- **LOW** `authenticate_user` не проверял `is_active` — деактивированный пользователь получал валидные токены. Исправлено.
+
+### 🐞 Второй раунд ревью (отдельный агент, вердикт «ship-with-nits») — ещё 6 правок
+Ревьюер откатывал каждый фикс и проверял, что тесты падают → тесты честные, ничего не ослаблено. Дополнительно найдено и исправлено:
+- **HIGH** rate-limit за прокси: все браузерные запросы приходят с IP Next.js-сервера → общий бакет 120 req/min на всех, и после фикса 429 это стало бы «весь апп затроттлен». Исправлено: `X-Forwarded-For` учитывается **только при явном** `RATE_LIMIT_TRUST_FORWARDED_FOR=true` (безопасный дефолт — не доверяем заголовку, иначе его можно подделать); лимиты вынесены в `Settings`.
+- **MEDIUM** порядок middleware: `RateLimitMiddleware` оборачивал `CORSMiddleware` → у 429 не было CORS-заголовков (браузер видел непрозрачную CORS-ошибку), а OPTIONS-preflight'ы жгли лимит. Исправлено перестановкой; проверено эмпирически (429 с `Access-Control-Allow-Origin`, preflight → 200) + тест.
+- **MEDIUM** `POST /users/me/subscription` создавал вторую строку с `is_active=True`, не гася протухшую → админ-счётчик врал, `cancel` гасил только новую. Исправлено: делегирование в `PaymentService.create_subscription` (гасит все активные).
+- **MEDIUM** фикс `PaymentService` (несколько активных) был **без теста** — добавлен.
+- **LOW/MEDIUM** история поиска писалась на **каждой странице** пагинации (3 страницы → 3 одинаковых записи). Исправлено: только `page == 1` + тест.
+- **LOW** `max_requests <= 0` → `IndexError` (500 вместо блокировки) — добавлен guard + тест.
+- **NIT→сделано** Redis-пул не закрывался вообще (ни в тестах, ни в проде): добавлены `close_redis()` + FastAPI `lifespan`; conftest теперь зовёт публичный API вместо приватного `_cache`.
+- **NIT→сделано** `POST /auth/refresh` не проверял `is_active` — деактивированный мог 30 дней обновлять токены. Исправлено + тест.
+- **LOW→сделано** индекс `(user_id, created_at DESC)` для истории поиска (миграция `91a61aee668d`; из автогенерации вручную убраны попытки снести GIN-trgm/partial индексы, которые autogenerate не видит).
+
+**Не исправлено осознанно (нужно решение — см. вопросы):** `RedisCache` приводит `Decimal`→строку (`json.dumps(default=str)`); счётчики rate-limit живут в памяти процесса (при N воркерах лимит умножается; Redis дал бы общий счётчик); bcrypt молча обрезает пароль на 72 байтах, хотя схема разрешает 128; `client`-фикстура в тестах не коммитит (проверяет видимость во flush, не durability — ревьюер отдельно подтвердил, что коммит в проде работает).
 
 **Известные заметки среды:**
 - Postgres на хосте — порт **5434**; тест-БД `bscout_test` создаётся отдельно (`CREATE DATABASE bscout_test`), прод-данные не трогаются.
+- Для параллельного прогона (несколько агентов/процессов одновременно) заведены изолированные БД `bscout_test_1..5`; выбираются через `TEST_DATABASE_URL=postgresql+asyncpg://bscout:bscout@localhost:5434/bscout_test_N`. Redis общий — в тестах ключи обязаны быть с уникальным префиксом.
 - Реальная схema auth-эндпоинтов — **snake_case** (`full_name`, `access_token`), несмотря на заявленный в `CLAUDE.md` camelCase; у `RegisterRequest`/`TokenResponse` нет alias-конфига. Тесты идут по факту; выравнивание конвенции — вне этого блока.
 - `pytest-asyncio`: async-фикстуры — function-scope (иначе ScopeMismatch с event loop).
 
@@ -273,6 +313,17 @@
 
 ## История обновлений
 
+- 2026-07-25 — **Второй раунд ревью правок («ship-with-nits»): ещё 6 дефектов исправлено** — rate-limit за прокси (XFF под флагом с безопасным дефолтом), порядок CORS/rate-limit (429 без CORS-заголовков), дубль активной подписки, история на каждой странице пагинации, `IndexError` при `max_requests<=0`, refresh деактивированного юзера. Плюс `close_redis()` + lifespan, индекс `(user_id, created_at DESC)`. **Бэкенд стал ruff-clean целиком (118 файлов)** → CI-job `lint` сделан блокирующим. Тесты: 161.
+- 2026-07-25 — **Блок 03 (бэкенд) ЗАКРЫТ: 45 → 156 тестов.** 5 агентов параллельно (изолированные БД `bscout_test_1..5`) написали и сами прогнали 111 тестов: rate-limit, auth.service, search-history+RedisCache, deps-guards, API-контракты. **Тесты вскрыли 6 настоящих багов прод-кода — все исправлены** (CRITICAL: троттлинг отдавал 500 вместо 429; HIGH: регистрозависимый email, история поиска не писалась, истёкшая подписка считалась активной; MEDIUM: MultipleResultsFound в payment; LOW: логин деактивированного). Добавлены регресс-тесты на каждый фикс, миграция `c4115bee8c5e` (email→CITEXT).
+- 2026-07-25 — **Порты и деплой-конфиг (решение владельца).** Прод остаётся на 8000; локально всё разведено через gitignored `.env` (BACKEND_PORT=8010, pg 5434). `docker-compose.yml` параметризован (+ `JWT_SECRET_KEY`/`DEBUG` из окружения), фронт-прокси через `BACKEND_URL`. Заведён CI `.github/workflows/ci.yml` (pg+redis сервисы, `alembic upgrade head` с нуля, unit → полный прогон с `--cov`; lint пока `continue-on-error`). Бэкенд-работа вынесена на ветку `feature/backend-core`.
+- 2026-07-25 — **Финальное ревью (отдельный агент) 02/05/06/04/08: «ship-with-nits».** Подтверждены: чистый import-граф (arq/bs4 не ломают `src.main`), корректность Redis-локов и concurrency (сессия-на-парсер), fuzzy-SQL (index-eligible + injection-safe), миграция/Docker/worker. **Исправлен MEDIUM:** `get_active_subscription` фильтровал только `is_active` (не `end_date`) → просроченная подписка вечно давала платные фичи; добавлен `end_date > now()` + регресс-тест (46 тестов). Низкие нити (оставлены осознанно): `release_lock` без owner-token (гонка при TTL-истечении лока), `parse_price("1.299")`→1.299 (RU-формат: точка=десятичная), `full_sync` не реализован (dead-параметр), stale «running» до `STATUS_TTL` после краша, NOT NULL без default в миграции (ок на пустой таблице).
+- 2026-07-25 — **Автономный проход 02–08.** Закрыты и проверены на живой БД/Redis: 02 (ядро данных), 06 (каркас парсеров), 05 (fuzzy). Тесты 17→45 (Блок 03 продвинут TDD-ом). Написаны, но не запущены (нет сети): 04 (Docker), 08 (arq-worker). Пропущен 07 (5 парсеров — нужны сеть+живые скрейпы). Всё на ветке `feature/frontend-integration`. Ограничение среды: `pip install`/`npm install`/`docker build` заблокированы → 04/07/08 не верифицируемы рантаймом.
+- 2026-07-25 — **Блок 08 [~]** (arq-worker): `src/worker.py` (WorkerSettings + cron каталог 03:00 / цены 6ч → `parser_service.run_all`); `arq` в requirements. Запуск не проверен (нет `arq`).
+- 2026-07-25 — **Блок 04 [~]** (Docker): `backend/Dockerfile` (pip, не poetry) + `.dockerignore` + сервис `backend` в compose (healthcheck pg). `docker build` не запускался (нет сети).
+- 2026-07-25 — **Блок 05 ЗАКРЫТ** (fuzzy pg_trgm): `product_service.search(fuzzy=True)` через оператор `%` + `similarity()`-сортировка; гейтинг `is_fuzzy_enabled` (только advanced); контроллер вычисляет fuzzy по подписке. +2 теста (42 всего).
+- 2026-07-25 — **Блок 06 ЗАКРЫТ** (каркас парсеров): exceptions, utils (parse_price/normalize_name/safe_request/compare_products), `ParserService` (upsert по `(store_id,source_sku)`, история цен, Redis status/locks, run_all с изоляцией), реальный контроллер. +18 тестов (40 всего).
+- 2026-07-25 — **Ревью Блока 02 (2-й агент) нашло HIGH-баг миграции**: `drop_constraint` по старым именам FK (`products_store_id_fkey`) падал на чистом `alembic upgrade head`, т.к. `naming_convention` заставляет initial-миграцию создавать FK как `fk_products_store_id_stores`. Исправлено (op.f-имена в up/down). Заодно починен pre-existing баг: initial-downgrade не дропал тип `planenum` → `DROP TYPE IF EXISTS`. Полный from-base round-trip (down base → up head) теперь чист. Также убран лишний `joinedload` в `search`.
+- 2026-07-25 — **Блок 02 ЗАКРЫТ** (автономно). Реструктуризация ядра: catalog-справочники (10 таблиц) + идемпотентный сид, `store_offers`/канон-`products`/`clusters`/`offer_price_history`/`match_candidates`, миграция `336d8cc4267a` (round-trip чисто, extensions+GIN+partial+CHECK+uniq), адаптация products/search/admin. Реестр моделей `db_metadata.py`. 22 теста зелёные (+4 новых). Проверено на живой БД. Сделано на ветке `feature/frontend-integration`.
 - 2026-07-25 — Наполнен Блок 02 (Ядро данных: канон/offers/справочники/матчинг). Подтверждено: таблицы `products`/`price_history` пусты (0 строк) → реструктуризация чистая, до парсеров. Целевая схема (offer↔канон, справочники, `clusters`, `match_candidates`, опт-цена, enum-наличие, `uniq(store_id, source_sku)`) сверена со стандартами. Зафиксированы границы с блоками 05 (pg_trgm/GIN заводятся в 02) и 06 (upsert/`ParseResult` остаются в 06); 02 идёт ДО 05/06/07 и переименовывает их цели. Активный блок остаётся 01.
 - 2026-07-25 — Заведён Блок 03 (покрытие тестами) [~]: по стандарту test-pyramid составлен план unit/integration/e2e/фронт/CI. Развёрнут каркас `backend/tests/{unit,integration}/` (pytest + pytest-asyncio + cov, маркеры, изоляция слоёв, тест-БД `bscout_test`, graceful skip) — 17 seed-тестов зелёные. Активный блок остаётся 01.
 - 2026-07-25 — Внесены блоки 04–08 (добор бэкенда по итогам сверки со Спринтом 1–2: Docker, fuzzy pg_trgm, каркас парсеров, 5 парсеров, arq-планировщик). В INDEX добавлена строка `S1` [x] (Спринт 1 закрыт) и строка Блока 02. Источник задач — `docs/sprints/sprint-001-backend-api.md`.

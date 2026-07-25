@@ -50,7 +50,12 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
 
 
 async def create_user(
-    db: AsyncSession, email: str, password: str, full_name: str, phone: str | None, company: str | None
+    db: AsyncSession,
+    email: str,
+    password: str,
+    full_name: str,
+    phone: str | None,
+    company: str | None,
 ) -> User:
     user = User(
         email=email,
@@ -67,5 +72,7 @@ async def create_user(
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     user = await get_user_by_email(db, email)
     if user is None or not verify_password(password, user.password_hash):
+        return None
+    if not user.is_active:
         return None
     return user

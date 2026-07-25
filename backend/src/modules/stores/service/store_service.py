@@ -5,7 +5,6 @@ from src.modules.stores.model.store import Store
 
 
 class StoreService:
-
     @staticmethod
     async def get_all(db: AsyncSession, active_only: bool = True) -> list[Store]:
         query = select(Store)
@@ -26,7 +25,9 @@ class StoreService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create(db: AsyncSession, name: str, slug: str, website_url: str, logo_url: str | None = None) -> Store:
+    async def create(
+        db: AsyncSession, name: str, slug: str, website_url: str, logo_url: str | None = None
+    ) -> Store:
         store = Store(name=name, slug=slug, website_url=website_url, logo_url=logo_url)
         db.add(store)
         await db.flush()

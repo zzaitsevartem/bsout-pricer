@@ -30,7 +30,11 @@ class Settings(BaseSettings):
     debug: bool = True
     app_name: str = "BScout API"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    rate_limit_max_requests: int = 120
+    rate_limit_window: int = 60
+    rate_limit_trust_forwarded_for: bool = False
+
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()

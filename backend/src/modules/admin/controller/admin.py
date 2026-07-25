@@ -25,7 +25,9 @@ async def list_users(
 
 
 @router.get("/users/{user_id}", response_model=UserBriefResponse)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)):
+async def get_user(
+    user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)
+):
     user = await AdminService.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -33,7 +35,9 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db), admin=Depen
 
 
 @router.post("/users/{user_id}/toggle-active", response_model=UserBriefResponse)
-async def toggle_user_active(user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)):
+async def toggle_user_active(
+    user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)
+):
     user = await AdminService.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

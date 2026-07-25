@@ -15,9 +15,7 @@ class PaymentService:
     }
 
     @staticmethod
-    async def create_subscription(
-        db: AsyncSession, user_id: int, plan: PlanEnum
-    ) -> Subscription:
+    async def create_subscription(db: AsyncSession, user_id: int, plan: PlanEnum) -> Subscription:
         now = datetime.now(timezone.utc)
         duration_days = 10 if plan == PlanEnum.trial else 30
 
@@ -27,8 +25,7 @@ class PaymentService:
                 Subscription.is_active.is_(True),
             )
         )
-        existing = result.scalar_one_or_none()
-        if existing:
+        for existing in result.scalars().all():
             existing.is_active = False
 
         subscription = Subscription(

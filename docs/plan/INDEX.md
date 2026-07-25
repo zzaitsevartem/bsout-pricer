@@ -9,10 +9,10 @@
 |------|----------|--------|--------|--------------|
 | S1 | Спринт 1 — Backend API (модели, миграции, auth/JWT, users, products, search, admin, payment, Redis-кэш) | [x] | 2026-07-25 | docs/sprints/sprint-001-backend-api.md |
 | 01 | Интеграция фронтенда с бэкендом (auth, кабинет, подписка) | [~] | — | MASTERPLAN |
-| 02 | Ядро данных: канон, offers, справочники, матчинг | [ ] | — | MASTERPLAN |
-| 04 | Docker бэкенда и финализация деплоя | [ ] | — | MASTERPLAN |
-| 05 | Fuzzy-поиск (pg_trgm) для тарифа advanced | [ ] | — | MASTERPLAN |
-| 06 | Каркас парсеров: утилиты, исключения, ParserService | [ ] | — | MASTERPLAN |
-| 07 | Пять парсеров магазинов | [ ] | — | MASTERPLAN |
-| 08 | Планировщик и очередь (arq worker) | [ ] | — | MASTERPLAN |
+| 02 | Ядро данных: канон, offers, справочники, матчинг | [x] | 2026-07-25 | MASTERPLAN |
+| 04 | Docker бэкенда и финализация деплоя | [~] | — | MASTERPLAN |
+| 05 | Fuzzy-поиск (pg_trgm) для тарифа advanced | [x] | 2026-07-25 | MASTERPLAN |
+| 06 | Каркас парсеров: утилиты, исключения, ParserService | [x] | 2026-07-25 | MASTERPLAN |
+| 07 | Пять парсеров магазинов | [!] | — | MASTERPLAN |
+| 08 | Планировщик и очередь (arq worker) | [~] | — | MASTERPLAN |
 | 03 | Покрытие тестами (pytest: unit + integration, TDD) | [~] | — | MASTERPLAN |

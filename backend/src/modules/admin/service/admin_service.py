@@ -2,19 +2,18 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.auth.model.user import Subscription, User
-from src.modules.products.model.product import Product
+from src.modules.products.model.product import StoreOffer
 from src.modules.stores.model.store import Store
 
 
 class AdminService:
-
     @staticmethod
     async def get_stats(db: AsyncSession) -> dict:
         users_count = await db.execute(select(func.count(User.id)))
         subs_count = await db.execute(
             select(func.count(Subscription.id)).where(Subscription.is_active.is_(True))
         )
-        products_count = await db.execute(select(func.count(Product.id)))
+        products_count = await db.execute(select(func.count(StoreOffer.id)))
         stores_count = await db.execute(select(func.count(Store.id)))
 
         return {
