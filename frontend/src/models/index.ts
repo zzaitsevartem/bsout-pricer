@@ -3,6 +3,7 @@ export * as userModel from './user';
 export * as storeModel from './store';
 export * as categoryModel from './category';
 export * as productModel from './product';
+export * as catalogModel from './catalog';
 export * as searchModel from './search';
 export * as paymentModel from './payment';
 export * as adminModel from './admin';
