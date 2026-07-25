@@ -1,4 +1,49 @@
-export { userBriefResponseSchema, adminStatsResponseSchema } from './schema';
-export type { UserBriefResponse, AdminStatsResponse } from './schema';
+export {
+  userBriefResponseSchema,
+  adminStatsResponseSchema,
+  offerImportItemSchema,
+  offerImportRowErrorSchema,
+  offerImportResponseSchema,
+  moderationStoreRefSchema,
+  moderationOfferRefSchema,
+  moderationProductRefSchema,
+  matchCandidateResponseSchema,
+  matchCandidateListResponseSchema,
+  matchCandidateStatusFilterSchema,
+  matchCandidateListParamsSchema,
+  offerStateResponseSchema,
+  candidateDecisionResponseSchema,
+  offerLinkRequestSchema,
+  offerLinkResponseSchema,
+} from './schema';
+export type {
+  UserBriefResponse,
+  AdminStatsResponse,
+  OfferImportItem,
+  OfferImportRowError,
+  OfferImportResponse,
+  ModerationStoreRef,
+  ModerationOfferRef,
+  ModerationProductRef,
+  MatchCandidateResponse,
+  MatchCandidateListResponse,
+  MatchCandidateStatusFilter,
+  MatchCandidateListParams,
+  OfferStateResponse,
+  CandidateDecisionResponse,
+  OfferLinkRequest,
+  OfferLinkResponse,
+} from './schema';
 export { adminApi } from './service';
-export { useAdminStats, useAdminUsers, useAdminUser, useToggleUserActive } from './hooks';
+export {
+  useAdminStats,
+  useAdminUsers,
+  useAdminUser,
+  useToggleUserActive,
+  useImportOffers,
+  useMatchCandidates,
+  useApproveMatchCandidate,
+  useRejectMatchCandidate,
+  useLinkOffer,
+  useUnlinkOffer,
+} from './hooks';
