@@ -204,7 +204,8 @@ async def test_require_active_subscription_forbids_user_without_subscription(db_
         await require_active_subscription(db=db_session, current_user=user)
 
     assert exc_info.value.status_code == 403
-    assert exc_info.value.detail == "Active subscription required"
+    assert exc_info.value.detail["code"] == "subscription_required"
+    assert exc_info.value.detail["message"]
 
 
 async def test_require_active_subscription_returns_active_subscription(db_session):

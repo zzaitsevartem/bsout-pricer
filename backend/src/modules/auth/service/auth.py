@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.modules.auth.model.user import User
+from src.modules.auth.model.user import PlanEnum, Subscription, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -67,6 +67,43 @@ async def create_user(
     db.add(user)
     await db.flush()
     return user
+
+
+async def has_active_subscription(db: AsyncSession, user_id: int) -> bool:
+    result = await db.execute(
+        select(Subscription.id)
+        .where(
+            Subscription.user_id == user_id,
+            Subscription.is_active.is_(True),
+            Subscription.end_date > func.now(),
+        )
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is not None
+
+
+async def grant_trial_subscription(db: AsyncSession, user: User) -> Subscription | None:
+    if user.trial_used:
+        return None
+    if await has_active_subscription(db, user.id):
+        return None
+
+    from src.modules.payment.service.plans import get_plan
+
+    definition = get_plan(PlanEnum.trial)
+    now = datetime.now(timezone.utc)
+    subscription = Subscription(
+        user_id=user.id,
+        plan=PlanEnum.trial,
+        start_date=now,
+        end_date=now + timedelta(days=definition.duration_days),
+        is_active=True,
+        auto_renew=False,
+    )
+    user.trial_used = True
+    db.add(subscription)
+    await db.flush()
+    return subscription
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:

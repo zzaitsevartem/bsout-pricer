@@ -30,8 +30,23 @@ async def _make_user(db_session, email: str) -> User:
     return user
 
 
+async def _activate_subscription(db_session, user: User) -> Subscription:
+    now = datetime.now(timezone.utc)
+    subscription = Subscription(
+        user_id=user.id,
+        plan=PlanEnum.basic,
+        start_date=now,
+        end_date=now + timedelta(days=30),
+        is_active=True,
+    )
+    db_session.add(subscription)
+    await db_session.flush()
+    return subscription
+
+
 async def test_product_search_records_search_history(client, db_session):
     user = await _make_user(db_session, "history@example.com")
+    await _activate_subscription(db_session, user)
     token = create_access_token(user.id)
 
     resp = await client.get("/api/products?q=дисплей+iphone", headers=_auth(token))
@@ -49,6 +64,7 @@ async def test_product_search_records_search_history(client, db_session):
 
 async def test_blank_query_does_not_record_history(client, db_session):
     user = await _make_user(db_session, "blank@example.com")
+    await _activate_subscription(db_session, user)
     token = create_access_token(user.id)
 
     assert (await client.get("/api/products", headers=_auth(token))).status_code == 200
@@ -78,6 +94,7 @@ async def test_catalog_search_matches_tokens_in_any_order(db_session):
 
 async def test_history_is_recorded_once_not_per_page(client, db_session):
     user = await _make_user(db_session, "paging@example.com")
+    await _activate_subscription(db_session, user)
     token = create_access_token(user.id)
 
     for page in (1, 2, 3):

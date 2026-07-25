@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.middleware.subscription_guard import is_fuzzy_enabled
+from src.middleware.subscription_guard import is_fuzzy_enabled, require_active_subscription
 from src.modules.products.schema.comparison import (
     CatalogListResponse,
     ComparisonDetailResponse,
@@ -19,7 +19,11 @@ from src.modules.search.service.search_history_service import SearchHistoryServi
 from src.modules.shared import get_current_user
 from src.modules.stores.service.store_service import StoreService
 
-router = APIRouter(prefix="/api/products", tags=["products"])
+router = APIRouter(
+    prefix="/api/products",
+    tags=["products"],
+    dependencies=[Depends(require_active_subscription)],
+)
 
 
 def _offer_to_response(offer, store_ref, is_cheapest: bool) -> ProductResponse:
