@@ -12,6 +12,7 @@ from src.modules.admin.schema.offer_import import (
 from src.modules.parser.service.base import ParseResult
 from src.modules.parser.service.parser_service import ParserService
 from src.modules.products.model.product import StoreOffer
+from src.modules.products.service.matching_service import MatchingService
 from src.modules.stores.model.store import Store
 
 MAX_REASON_LENGTH = 300
@@ -110,6 +111,9 @@ class OfferImportService:
                 updated += 1
             else:
                 created += 1
+
+        if created or updated:
+            await MatchingService.match_all(db, only_unmatched=True)
 
         return OfferImportResponse(
             total=len(rows),

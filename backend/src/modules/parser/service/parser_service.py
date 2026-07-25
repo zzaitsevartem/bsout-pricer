@@ -163,6 +163,11 @@ class ParserService:
                 await self.upsert_offer(db, store_id, result)
                 upserted += 1
 
+            if upserted:
+                from src.modules.products.service.matching_service import MatchingService
+
+                await MatchingService.match_all(db, only_unmatched=True)
+
             parser.last_run = datetime.now(timezone.utc)
             await RedisCache.set(
                 _status_key(slug),
