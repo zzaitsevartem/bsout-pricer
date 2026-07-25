@@ -7,8 +7,16 @@ from fastapi.testclient import TestClient
 
 from src.middleware import rate_limit as rate_limit_module
 from src.middleware.rate_limit import RateLimitMiddleware
+from tests.unit.test_rate_limit_redis import FakeRedis
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def fake_redis(monkeypatch) -> FakeRedis:
+    redis = FakeRedis()
+    monkeypatch.setattr(rate_limit_module, "get_redis", lambda: redis)
+    return redis
 
 
 class FakeClock:
@@ -262,31 +270,26 @@ async def test_unknown_bucket_is_separate_from_real_ips(clock):
     assert_throttled(await middleware.dispatch(FakeRequest(host=None), call_next))
 
 
-async def test_middleware_instances_do_not_share_state(clock):
+async def test_middleware_instances_share_state_through_redis(clock):
     first = build_middleware(max_requests=1)
     second = build_middleware(max_requests=1)
     call_next = CallNextSpy()
 
     await first.dispatch(FakeRequest(), call_next)
 
-    result = await second.dispatch(FakeRequest(), call_next)
-
-    assert result is call_next.response
+    assert_throttled(await second.dispatch(FakeRequest(), call_next))
 
 
-async def test_idle_buckets_are_swept_and_do_not_grow_forever(clock):
+async def test_idle_buckets_expire_via_redis_ttl_and_do_not_grow_forever(clock, fake_redis):
     middleware = build_middleware(max_requests=5, window=60)
     call_next = CallNextSpy()
 
-    for i in range(rate_limit_module.SWEEP_EVERY - 1):
+    for i in range(50):
         await middleware.dispatch(FakeRequest(f"10.0.{i // 250}.{i % 250}"), call_next)
 
-    assert len(middleware._requests) > 1
-
-    clock.advance(120)
-    await middleware.dispatch(FakeRequest("172.16.0.1"), call_next)
-
-    assert list(middleware._requests) == ["172.16.0.1"]
+    assert middleware._requests == {}
+    assert len(fake_redis.store) == 50
+    assert set(fake_redis.ttls.values()) == {61}
 
 
 def build_asgi_app(max_requests: int) -> FastAPI:
