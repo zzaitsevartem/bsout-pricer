@@ -156,13 +156,23 @@ async def test_tracking_forbidden_without_active_subscription(client, db_session
     _, token = await _make_user(db_session, "track-nosub@example.com", plan=None)
 
     listed = await client.get("/api/tracking", headers=_auth(token))
-    usage = await client.get("/api/tracking/usage", headers=_auth(token))
     created = await client.post("/api/tracking", json={"productId": 1}, headers=_auth(token))
 
     assert listed.status_code == 403, listed.text
-    assert usage.status_code == 403, usage.text
     assert created.status_code == 403, created.text
     assert created.json()["detail"]["code"] == "subscription_required"
+
+
+async def test_usage_stays_readable_without_subscription_for_upsell(client, db_session):
+    _, token = await _make_user(db_session, "track-usage-nosub@example.com", plan=None)
+
+    usage = await client.get("/api/tracking/usage", headers=_auth(token))
+
+    assert usage.status_code == 200, usage.text
+    body = usage.json()
+    assert body["used"] == 0
+    assert body["limit"] == 0
+    assert body["plan"] is None
 
 
 async def test_create_tracking_fills_last_seen_price_from_city_minimum(client, db_session):

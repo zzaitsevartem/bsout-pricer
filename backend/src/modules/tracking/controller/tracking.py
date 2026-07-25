@@ -20,11 +20,9 @@ from src.modules.tracking.schema.tracking import (
 )
 from src.modules.tracking.service.tracking_service import TrackingService
 
-router = APIRouter(
-    prefix="/api/tracking",
-    tags=["tracking"],
-    dependencies=[Depends(require_active_subscription)],
-)
+router = APIRouter(prefix="/api/tracking", tags=["tracking"])
+
+GATED = [Depends(require_active_subscription)]
 
 PRODUCT_NOT_FOUND = "Canonical product not found"
 TRACKED_NOT_FOUND = "Tracked product not found"
@@ -48,19 +46,19 @@ def _limit_reached_detail(plan, limit: int, used: int) -> dict:
 async def get_tracking_usage(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    subscription: Subscription = Depends(require_active_subscription),
 ):
     used = await TrackingService.count_active(db, current_user.id)
     limit = await tracked_products_limit_for(db, current_user.id)
+    plan = await get_current_plan(db, current_user.id)
     return TrackingUsageResponse(
         used=used,
         limit=limit,
         remaining=max(limit - used, 0),
-        plan=subscription.plan,
+        plan=plan,
     )
 
 
-@router.get("", response_model=TrackedProductListResponse)
+@router.get("", response_model=TrackedProductListResponse, dependencies=GATED)
 async def list_tracked_products(
     is_active: bool | None = Query(default=None),
     page: int = Query(default=1, ge=1),
@@ -78,7 +76,12 @@ async def list_tracked_products(
     return TrackedProductListResponse(results=results, total=total, page=page, per_page=per_page)
 
 
-@router.post("", response_model=TrackedProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=TrackedProductResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=GATED,
+)
 async def create_tracked_product(
     payload: TrackedProductCreateRequest,
     response: Response,
@@ -123,7 +126,7 @@ async def create_tracked_product(
     return await TrackingService.build_response(db, tracked, snapshot)
 
 
-@router.patch("/{tracked_id}", response_model=TrackedProductResponse)
+@router.patch("/{tracked_id}", response_model=TrackedProductResponse, dependencies=GATED)
 async def update_tracked_product(
     tracked_id: int,
     payload: TrackedProductUpdateRequest,
@@ -149,7 +152,7 @@ async def update_tracked_product(
     return await TrackingService.build_response(db, tracked)
 
 
-@router.delete("/{tracked_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tracked_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=GATED)
 async def delete_tracked_product(
     tracked_id: int,
     db: AsyncSession = Depends(get_db),

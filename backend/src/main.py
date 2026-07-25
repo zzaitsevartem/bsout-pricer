@@ -15,6 +15,7 @@ from src.modules.payment.controller import payment_router
 from src.modules.products.controller import products_router
 from src.modules.search.controller import search_router
 from src.modules.stores.controller import stores_router
+from src.modules.tracking.controller import notifications_router, tracking_router
 from src.modules.users.controller import users_router
 
 
@@ -50,3 +51,5 @@ app.include_router(search_router)
 app.include_router(payment_router)
 app.include_router(admin_router)
 app.include_router(parser_router)
+app.include_router(tracking_router)
+app.include_router(notifications_router)

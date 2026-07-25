@@ -38,7 +38,9 @@ def _build_item(
     stores_count: int,
 ) -> dict:
     current = _money(current_price)
-    baseline = _money(tracked.last_seen_price)
+    baseline = _money(tracked.initial_price)
+    if baseline is None:
+        baseline = _money(tracked.last_seen_price)
     target = _money(tracked.target_price)
 
     delta = None
@@ -56,7 +58,8 @@ def _build_item(
         "target_price": target,
         "notify_on_any_drop": tracked.notify_on_any_drop,
         "is_active": tracked.is_active,
-        "last_seen_price": baseline,
+        "initial_price": baseline,
+        "last_seen_price": _money(tracked.last_seen_price),
         "current_price": current,
         "price_delta": delta,
         "price_delta_pct": delta_pct,
@@ -122,6 +125,7 @@ class TrackingService:
             user_id=user_id,
             product_id=product_id,
             target_price=target_price,
+            initial_price=last_seen_price,
             last_seen_price=last_seen_price,
             notify_on_any_drop=True,
             is_active=True,

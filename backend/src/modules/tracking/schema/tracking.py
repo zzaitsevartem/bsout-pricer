@@ -43,6 +43,7 @@ class TrackedProductResponse(BaseModel):
     target_price: Decimal | None = None
     notify_on_any_drop: bool
     is_active: bool
+    initial_price: Decimal | None = None
     last_seen_price: Decimal | None = None
     current_price: Decimal | None = None
     price_delta: Decimal | None = None

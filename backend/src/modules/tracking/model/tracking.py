@@ -34,6 +34,7 @@ class TrackedProduct(Base):
     )
     target_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     notify_on_any_drop: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    initial_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     last_seen_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     last_notified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
