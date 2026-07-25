@@ -36,3 +36,6 @@ frontend/.next/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# git worktrees параллельных агентов
+.claude/worktrees/
