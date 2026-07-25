@@ -3,11 +3,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.middleware.subscription_guard import is_fuzzy_enabled
+from src.modules.products.schema.comparison import (
+    CatalogListResponse,
+    ComparisonDetailResponse,
+    ProductPriceHistoryResponse,
+)
 from src.modules.products.schema.product import (
     PriceHistoryResponse,
     ProductListResponse,
     ProductResponse,
 )
+from src.modules.products.service.comparison_service import ComparisonService
 from src.modules.products.service.product_service import ProductService
 from src.modules.search.service.search_history_service import SearchHistoryService
 from src.modules.shared import get_current_user
@@ -103,6 +109,58 @@ async def search_products(
         )
 
     return ProductListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.get("/catalog", response_model=CatalogListResponse)
+async def search_catalog(
+    q: str = Query(default="", max_length=500),
+    device_id: int | None = Query(default=None, ge=1),
+    part_type_id: int | None = Query(default=None, ge=1),
+    quality_tier_id: int | None = Query(default=None, ge=1),
+    sort_by: str = Query(default="min_price_asc"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    results, total = await ComparisonService.search_catalog(
+        db=db,
+        query=q,
+        device_id=device_id,
+        part_type_id=part_type_id,
+        quality_tier_id=quality_tier_id,
+        sort_by=sort_by,
+        page=page,
+        per_page=per_page,
+    )
+    return CatalogListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.get("/catalog/{product_id}", response_model=ComparisonDetailResponse)
+async def get_catalog_product(
+    product_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)
+):
+    comparison = await ComparisonService.get_comparison(db, product_id)
+    if comparison is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Canonical product not found"
+        )
+    return ComparisonDetailResponse(**comparison)
+
+
+@router.get("/catalog/{product_id}/price-history", response_model=ProductPriceHistoryResponse)
+async def get_catalog_price_history(
+    product_id: int,
+    days: int = Query(default=90, ge=1, le=730),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    points = await ComparisonService.get_price_history(db, product_id, days=days)
+    if points is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Canonical product not found"
+        )
+    return ProductPriceHistoryResponse(product_id=product_id, days=days, points=points)
 
 
 @router.get("/{offer_id}", response_model=ProductResponse)
