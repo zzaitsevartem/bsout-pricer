@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Header } from '../../widgets/Header/ui/Header';
+import { Header } from '@/widgets/Header/ui/Header';
+import { RequireAdmin } from '@/widgets/RequireAdmin/ui/RequireAdmin';
 
 export default function AdminPage() {
   return (
     <>
-      <Header adminBadge navCta="logout" />
+      <Header />
 
+      <RequireAdmin>
       <div className="flex min-h-[calc(100vh-64px)]">
         <aside className="w-[264px] min-w-[240px] bg-ivory border-r border-border-light-subtle sticky top-16 h-[calc(100vh-64px)] overflow-y-auto max-lg:hidden">
           <div className="px-4 pt-4 pb-2">
@@ -155,6 +157,7 @@ export default function AdminPage() {
           </div>
         </main>
       </div>
+      </RequireAdmin>
     </>
   );
 }

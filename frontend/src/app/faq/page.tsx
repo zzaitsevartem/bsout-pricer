@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Header } from '../../widgets/Header/ui/Header';
-import { Footer } from '../../widgets/Footer/ui/Footer';
+import { Header } from '@/widgets/Header/ui/Header';
+import { Footer } from '@/widgets/Footer/ui/Footer';
 
 const faqItems = [
   { q: 'Что такое BScout?', a: 'BScout — это веб-платформа для поиска и сравнения цен на запчасти для мобильных телефонов, ноутбуков и другой электроники среди локальных магазинов города Ставрополя. Сервис автоматически собирает информацию о товарах из 5 магазинов и предоставляет единый интерфейс для поиска.' },
@@ -41,7 +41,7 @@ export default function FaqPage() {
 
   return (
     <>
-      <Header showProfileIcon navCta="register" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">Главная</a>

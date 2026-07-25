@@ -3,19 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useUnit } from 'effector-react';
+import { $isAuth } from '@/shared/config/store';
+import { useMe } from '@/models/user';
+import { useLogout } from '@/models/auth';
 
-interface HeaderProps {
-  navCta?: 'login' | 'register' | 'logout' | 'profile';
-  showProfileIcon?: boolean;
-  adminBadge?: boolean;
-}
-
-const Header: React.FC<HeaderProps> = ({
-  navCta = 'both',
-  showProfileIcon = false,
-  adminBadge = false,
-}) => {
+const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+  const isAuth = useUnit($isAuth);
+  const { data: me } = useMe({ enabled: isAuth });
+  const logout = useLogout();
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -23,6 +22,13 @@ const Header: React.FC<HeaderProps> = ({
   }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = () => {
+    closeMenu();
+    logout.mutate(undefined, {
+      onSettled: () => router.push('/login'),
+    });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-ivory border-b border-border-light-subtle">
@@ -35,6 +41,7 @@ const Header: React.FC<HeaderProps> = ({
             height={48}
             className="h-12 w-auto"
             priority
+            unoptimized
             style={{ filter: 'brightness(0) contrast(100)' }}
           />
         </Link>
@@ -58,23 +65,25 @@ const Header: React.FC<HeaderProps> = ({
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          {navCta === 'login' && (
-            <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
-          )}
-          {navCta === 'register' && (
-            <Link href="/register" className="btn-primary btn-sm">Регистрация</Link>
-          )}
-          {navCta === 'both' && (
+          {!isAuth && (
             <>
               <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
               <Link href="/register" className="btn-primary btn-sm">Регистрация</Link>
             </>
           )}
-          {navCta === 'logout' && (
-            <Link href="/login" className="btn-secondary btn-sm">Выйти</Link>
-          )}
-          {navCta === 'profile' && (
-            <Link href="/login" className="btn-secondary btn-sm">Выйти</Link>
+          {isAuth && (
+            <>
+              {me?.is_admin && (
+                <Link href="/admin" className="btn-ghost btn-sm">Админка</Link>
+              )}
+              <Link href="/account" className="btn-secondary btn-sm inline-flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Кабинет
+              </Link>
+              <button onClick={handleLogout} disabled={logout.isPending} className="btn-primary btn-sm disabled:opacity-60">
+                Выйти
+              </button>
+            </>
           )}
         </div>
 
@@ -108,6 +117,23 @@ const Header: React.FC<HeaderProps> = ({
                 ))}
               </ul>
             </nav>
+            <div className="flex flex-col items-center gap-4">
+              {!isAuth && (
+                <>
+                  <Link href="/login" className="btn-secondary" onClick={closeMenu}>Войти</Link>
+                  <Link href="/register" className="btn-primary" onClick={closeMenu}>Регистрация</Link>
+                </>
+              )}
+              {isAuth && (
+                <>
+                  {me?.is_admin && (
+                    <Link href="/admin" className="btn-ghost" onClick={closeMenu}>Админка</Link>
+                  )}
+                  <Link href="/account" className="btn-secondary" onClick={closeMenu}>Кабинет</Link>
+                  <button onClick={handleLogout} disabled={logout.isPending} className="btn-primary disabled:opacity-60">Выйти</button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

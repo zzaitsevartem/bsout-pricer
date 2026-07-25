@@ -56,6 +56,14 @@
     @apply bg-ivory-elevated;
   }
 
+  .btn-danger {
+    @apply btn bg-clay text-ivory border-clay;
+  }
+
+  .btn-danger:hover {
+    @apply bg-clay-ember border-clay-ember text-ivory;
+  }
+
   .btn-sm {
     @apply text-[14px] px-4 py-2;
   }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { planEnumSchema } from '../user/schema';
+import { planEnumSchema } from '@/models/user/schema';
 
 export const paymentCreateRequestSchema = z.object({
   plan: planEnumSchema,

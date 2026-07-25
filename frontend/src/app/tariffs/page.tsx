@@ -2,13 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Header } from '../../widgets/Header/ui/Header';
-import { Footer } from '../../widgets/Footer/ui/Footer';
+import { useUnit } from 'effector-react';
+import { Header } from '@/widgets/Header/ui/Header';
+import { Footer } from '@/widgets/Footer/ui/Footer';
+import { $isAuth } from '@/shared/config/store';
 
 export default function TariffsPage() {
+  const isAuth = useUnit($isAuth);
   return (
     <>
-      <Header showProfileIcon navCta="register" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">Главная</a>
@@ -58,7 +61,7 @@ export default function TariffsPage() {
                 <td className="px-4 py-[14px] border-b border-border-light-subtle"></td>
                 {['/register', '/register?plan=basic', '/register?plan=advanced'].map((href, j) => (
                   <td key={j} className={`px-4 py-5 text-center ${j === 1 ? 'bg-ivory-elevated' : ''}`}>
-                    <Link href={href} className={`btn ${j === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm no-underline`}>
+                    <Link href={isAuth ? '/subscription' : href} className={`btn ${j === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm no-underline`}>
                       {j === 0 ? 'Попробовать' : 'Выбрать'}
                     </Link>
                   </td>
