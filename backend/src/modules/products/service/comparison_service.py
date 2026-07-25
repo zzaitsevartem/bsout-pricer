@@ -105,9 +105,8 @@ class ComparisonService:
         part_type_id: int | None,
         quality_tier_id: int | None,
     ):
-        normalized = (query or "").strip()
-        if normalized:
-            stmt = stmt.where(Product.canonical_name.ilike(f"%{normalized}%"))
+        for token in (query or "").split():
+            stmt = stmt.where(Product.canonical_name.ilike(f"%{token}%"))
         if device_id is not None:
             stmt = stmt.where(Cluster.device_id == device_id)
         if part_type_id is not None:

@@ -123,10 +123,6 @@ export default function ProductComparisonPage({ params }: { params: { id: string
 
   const { product, stats, offers, alternatives } = data;
 
-  const attributes = Object.entries(product.key_attrs ?? {}).filter(
-    ([, value]) => typeof value === 'string' || typeof value === 'number',
-  );
-
   return (
     <Shell>
       <Breadcrumbs current={product.canonical_name} />
@@ -145,11 +141,6 @@ export default function ProductComparisonPage({ params }: { params: { id: string
               {product.quality_tier.name_ru}
             </span>
           )}
-          {attributes.map(([key, value]) => (
-            <span key={key} className={CHIP}>
-              {key}: {String(value)}
-            </span>
-          ))}
         </div>
       </header>
 

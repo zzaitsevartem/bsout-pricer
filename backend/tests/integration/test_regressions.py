@@ -6,6 +6,8 @@ from sqlalchemy import func, select
 from src.modules.auth.model.user import PlanEnum, Subscription, User
 from src.modules.auth.service.auth import create_access_token, create_refresh_token, hash_password
 from src.modules.payment.service.payment_service import PaymentService
+from src.modules.products.model.product import Product
+from src.modules.products.service.comparison_service import ComparisonService
 
 pytestmark = pytest.mark.integration
 
@@ -55,6 +57,23 @@ async def test_blank_query_does_not_record_history(client, db_session):
     history = await client.get("/api/search/history", headers=_auth(token))
 
     assert history.json() == []
+
+
+async def test_catalog_search_matches_tokens_in_any_order(db_session):
+    product = Product(
+        canonical_key="apple-iphone-13|display|original|-",
+        canonical_name="Дисплей Apple iPhone 13 (Оригинал)",
+    )
+    db_session.add(product)
+    await db_session.flush()
+
+    for query in ("дисплей iPhone 13", "iphone 13 дисплей", "ДИСПЛЕЙ APPLE"):
+        results, total = await ComparisonService.search_catalog(db_session, query=query)
+        assert total == 1, query
+        assert results[0]["canonical_name"] == "Дисплей Apple iPhone 13 (Оригинал)"
+
+    _, missing = await ComparisonService.search_catalog(db_session, query="дисплей iphone 14")
+    assert missing == 0
 
 
 async def test_history_is_recorded_once_not_per_page(client, db_session):
