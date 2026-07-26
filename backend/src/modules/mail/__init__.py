@@ -1,0 +1,41 @@
+from src.modules.mail.service.mailer import (
+    CONSOLE_BACKEND,
+    MAIL_BACKENDS,
+    SMTP_BACKEND,
+    ConsoleMailer,
+    Mailer,
+    MailError,
+    MailNotConfiguredError,
+    SmtpMailer,
+    get_mailer,
+)
+from src.modules.mail.service.templates import (
+    PASSWORD_CHANGED_SUBJECT,
+    PASSWORD_RESET_PATH,
+    PASSWORD_RESET_SUBJECT,
+    MailMessage,
+    frontend_link,
+    password_changed_message,
+    password_reset_link,
+    password_reset_message,
+)
+
+__all__ = [
+    "CONSOLE_BACKEND",
+    "MAIL_BACKENDS",
+    "SMTP_BACKEND",
+    "ConsoleMailer",
+    "MailError",
+    "MailMessage",
+    "MailNotConfiguredError",
+    "Mailer",
+    "PASSWORD_CHANGED_SUBJECT",
+    "PASSWORD_RESET_PATH",
+    "PASSWORD_RESET_SUBJECT",
+    "SmtpMailer",
+    "frontend_link",
+    "get_mailer",
+    "password_changed_message",
+    "password_reset_link",
+    "password_reset_message",
+]
