@@ -38,6 +38,23 @@ class Settings(BaseSettings):
 
     yookassa_webhook_secret: str | None = None
 
+    frontend_base_url: str = "http://localhost:3000"
+
+    smtp_host: str | None = None
+    smtp_port: int = 465
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_use_ssl: bool = True
+    smtp_from: str = "BScout <no-reply@bscout.ru>"
+    mail_backend: str = "console"
+
+    vk_client_id: str | None = None
+    vk_client_secret: str | None = None
+    vk_redirect_uri: str | None = None
+
+    telegram_bot_token: str | None = None
+    telegram_bot_username: str | None = None
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
