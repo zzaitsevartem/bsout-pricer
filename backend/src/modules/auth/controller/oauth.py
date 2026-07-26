@@ -7,6 +7,7 @@ from src.modules.auth.model.user import User
 from src.modules.auth.schema.oauth import (
     IdentityResponse,
     TelegramLinkRequest,
+    TelegramNonceResponse,
     VKAuthorizeResponse,
     VKAuthResponse,
     VKCallbackRequest,
@@ -14,11 +15,17 @@ from src.modules.auth.schema.oauth import (
 from src.modules.auth.service.oauth_service import (
     INVALID_STATE_CODE,
     INVALID_STATE_MESSAGE,
+    TELEGRAM_NONCE_TTL_SECONDS,
+    TELEGRAM_NOT_CONFIGURED_CODE,
+    TELEGRAM_NOT_CONFIGURED_MESSAGE,
     VK_STATE_TTL_SECONDS,
     OAuthError,
     VKClient,
     build_vk_authorize_url,
+    consume_telegram_nonce,
+    consume_telegram_payload,
     consume_vk_state,
+    create_telegram_nonce,
     create_vk_state,
     ensure_vk_configured,
     get_vk_client,
@@ -125,15 +132,38 @@ async def vk_unlink(
     return None
 
 
+@router.post("/telegram/prepare", response_model=TelegramNonceResponse)
+async def telegram_prepare(current_user: User = Depends(get_current_user)):
+    try:
+        if not settings.telegram_bot_token:
+            raise OAuthError(
+                TELEGRAM_NOT_CONFIGURED_CODE,
+                TELEGRAM_NOT_CONFIGURED_MESSAGE,
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        nonce = await create_telegram_nonce(current_user.id)
+    except OAuthError as exc:
+        raise _http_error(exc)
+    return TelegramNonceResponse(
+        nonce=nonce,
+        expires_in=TELEGRAM_NONCE_TTL_SECONDS,
+        bot_username=settings.telegram_bot_username,
+    )
+
+
 @router.post("/telegram/link", response_model=IdentityResponse)
 async def telegram_link(
     body: TelegramLinkRequest,
+    nonce: str | None = Query(default=None, max_length=256),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     fields = body.signed_fields()
     try:
         verify_telegram_auth(fields, body.hash)
+        if nonce is not None:
+            await consume_telegram_nonce(nonce, current_user.id)
+        await consume_telegram_payload(body.hash)
         identity = await link_telegram_identity(db, current_user, fields)
     except OAuthError as exc:
         raise _http_error(exc)

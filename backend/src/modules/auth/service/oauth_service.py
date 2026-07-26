@@ -40,8 +40,11 @@ VK_USERS_ENDPOINT = "https://api.vk.com/method/users.get"
 VK_SCOPE = "email"
 VK_HTTP_TIMEOUT = 10.0
 
-TELEGRAM_AUTH_MAX_AGE_SECONDS = 86400
-TELEGRAM_CLOCK_SKEW_SECONDS = 300
+TELEGRAM_AUTH_MAX_AGE_SECONDS = 120
+TELEGRAM_CLOCK_SKEW_SECONDS = 60
+TELEGRAM_USED_PREFIX = "auth:telegram:used:"
+TELEGRAM_NONCE_PREFIX = "auth:telegram:nonce:"
+TELEGRAM_NONCE_TTL_SECONDS = 600
 
 UNUSABLE_PASSWORD_MARKER = "." * 31
 
@@ -62,6 +65,9 @@ LAST_LOGIN_METHOD_CODE = "last_login_method"
 TELEGRAM_NOT_CONFIGURED_CODE = "telegram_not_configured"
 TELEGRAM_BAD_SIGNATURE_CODE = "telegram_bad_signature"
 TELEGRAM_STALE_AUTH_CODE = "telegram_stale_auth"
+TELEGRAM_REPLAYED_CODE = "telegram_replayed_auth"
+TELEGRAM_INVALID_NONCE_CODE = "telegram_invalid_nonce"
+TELEGRAM_UNAVAILABLE_CODE = "telegram_link_unavailable"
 TELEGRAM_IDENTITY_TAKEN_CODE = "telegram_identity_taken"
 TELEGRAM_ALREADY_LINKED_CODE = "telegram_already_linked"
 TELEGRAM_NOT_LINKED_CODE = "telegram_not_linked"
@@ -91,6 +97,13 @@ LAST_LOGIN_METHOD_MESSAGE = (
 TELEGRAM_NOT_CONFIGURED_MESSAGE = "Привязка Телеграма не настроена на сервере."
 TELEGRAM_BAD_SIGNATURE_MESSAGE = "Подпись данных Телеграма недействительна."
 TELEGRAM_STALE_AUTH_MESSAGE = "Данные авторизации Телеграма устарели. Повторите вход через виджет."
+TELEGRAM_REPLAYED_MESSAGE = (
+    "Эти данные Телеграма уже были использованы. Повторите вход через виджет."
+)
+TELEGRAM_INVALID_NONCE_MESSAGE = (
+    "Одноразовый код привязки Телеграма недействителен. Начните привязку заново."
+)
+TELEGRAM_UNAVAILABLE_MESSAGE = "Привязка Телеграма временно недоступна. Попробуйте позже."
 TELEGRAM_IDENTITY_TAKEN_MESSAGE = "Этот аккаунт Телеграма уже привязан к другому пользователю."
 TELEGRAM_ALREADY_LINKED_MESSAGE = (
     "К аккаунту уже привязан другой Телеграм. Сначала отвяжите текущий."
@@ -462,6 +475,70 @@ def verify_telegram_auth(
     if age > max_age or age < -TELEGRAM_CLOCK_SKEW_SECONDS:
         raise OAuthError(
             TELEGRAM_STALE_AUTH_CODE, TELEGRAM_STALE_AUTH_MESSAGE, status.HTTP_401_UNAUTHORIZED
+        )
+
+
+async def consume_telegram_payload(
+    provided_hash: str, max_age: int = TELEGRAM_AUTH_MAX_AGE_SECONDS
+) -> None:
+    key = f"{TELEGRAM_USED_PREFIX}{provided_hash.lower()}"
+    try:
+        redis = get_redis()
+        stored = await redis.set(key, "1", nx=True, ex=max_age + TELEGRAM_CLOCK_SKEW_SECONDS)
+    except REDIS_ERRORS as exc:
+        logger.warning("telegram replay protection unavailable, redis is down: %s", exc)
+        raise OAuthError(
+            TELEGRAM_UNAVAILABLE_CODE,
+            TELEGRAM_UNAVAILABLE_MESSAGE,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    if not stored:
+        raise OAuthError(
+            TELEGRAM_REPLAYED_CODE, TELEGRAM_REPLAYED_MESSAGE, status.HTTP_401_UNAUTHORIZED
+        )
+
+
+async def create_telegram_nonce(user_id: int) -> str:
+    nonce = secrets.token_urlsafe(24)
+    try:
+        redis = get_redis()
+        await redis.set(
+            f"{TELEGRAM_NONCE_PREFIX}{nonce}", str(user_id), ex=TELEGRAM_NONCE_TTL_SECONDS
+        )
+    except REDIS_ERRORS as exc:
+        logger.warning("telegram nonce could not be stored, redis is down: %s", exc)
+        raise OAuthError(
+            TELEGRAM_UNAVAILABLE_CODE,
+            TELEGRAM_UNAVAILABLE_MESSAGE,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return nonce
+
+
+async def consume_telegram_nonce(nonce: str, user_id: int) -> None:
+    try:
+        redis = get_redis()
+        raw = await redis.getdel(f"{TELEGRAM_NONCE_PREFIX}{nonce}")
+    except REDIS_ERRORS as exc:
+        logger.warning("telegram nonce could not be verified, redis is down: %s", exc)
+        raise OAuthError(
+            TELEGRAM_UNAVAILABLE_CODE,
+            TELEGRAM_UNAVAILABLE_MESSAGE,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    if raw is None:
+        raise OAuthError(
+            TELEGRAM_INVALID_NONCE_CODE,
+            TELEGRAM_INVALID_NONCE_MESSAGE,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "ignore")
+    if str(raw) != str(user_id):
+        raise OAuthError(
+            TELEGRAM_INVALID_NONCE_CODE,
+            TELEGRAM_INVALID_NONCE_MESSAGE,
+            status.HTTP_401_UNAUTHORIZED,
         )
 
 

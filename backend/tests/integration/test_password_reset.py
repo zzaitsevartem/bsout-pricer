@@ -112,7 +112,10 @@ async def _age_reset_tokens(db_session, user_id: int, seconds: int) -> None:
 async def _tokens_in_db(db_session, user_id: int) -> list[VerificationToken]:
     db_session.expire_all()
     result = await db_session.execute(
-        select(VerificationToken).where(VerificationToken.user_id == user_id)
+        select(VerificationToken).where(
+            VerificationToken.user_id == user_id,
+            VerificationToken.purpose == PURPOSE_PASSWORD_RESET,
+        )
     )
     return list(result.scalars().all())
 
@@ -142,7 +145,15 @@ async def test_reset_request_works_with_the_real_console_mailer(
     assert EMAIL in logged
 
     db_session.expire_all()
-    rows = (await db_session.execute(select(VerificationToken))).scalars().all()
+    rows = (
+        (
+            await db_session.execute(
+                select(VerificationToken).where(VerificationToken.purpose == PURPOSE_PASSWORD_RESET)
+            )
+        )
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
     assert rows[0].token_hash not in logged
 

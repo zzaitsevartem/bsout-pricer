@@ -25,6 +25,9 @@ AUTHORIZE_URL = "/api/auth/vk/authorize"
 CALLBACK_URL = "/api/auth/vk/callback"
 VK_LINK_URL = "/api/auth/vk/link"
 TELEGRAM_LINK_URL = "/api/auth/telegram/link"
+TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
+PASSWORD_RESET_REQUEST_URL = "/api/auth/password-reset/request"
+PASSWORD_RESET_CONFIRM_URL = "/api/auth/password-reset/confirm"
 
 BOT_TOKEN = "123456:AAF-test-bot-token"
 
@@ -59,6 +62,34 @@ def vk_client():
     app.dependency_overrides[get_vk_client] = lambda: holder
     yield holder
     app.dependency_overrides.pop(get_vk_client, None)
+
+
+class _CapturingMailer:
+    backend = "capture"
+
+    def __init__(self) -> None:
+        self.messages: list[dict] = []
+
+    async def send(self, to, subject, text, html=None):
+        self.messages.append({"to": to, "subject": subject, "text": text, "html": html})
+
+
+@pytest.fixture
+def mailbox(monkeypatch):
+    from src.modules.auth.service import password_service
+
+    box = _CapturingMailer()
+    monkeypatch.setattr(password_service, "get_mailer", lambda: box)
+    return box
+
+
+def _reset_token_from(mailbox: _CapturingMailer) -> str:
+    from urllib.parse import unquote
+
+    assert mailbox.messages, "письмо со ссылкой восстановления не отправлено"
+    text = mailbox.messages[-1]["text"]
+    raw = text.split("token=", 1)[1].split()[0].strip().rstrip(".,)")
+    return unquote(raw)
 
 
 @pytest.fixture
@@ -453,14 +484,16 @@ async def test_telegram_link_conflicts_when_taken_by_another_user(
     owner, _ = await _make_user(db_session, "tg-owner@example.com")
     db_session.add(
         UserIdentity(
-            user_id=owner.id, provider="telegram", provider_user_id="777", display_name="owner"
+            user_id=owner.id, provider="telegram", provider_user_id="7771", display_name="owner"
         )
     )
     await db_session.flush()
     _other, other_access = await _make_user(db_session, "tg-other@example.com")
 
     resp = await client.post(
-        TELEGRAM_LINK_URL, json=_telegram_payload(telegram_configured), headers=_auth(other_access)
+        TELEGRAM_LINK_URL,
+        json=_telegram_payload(telegram_configured, tg_id=7771),
+        headers=_auth(other_access),
     )
 
     assert resp.status_code == 409, resp.text
@@ -470,7 +503,9 @@ async def test_telegram_link_conflicts_when_taken_by_another_user(
 async def test_telegram_unlink_removes_identity(client, db_session, telegram_configured):
     user, access = await _make_user(db_session, "tg-unlink@example.com")
     await client.post(
-        TELEGRAM_LINK_URL, json=_telegram_payload(telegram_configured), headers=_auth(access)
+        TELEGRAM_LINK_URL,
+        json=_telegram_payload(telegram_configured, tg_id=7772),
+        headers=_auth(access),
     )
 
     resp = await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
@@ -484,10 +519,148 @@ async def test_telegram_unlink_removes_identity(client, db_session, telegram_con
     assert identities == []
 
 
+async def test_telegram_payload_is_single_use(client, db_session, telegram_configured):
+    _user, access = await _make_user(db_session, "tg-once@example.com")
+    payload = _telegram_payload(telegram_configured, tg_id=7781)
+
+    first = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    assert first.status_code in (200, 201), first.text
+
+    await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
+    replay = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+
+    assert replay.status_code == 401, replay.text
+    assert replay.json()["detail"]["code"] == "telegram_replayed_auth"
+
+
+async def test_telegram_auth_date_window_is_two_minutes(client, db_session, telegram_configured):
+    _user, access = await _make_user(db_session, "tg-window@example.com")
+
+    fresh = await client.post(
+        TELEGRAM_LINK_URL,
+        json=_telegram_payload(telegram_configured, tg_id=7782, age_seconds=30),
+        headers=_auth(access),
+    )
+    assert fresh.status_code in (200, 201), fresh.text
+
+    await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
+    stale = await client.post(
+        TELEGRAM_LINK_URL,
+        json=_telegram_payload(telegram_configured, tg_id=7783, age_seconds=300),
+        headers=_auth(access),
+    )
+
+    assert stale.status_code == 401, stale.text
+    assert stale.json()["detail"]["code"] == "telegram_stale_auth"
+
+
+async def test_telegram_prepare_issues_a_nonce_bound_to_the_caller(
+    client, db_session, telegram_configured
+):
+    _user, access = await _make_user(db_session, "tg-nonce@example.com")
+
+    resp = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(access))
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["nonce"]
+    assert body["expires_in"] > 0
+    assert body["bot_username"] == "bscout_bot"
+
+
+async def test_telegram_nonce_of_another_account_is_rejected(
+    client, db_session, telegram_configured
+):
+    _victim, victim_access = await _make_user(db_session, "tg-nonce-owner@example.com")
+    _thief, thief_access = await _make_user(db_session, "tg-nonce-thief@example.com")
+
+    prepared = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(victim_access))
+    nonce = prepared.json()["nonce"]
+
+    resp = await client.post(
+        f"{TELEGRAM_LINK_URL}?nonce={nonce}",
+        json=_telegram_payload(telegram_configured, tg_id=7784),
+        headers=_auth(thief_access),
+    )
+
+    assert resp.status_code == 401, resp.text
+    assert resp.json()["detail"]["code"] == "telegram_invalid_nonce"
+    identities = (await db_session.execute(select(UserIdentity))).scalars().all()
+    assert identities == []
+
+
+async def test_telegram_own_nonce_is_accepted_once(client, db_session, telegram_configured):
+    _user, access = await _make_user(db_session, "tg-nonce-ok@example.com")
+
+    prepared = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(access))
+    nonce = prepared.json()["nonce"]
+
+    linked = await client.post(
+        f"{TELEGRAM_LINK_URL}?nonce={nonce}",
+        json=_telegram_payload(telegram_configured, tg_id=7785),
+        headers=_auth(access),
+    )
+    assert linked.status_code in (200, 201), linked.text
+
+    await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
+    reused = await client.post(
+        f"{TELEGRAM_LINK_URL}?nonce={nonce}",
+        json=_telegram_payload(telegram_configured, tg_id=7786),
+        headers=_auth(access),
+    )
+
+    assert reused.status_code == 401, reused.text
+    assert reused.json()["detail"]["code"] == "telegram_invalid_nonce"
+
+
+async def test_vk_only_account_can_set_a_password_and_then_unlink(
+    client, db_session, vk_configured, vk_client, mailbox
+):
+    vk_client.profile = VKProfile(
+        provider_user_id="5959", email="vk-locked@example.com", display_name="Locked"
+    )
+    created = await client.post(
+        CALLBACK_URL, json={"code": "vk-code", "state": await _state(client)}
+    )
+    assert created.status_code in (200, 201), created.text
+
+    blocked = await client.request(
+        "DELETE", VK_LINK_URL, headers=_auth(created.json()["access_token"])
+    )
+    assert blocked.status_code == 409, blocked.text
+    assert blocked.json()["detail"]["code"] == "last_login_method"
+
+    requested = await client.post(
+        PASSWORD_RESET_REQUEST_URL, json={"email": "vk-locked@example.com"}
+    )
+    assert requested.status_code == 202, requested.text
+    raw_token = _reset_token_from(mailbox)
+
+    confirmed = await client.post(
+        PASSWORD_RESET_CONFIRM_URL,
+        json={"token": raw_token, "new_password": "vk-n3w-pass"},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+
+    logged_in = await client.post(
+        "/api/auth/login", json={"email": "vk-locked@example.com", "password": "vk-n3w-pass"}
+    )
+    assert logged_in.status_code == 200, logged_in.text
+
+    unlinked = await client.request(
+        "DELETE", VK_LINK_URL, headers=_auth(logged_in.json()["access_token"])
+    )
+    assert unlinked.status_code == 204, unlinked.text
+    identities = (await db_session.execute(select(UserIdentity))).scalars().all()
+    assert identities == []
+
+
 async def test_telegram_unlink_is_allowed_without_password(client, db_session, telegram_configured):
     user, access = await _make_user(db_session, "tg-nopass@example.com", password=None)
     linked = await client.post(
-        TELEGRAM_LINK_URL, json=_telegram_payload(telegram_configured), headers=_auth(access)
+        TELEGRAM_LINK_URL,
+        json=_telegram_payload(telegram_configured, tg_id=7773),
+        headers=_auth(access),
     )
     assert linked.status_code in (200, 201), linked.text
 

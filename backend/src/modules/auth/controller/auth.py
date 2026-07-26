@@ -20,6 +20,7 @@ from src.modules.auth.service.auth import (
     get_user_by_email,
     grant_trial_subscription,
 )
+from src.modules.auth.service.email_verification_service import issue_email_verification
 from src.modules.auth.service.token_service import (
     TokenError,
     issue_token_pair,
@@ -78,6 +79,12 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
         logger.exception("failed to grant trial subscription for user %s", user.id)
 
     user_agent, ip_address = _client_info(request)
+
+    try:
+        await issue_email_verification(db, user, requested_ip=ip_address)
+    except Exception:
+        logger.exception("failed to send verification email for user %s", user.id)
+
     access_token, refresh_token = await issue_token_pair(
         db, user.id, user_agent=user_agent, ip_address=ip_address
     )

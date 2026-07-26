@@ -14,6 +14,7 @@ from src.modules.auth.model.user import User
 from src.modules.auth.model.verification import VerificationToken
 from src.modules.auth.service.auth import get_user_by_id
 from src.modules.cache.service.redis_cache import get_redis
+from src.modules.mail import MailNotConfiguredError, get_mailer
 from src.modules.shared import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -64,20 +65,51 @@ class VerificationMailer(Protocol):
     ) -> None: ...
 
 
+def build_verification_message(link: str, expires_at: datetime) -> tuple[str, str]:
+    deadline = expires_at.strftime("%d.%m.%Y %H:%M UTC")
+    text = (
+        "Здравствуйте!\n\n"
+        "Подтвердите адрес электронной почты в BScout, перейдя по ссылке:\n"
+        f"{link}\n\n"
+        f"Ссылка действует до {deadline} и может быть использована один раз.\n"
+        "Если вы не регистрировались в BScout, просто проигнорируйте это письмо.\n"
+    )
+    html = (
+        "<p>Здравствуйте!</p>"
+        "<p>Подтвердите адрес электронной почты в BScout, перейдя по ссылке:<br>"
+        f'<a href="{link}">{link}</a></p>'
+        f"<p>Ссылка действует до {deadline} и может быть использована один раз.</p>"
+        "<p>Если вы не регистрировались в BScout, просто проигнорируйте это письмо.</p>"
+    )
+    return text, html
+
+
 class ConsoleVerificationMailer:
     async def send_verification_email(self, *, to: str, link: str, expires_at: datetime) -> None:
         logger.info(
-            "[mail:%s] to=%s subject=%s link=%s expires_at=%s",
+            "verification email not delivered, mail backend is unusable: backend=%s to=%s",
             settings.mail_backend,
             to,
-            VERIFICATION_SUBJECT,
-            link,
-            expires_at.isoformat(),
         )
 
 
+class MailVerificationSender:
+    def __init__(self, mailer=None, fallback: VerificationMailer | None = None) -> None:
+        self._mailer = mailer
+        self._fallback = fallback if fallback is not None else ConsoleVerificationMailer()
+
+    async def send_verification_email(self, *, to: str, link: str, expires_at: datetime) -> None:
+        text, html = build_verification_message(link, expires_at)
+        try:
+            mailer = self._mailer if self._mailer is not None else get_mailer()
+            await mailer.send(to=to, subject=VERIFICATION_SUBJECT, text=text, html=html)
+        except MailNotConfiguredError as exc:
+            logger.error("verification email could not be sent: %s", exc)
+            await self._fallback.send_verification_email(to=to, link=link, expires_at=expires_at)
+
+
 def get_verification_mailer() -> VerificationMailer:
-    return ConsoleVerificationMailer()
+    return MailVerificationSender()
 
 
 def _now() -> datetime:
@@ -204,8 +236,11 @@ async def consume_resend_quota(user_id: int) -> bool:
         if attempts == 1:
             await redis.expire(key, RESEND_WINDOW_SECONDS)
     except REDIS_ERRORS as exc:
-        logger.warning("email verification resend quota not enforced, redis unavailable: %s", exc)
-        return True
+        logger.warning(
+            "email verification resend refused, quota cannot be enforced while redis is down: %s",
+            exc,
+        )
+        return False
     return attempts <= RESEND_MAX_ATTEMPTS
 
 

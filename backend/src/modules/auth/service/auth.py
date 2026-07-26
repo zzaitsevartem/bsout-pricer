@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -33,8 +34,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    payload = {"sub": str(user_id), "exp": expire, "type": "access"}
+    issued_at = time.time()
+    expire = datetime.fromtimestamp(issued_at, tz=timezone.utc) + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
+    payload = {"sub": str(user_id), "exp": expire, "iat": issued_at, "type": "access"}
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
