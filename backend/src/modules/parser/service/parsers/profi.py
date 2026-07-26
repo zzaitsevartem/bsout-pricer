@@ -82,7 +82,7 @@ def _stock_from_text(text: str) -> tuple[str, int | None]:
     qty_match = _QTY_RE.search(lowered)
     qty = int(qty_match.group(1)) if qty_match else None
     if "нет" in lowered or "под заказ" in lowered:
-        return "out_of_stock", None
+        return "out", None
     if "налич" in lowered or "есть" in lowered or (qty is not None and qty > 0):
         return "in_stock", qty
     return "unknown", qty
@@ -315,7 +315,7 @@ class ProfiParser(BaseParser):
         link = soup.select_one('[itemtype*="schema.org/Product"] link[itemprop=availability]')
         href = (link.get("href") or "").lower() if link is not None else ""
         if "outofstock" in href:
-            return "out_of_stock", None
+            return "out", None
         if "instock" in href:
             scoped = soup.select_one(f"#product_amount_update_{product_id}") if product_id else None
             qty = _stock_from_text(scoped.get_text(" ", strip=True))[1] if scoped else None

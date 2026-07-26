@@ -7,6 +7,7 @@ from src.modules.auth.model.user import User
 from src.modules.auth.service.auth import decode_token, get_user_by_id
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -39,3 +40,18 @@ async def get_current_admin(
             detail="Admin access required",
         )
     return current_user
+
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    if credentials is None:
+        return None
+    payload = decode_token(credentials.credentials)
+    if payload is None or payload.get("type") != "access":
+        return None
+    user = await get_user_by_id(db, int(payload["sub"]))
+    if user is None or not user.is_active:
+        return None
+    return user

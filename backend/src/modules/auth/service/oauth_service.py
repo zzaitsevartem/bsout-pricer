@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import json
 import logging
 import secrets
 import time
@@ -215,11 +216,14 @@ def build_vk_authorize_url(state: str) -> str:
     return f"{VK_AUTHORIZE_ENDPOINT}?{urlencode(params)}"
 
 
-async def create_vk_state() -> str:
+async def create_vk_state(purpose: str = "login", user_id: int | None = None) -> str:
+    if purpose not in ("login", "link"):
+        raise OAuthError(INVALID_STATE_CODE, INVALID_STATE_MESSAGE, status.HTTP_400_BAD_REQUEST)
     state = secrets.token_urlsafe(32)
+    payload = json.dumps({"purpose": purpose, "user_id": user_id})
     try:
         redis = get_redis()
-        await redis.set(f"{VK_STATE_PREFIX}{state}", "1", ex=VK_STATE_TTL_SECONDS)
+        await redis.set(f"{VK_STATE_PREFIX}{state}", payload, ex=VK_STATE_TTL_SECONDS)
     except REDIS_ERRORS as exc:
         logger.warning("vk state could not be stored, redis unavailable: %s", exc)
         raise OAuthError(
@@ -230,20 +234,31 @@ async def create_vk_state() -> str:
     return state
 
 
-async def consume_vk_state(state: str) -> bool:
+async def consume_vk_state(state: str) -> dict | None:
     if not state:
-        return False
+        return None
+    key = f"{VK_STATE_PREFIX}{state}"
     try:
         redis = get_redis()
-        deleted = await redis.delete(f"{VK_STATE_PREFIX}{state}")
+        raw = await redis.getdel(key)
     except REDIS_ERRORS as exc:
         logger.warning("vk state could not be verified, redis unavailable: %s", exc)
-        return False
-    return int(deleted) == 1
+        return None
+    if raw is None:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "ignore")
+    try:
+        payload = json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
-def require_vk_state(consumed: bool) -> None:
-    if not consumed:
+def require_vk_state(payload: dict | None, purpose: str, user_id: int | None = None) -> None:
+    if not payload or payload.get("purpose") != purpose:
+        raise OAuthError(INVALID_STATE_CODE, INVALID_STATE_MESSAGE, status.HTTP_400_BAD_REQUEST)
+    if purpose == "link" and payload.get("user_id") != user_id:
         raise OAuthError(INVALID_STATE_CODE, INVALID_STATE_MESSAGE, status.HTTP_400_BAD_REQUEST)
 
 

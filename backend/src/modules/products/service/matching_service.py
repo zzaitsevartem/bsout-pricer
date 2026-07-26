@@ -26,6 +26,7 @@ class MatchStats:
     processed: int = 0
     auto: int = 0
     candidates: int = 0
+    review: int = 0
     unmatched: int = 0
     skipped: int = 0
     products_created: int = 0
@@ -36,6 +37,7 @@ class MatchStats:
             "processed": self.processed,
             "auto": self.auto,
             "candidates": self.candidates,
+            "review": self.review,
             "unmatched": self.unmatched,
             "skipped": self.skipped,
             "products_created": self.products_created,
@@ -199,6 +201,13 @@ class MatchingService:
             product = await MatchingService.canonicalize(db, attrs, dicts, stats)
 
         if product is None:
+            if attrs.part_type_id is not None or attrs.device_id is not None:
+                offer.match_status = "review"
+                offer.match_confidence = confidence
+                await db.flush()
+                if stats is not None:
+                    stats.review += 1
+                return MatchOutcome(offer.id, None, "review", confidence)
             if stats is not None:
                 stats.unmatched += 1
             return MatchOutcome(offer.id, None, "unmatched", confidence)

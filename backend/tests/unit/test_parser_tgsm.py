@@ -63,7 +63,7 @@ def test_parse_product_html_extracts_core_fields(parser, product_html):
 def test_parse_product_html_reports_stock_and_branches(parser, product_html):
     result = parser.parse_product_html(product_html, PRODUCT_URL)
 
-    assert result.stock_status == "out_of_stock"
+    assert result.stock_status == "out"
     assert result.stock_qty is None
     assert result.raw["sku_code"] == "zm314774"
     assert result.raw["currency"] == "RUB"

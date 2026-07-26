@@ -320,7 +320,7 @@ class TgsmParser(BaseParser):
         if any(state is True for state in states):
             return "in_stock", (sum(quantities) if quantities else None), branches
         if all(state is False for state in states):
-            return "out_of_stock", None, branches
+            return "out", None, branches
         return "unknown", None, branches
 
     async def _parse_many(self, client: httpx.AsyncClient, urls: list[str]) -> list[ParseResult]:

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.database import get_db
 from src.modules.auth.model.user import PlanEnum, Subscription, User
+from src.modules.auth.service.email_verification_service import require_verified_email
 from src.modules.payment.model.payment import Payment
 from src.modules.payment.schema.payment import (
     PaymentCreateRequest,
@@ -71,7 +72,12 @@ async def list_plans():
     ]
 
 
-@router.post("/subscribe", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/subscribe",
+    dependencies=[Depends(require_verified_email)],
+    response_model=PaymentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def subscribe(
     body: PaymentCreateRequest,
     response: Response,

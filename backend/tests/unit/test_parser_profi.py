@@ -117,7 +117,7 @@ def test_out_of_stock_availability_is_detected(parser):
     )
     result = parser.parse_product_html(html, PRODUCT_URL)
 
-    assert result.stock_status == "out_of_stock"
+    assert result.stock_status == "out"
 
 
 def test_missing_stock_block_is_unknown_not_fatal(parser):

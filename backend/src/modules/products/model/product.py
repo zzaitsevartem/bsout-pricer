@@ -19,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 
 STOCK_STATUSES = ("in_stock", "low", "out", "preorder", "unknown")
-OFFER_MATCH_STATUSES = ("unmatched", "auto", "manual", "rejected")
+OFFER_MATCH_STATUSES = ("unmatched", "auto", "manual", "rejected", "review")
 CANDIDATE_STATUSES = ("pending", "approved", "rejected")
 
 
@@ -77,7 +77,7 @@ class StoreOffer(Base):
             name="stock_status_allowed",
         ),
         CheckConstraint(
-            "match_status IN ('unmatched', 'auto', 'manual', 'rejected')",
+            "match_status IN ('unmatched', 'auto', 'manual', 'rejected', 'review')",
             name="match_status_allowed",
         ),
     )

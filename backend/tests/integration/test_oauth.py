@@ -85,8 +85,10 @@ async def _make_user(db, email: str, *, password: str | None = "s3cret-pass"):
     return user, create_access_token(user.id)
 
 
-async def _state(client) -> str:
-    resp = await client.get(AUTHORIZE_URL)
+async def _state(client, token: str | None = None) -> str:
+    url = AUTHORIZE_URL + ("?purpose=link" if token else "")
+    headers = _auth(token) if token else {}
+    resp = await client.get(url, headers=headers)
     assert resp.status_code == 200, resp.text
     return resp.json()["state"]
 
@@ -290,7 +292,7 @@ async def test_vk_link_and_unlink_for_authenticated_user(
 
     linked = await client.post(
         VK_LINK_URL,
-        json={"code": "vk-code", "state": await _state(client)},
+        json={"code": "vk-code", "state": await _state(client, access)},
         headers=_auth(access),
     )
 
@@ -323,7 +325,7 @@ async def test_vk_link_rejects_identity_owned_by_another_user(
 
     resp = await client.post(
         VK_LINK_URL,
-        json={"code": "vk-code", "state": await _state(client)},
+        json={"code": "vk-code", "state": await _state(client, thief_access)},
         headers=_auth(thief_access),
     )
 

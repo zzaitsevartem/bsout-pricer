@@ -5,11 +5,12 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 
+from src.modules.catalog.service.dictionaries import load_dictionaries
 from src.modules.catalog.service.seed import seed_all
 from src.modules.parser.service.base import ParseResult
 from src.modules.parser.service.parser_service import ParserService
 from src.modules.products.model.product import Cluster, MatchCandidate, Product, StoreOffer
-from src.modules.products.service.matching_service import MatchingService
+from src.modules.products.service.matching_service import MatchingService, MatchStats
 from src.modules.stores.model.store import Store
 
 pytestmark = pytest.mark.integration
@@ -216,3 +217,32 @@ async def test_low_confidence_offer_goes_to_moderation_queue(db_session):
     assert (
         await db_session.execute(select(func.count()).select_from(MatchCandidate))
     ).scalar() == 0
+
+
+async def test_known_part_unknown_device_routes_to_review(db_session):
+    await seed_all(db_session)
+    store = Store(name="ReviewTest", slug="review-test", website_url="https://rt.example")
+    db_session.add(store)
+    await db_session.flush()
+
+    offer = await ParserService.upsert_offer(
+        db_session,
+        store.id,
+        ParseResult(
+            source_sku="RV1",
+            title="Дисплей для Blackberry Passport (копия)",
+            price_retail=Decimal("1000.00"),
+            url="https://rt.example/1",
+        ),
+    )
+
+    dicts = await load_dictionaries(db_session)
+    stats = MatchStats()
+    outcome = await MatchingService.match_offer(db_session, offer, dicts, stats)
+
+    assert outcome.status == "review"
+    assert outcome.product_id is None
+    assert offer.match_status == "review"
+    assert offer.product_id is None
+    assert stats.review == 1
+    assert stats.unmatched == 0

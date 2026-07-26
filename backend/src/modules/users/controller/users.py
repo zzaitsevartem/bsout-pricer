@@ -10,7 +10,7 @@ from src.modules.auth.schema.user import (
     UserResponse,
     UserUpdateRequest,
 )
-from src.modules.payment.service.payment_service import PaymentService
+from src.modules.payment.service.plans import get_plan
 from src.modules.shared import get_current_user
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -68,4 +68,19 @@ async def create_subscription(
             detail="User already has an active subscription",
         )
 
-    return await PaymentService.create_subscription(db, current_user.id, body.plan)
+    if get_plan(body.plan).price > 0:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "code": "payment_required",
+                "message": (
+                    "Платные тарифы оформляются через оплату: "
+                    "создайте платёж на /api/payment/subscribe."
+                ),
+            },
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_402_PAYMENT_REQUIRED,
+        detail={"code": "payment_required", "message": "Пробный период выдаётся при регистрации."},
+    )

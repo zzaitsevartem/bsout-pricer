@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -12,6 +12,8 @@ from src.modules.auth.schema.oauth import (
     VKCallbackRequest,
 )
 from src.modules.auth.service.oauth_service import (
+    INVALID_STATE_CODE,
+    INVALID_STATE_MESSAGE,
     VK_STATE_TTL_SECONDS,
     OAuthError,
     VKClient,
@@ -29,7 +31,7 @@ from src.modules.auth.service.oauth_service import (
     verify_telegram_auth,
 )
 from src.modules.auth.service.token_service import issue_token_pair
-from src.modules.shared import get_current_user
+from src.modules.shared import get_current_user, get_current_user_optional
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -51,10 +53,20 @@ def _client_info(request: Request) -> tuple[str | None, str | None]:
 
 
 @router.get("/vk/authorize", response_model=VKAuthorizeResponse)
-async def vk_authorize():
+async def vk_authorize(
+    purpose: str = Query(default="login", pattern="^(login|link)$"),
+    current_user: User | None = Depends(get_current_user_optional),
+):
     try:
         ensure_vk_configured()
-        state = await create_vk_state()
+        if purpose == "link":
+            if current_user is None:
+                raise OAuthError(
+                    INVALID_STATE_CODE, INVALID_STATE_MESSAGE, status.HTTP_401_UNAUTHORIZED
+                )
+            state = await create_vk_state("link", current_user.id)
+        else:
+            state = await create_vk_state("login")
     except OAuthError as exc:
         raise _http_error(exc)
     return VKAuthorizeResponse(
@@ -72,7 +84,7 @@ async def vk_callback(
     vk_client: VKClient = Depends(get_vk_client),
 ):
     try:
-        require_vk_state(await consume_vk_state(body.state))
+        require_vk_state(await consume_vk_state(body.state), "login")
         profile = await vk_client.exchange_code(body.code)
         user, created = await login_or_register_vk(db, profile)
     except OAuthError as exc:
@@ -93,7 +105,7 @@ async def vk_link(
     vk_client: VKClient = Depends(get_vk_client),
 ):
     try:
-        require_vk_state(await consume_vk_state(body.state))
+        require_vk_state(await consume_vk_state(body.state), "link", current_user.id)
         profile = await vk_client.exchange_code(body.code)
         identity = await link_vk_identity(db, current_user, profile)
     except OAuthError as exc:
