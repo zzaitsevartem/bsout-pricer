@@ -35,6 +35,7 @@ async def update_me(
         current_user.company = body.company
 
     await db.flush()
+    await db.refresh(current_user)
     return current_user
 
 

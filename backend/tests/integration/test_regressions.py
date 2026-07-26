@@ -237,3 +237,20 @@ async def test_active_subscription_still_blocks_duplicate(client, db_session):
     )
 
     assert resp.status_code == 409
+
+
+async def test_profile_update_returns_valid_response(client, db_session):
+    user = await _make_user(db_session, "profile-update@example.com")
+    token = create_access_token(user.id)
+
+    resp = await client.patch(
+        "/api/users/me",
+        json={"full_name": "Новое имя", "company": "ООО Ромашка"},
+        headers=_auth(token),
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["full_name"] == "Новое имя"
+    assert body["company"] == "ООО Ромашка"
+    assert body["updated_at"]
