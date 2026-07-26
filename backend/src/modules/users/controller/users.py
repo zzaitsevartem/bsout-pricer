@@ -10,6 +10,7 @@ from src.modules.auth.schema.user import (
     UserResponse,
     UserUpdateRequest,
 )
+from src.modules.auth.service.email_verification_service import require_verified_email
 from src.modules.payment.service.plans import get_plan
 from src.modules.shared import get_current_user
 
@@ -67,6 +68,8 @@ async def create_subscription(
             status_code=status.HTTP_409_CONFLICT,
             detail="User already has an active subscription",
         )
+
+    await require_verified_email(current_user)
 
     if get_plan(body.plan).price > 0:
         raise HTTPException(

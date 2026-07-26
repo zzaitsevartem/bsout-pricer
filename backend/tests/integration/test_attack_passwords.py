@@ -319,7 +319,10 @@ async def test_attack_expired_token_rejected(client, mailbox, db_session):
     user_id = await _user_id(db_session)
     stored = (
         await db_session.execute(
-            select(VerificationToken).where(VerificationToken.user_id == user_id)
+            select(VerificationToken).where(
+                VerificationToken.user_id == user_id,
+                VerificationToken.purpose == "password_reset",
+            )
         )
     ).scalar_one()
     stored.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)

@@ -38,6 +38,12 @@ class TelegramLinkRequest(BaseModel):
         return {key: str(value) for key, value in raw.items() if value is not None}
 
 
+class TelegramNonceResponse(BaseModel):
+    nonce: str
+    expires_in: int
+    bot_username: str | None = None
+
+
 class IdentityResponse(BaseModel):
     provider: str
     provider_user_id: str

@@ -1,9 +1,13 @@
+import logging
+import time
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from redis.exceptions import RedisError
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.service.auth import (
     create_access_token,
@@ -12,6 +16,12 @@ from src.modules.auth.service.auth import (
     get_user_by_id,
     refresh_token_expires_at,
 )
+from src.modules.cache.service.redis_cache import get_redis
+
+logger = logging.getLogger(__name__)
+
+ACCESS_DENYLIST_PREFIX = "auth:invalidate:"
+REDIS_ERRORS = (RedisError, OSError)
 
 REASON_LOGOUT = "logout"
 REASON_ROTATED = "rotated"
@@ -49,6 +59,82 @@ def _clip(value: str | None, limit: int) -> str | None:
     if not cleaned:
         return None
     return cleaned[:limit]
+
+
+def access_token_ttl_seconds() -> int:
+    return max(int(settings.access_token_expire_minutes) * 60, 1)
+
+
+async def invalidate_access_tokens(user_id: int) -> bool:
+    try:
+        redis = get_redis()
+        await redis.set(
+            f"{ACCESS_DENYLIST_PREFIX}{user_id}",
+            repr(time.time()),
+            ex=access_token_ttl_seconds(),
+        )
+    except REDIS_ERRORS as exc:
+        logger.warning(
+            "access tokens for user %s were not added to the denylist, redis unavailable: %s",
+            user_id,
+            exc,
+        )
+        return False
+    return True
+
+
+async def access_tokens_invalid_before(user_id: int) -> float | None:
+    try:
+        redis = get_redis()
+        raw = await redis.get(f"{ACCESS_DENYLIST_PREFIX}{user_id}")
+    except REDIS_ERRORS as exc:
+        logger.warning(
+            "access token denylist not checked for user %s, redis unavailable: %s", user_id, exc
+        )
+        return None
+    if raw is None:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "ignore")
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def access_token_issued_at(payload: dict) -> float | None:
+    issued_at = payload.get("iat")
+    if issued_at is None:
+        expires_at = payload.get("exp")
+        if expires_at is None:
+            return None
+        try:
+            return float(expires_at) - access_token_ttl_seconds()
+        except (TypeError, ValueError):
+            return None
+    try:
+        return float(issued_at)
+    except (TypeError, ValueError):
+        return None
+
+
+async def access_token_is_invalidated(payload: dict) -> bool:
+    subject = payload.get("sub")
+    if subject is None:
+        return True
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError):
+        return True
+
+    invalid_before = await access_tokens_invalid_before(user_id)
+    if invalid_before is None:
+        return False
+
+    issued_at = access_token_issued_at(payload)
+    if issued_at is None:
+        return True
+    return issued_at < invalid_before
 
 
 async def get_token_by_jti(
@@ -113,7 +199,9 @@ async def revoke_family(db: AsyncSession, family_id: str, reason: str) -> int:
     return result.rowcount or 0
 
 
-async def revoke_all_for_user(db: AsyncSession, user_id: int, reason: str) -> int:
+async def revoke_all_for_user(
+    db: AsyncSession, user_id: int, reason: str, invalidate_access: bool = True
+) -> int:
     result = await db.execute(
         update(RefreshToken)
         .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
@@ -121,6 +209,8 @@ async def revoke_all_for_user(db: AsyncSession, user_id: int, reason: str) -> in
         .execution_options(synchronize_session=False)
     )
     await db.flush()
+    if invalidate_access:
+        await invalidate_access_tokens(user_id)
     return result.rowcount or 0
 
 
@@ -181,4 +271,4 @@ async def revoke_session(db: AsyncSession, user_id: int, raw_token: str | None) 
             stored = await get_token_by_jti(db, jti)
             if stored is not None and stored.user_id == user_id:
                 return await revoke_family(db, stored.family_id, REASON_LOGOUT)
-    return await revoke_all_for_user(db, user_id, REASON_LOGOUT)
+    return await revoke_all_for_user(db, user_id, REASON_LOGOUT, invalidate_access=False)
