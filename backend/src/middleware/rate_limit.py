@@ -15,7 +15,14 @@ logger = logging.getLogger(__name__)
 DEFAULT_NAMESPACE = "ratelimit"
 DEFAULT_AUTH_MAX_REQUESTS = 10
 DEFAULT_AUTH_WINDOW = 300
-DEFAULT_AUTH_PATHS = ("/api/auth/login", "/api/auth/register", "/api/auth/refresh")
+DEFAULT_AUTH_PATHS = (
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/refresh",
+    "/api/auth/password-reset/request",
+    "/api/auth/password-reset/confirm",
+    "/api/auth/password/change",
+)
 REDIS_ERRORS = (RedisError, OSError)
 THROTTLED_DETAIL = "Too many requests. Try again later."
 

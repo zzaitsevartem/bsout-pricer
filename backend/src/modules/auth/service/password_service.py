@@ -14,7 +14,13 @@ from src.modules.auth.service.auth import (
     verify_password,
 )
 from src.modules.auth.service.token_service import revoke_all_for_user
-from src.modules.mail import get_mailer, password_reset_message
+from src.modules.mail import (
+    MailMessage,
+    dispatch_mail,
+    get_mailer,
+    password_changed_message,
+    password_reset_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +28,17 @@ PURPOSE_PASSWORD_RESET = "password_reset"
 RESET_TOKEN_TTL = timedelta(hours=1)
 RESET_TOKEN_BYTES = 32
 
+RESET_TOKEN_WINDOW = 3
+RESET_REQUEST_COOLDOWN = timedelta(seconds=60)
+RESET_MAIL_WINDOW = timedelta(hours=1)
+RESET_MAIL_MAX_PER_WINDOW = 3
+
 REASON_PASSWORD_RESET = "password_reset"
 REASON_PASSWORD_CHANGE = "password_change"
 
 INVALID_RESET_TOKEN_DETAIL = "Invalid or expired password reset token"
 INVALID_CURRENT_PASSWORD_DETAIL = "Current password is incorrect"
+SAME_PASSWORD_DETAIL = "Новый пароль должен отличаться от текущего."
 RESET_REQUESTED_DETAIL = (
     "Если аккаунт с таким адресом существует, письмо со ссылкой для восстановления отправлено."
 )
@@ -40,6 +52,12 @@ class PasswordResetError(Exception):
 
 class InvalidCurrentPasswordError(Exception):
     def __init__(self, detail: str = INVALID_CURRENT_PASSWORD_DETAIL) -> None:
+        super().__init__(detail)
+        self.detail = detail
+
+
+class SamePasswordError(Exception):
+    def __init__(self, detail: str = SAME_PASSWORD_DETAIL) -> None:
         super().__init__(detail)
         self.detail = detail
 
@@ -62,6 +80,21 @@ def hash_reset_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def recipient_key(email: str) -> str:
+    return hashlib.sha256(email.strip().lower().encode("utf-8")).hexdigest()
+
+
+async def deliver_mail(to: str, subject: str, text: str, html: str | None = None) -> None:
+    try:
+        await get_mailer().send(to=to, subject=subject, text=text, html=html)
+    except Exception:
+        logger.exception("mail delivery failed for recipient %s", recipient_key(to))
+
+
+async def _queue_message(to: str, message: MailMessage) -> None:
+    await dispatch_mail(deliver_mail, to, message.subject, message.text, message.html)
+
+
 async def invalidate_reset_tokens(db: AsyncSession, user_id: int) -> int:
     result = await db.execute(
         update(VerificationToken)
@@ -74,6 +107,49 @@ async def invalidate_reset_tokens(db: AsyncSession, user_id: int) -> int:
         .execution_options(synchronize_session=False)
     )
     return result.rowcount or 0
+
+
+async def _recent_reset_tokens(db: AsyncSession, user_id: int) -> list[VerificationToken]:
+    result = await db.execute(
+        select(VerificationToken)
+        .where(
+            VerificationToken.user_id == user_id,
+            VerificationToken.purpose == PURPOSE_PASSWORD_RESET,
+            VerificationToken.created_at >= _now() - RESET_MAIL_WINDOW,
+        )
+        .order_by(VerificationToken.created_at.desc(), VerificationToken.id.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def _trim_token_window(db: AsyncSession, user_id: int) -> int:
+    result = await db.execute(
+        select(VerificationToken.id)
+        .where(
+            VerificationToken.user_id == user_id,
+            VerificationToken.purpose == PURPOSE_PASSWORD_RESET,
+            VerificationToken.used_at.is_(None),
+            VerificationToken.expires_at > _now(),
+        )
+        .order_by(VerificationToken.created_at.desc(), VerificationToken.id.desc())
+        .offset(RESET_TOKEN_WINDOW - 1)
+    )
+    stale = list(result.scalars().all())
+    if not stale:
+        return 0
+    await db.execute(
+        update(VerificationToken)
+        .where(VerificationToken.id.in_(stale))
+        .values(used_at=_now())
+        .execution_options(synchronize_session=False)
+    )
+    return len(stale)
+
+
+def _cooldown_active(recent: list[VerificationToken]) -> bool:
+    if not recent:
+        return False
+    return _aware(recent[0].created_at) > _now() - RESET_REQUEST_COOLDOWN
 
 
 async def request_password_reset(
@@ -94,7 +170,17 @@ async def request_password_reset(
         await db.commit()
         return None
 
-    await invalidate_reset_tokens(db, user.id)
+    recent = await _recent_reset_tokens(db, user.id)
+    if _cooldown_active(recent):
+        await db.commit()
+        logger.info("password reset throttled by cooldown, recipient=%s", recipient_key(normalized))
+        return None
+    if len(recent) >= RESET_MAIL_MAX_PER_WINDOW:
+        logger.info("password reset throttled by quota, recipient=%s", recipient_key(normalized))
+        await db.commit()
+        return None
+
+    await _trim_token_window(db, user.id)
     db.add(
         VerificationToken(
             user_id=user.id,
@@ -104,15 +190,10 @@ async def request_password_reset(
             requested_ip=requested_ip,
         )
     )
+    recipient = user.email
     await db.commit()
 
-    message = password_reset_message(token)
-    await get_mailer().send(
-        to=user.email,
-        subject=message.subject,
-        text=message.text,
-        html=message.html,
-    )
+    await _queue_message(recipient, password_reset_message(token))
     return token
 
 
@@ -133,20 +214,47 @@ async def _load_usable_reset_token(db: AsyncSession, token: str) -> Verification
     return stored
 
 
+async def _claim_reset_token(db: AsyncSession, token: str) -> int:
+    now = _now()
+    result = await db.execute(
+        update(VerificationToken)
+        .where(
+            VerificationToken.token_hash == hash_reset_token(token),
+            VerificationToken.purpose == PURPOSE_PASSWORD_RESET,
+            VerificationToken.used_at.is_(None),
+            VerificationToken.expires_at > now,
+        )
+        .values(used_at=now)
+        .returning(VerificationToken.user_id)
+        .execution_options(synchronize_session=False)
+    )
+    claimed = result.scalar_one_or_none()
+    if claimed is None:
+        raise PasswordResetError()
+    return claimed
+
+
 async def confirm_password_reset(db: AsyncSession, token: str, new_password: str) -> User:
     stored = await _load_usable_reset_token(db, token)
 
     user = (await db.execute(select(User).where(User.id == stored.user_id))).scalar_one_or_none()
     if user is None or not user.is_active:
         raise PasswordResetError()
+    if verify_password(new_password, user.password_hash):
+        raise SamePasswordError()
+
+    claimed_user_id = await _claim_reset_token(db, token)
+    if claimed_user_id != user.id:
+        raise PasswordResetError()
 
     user.password_hash = hash_password(new_password)
-    stored.used_at = _now()
     await invalidate_reset_tokens(db, user.id)
     await revoke_all_for_user(db, user.id, REASON_PASSWORD_RESET)
+    recipient = user.email
     await db.commit()
 
     logger.info("password reset completed for user %s", user.id)
+    await _queue_message(recipient, password_changed_message())
     return user
 
 
@@ -158,11 +266,15 @@ async def change_password(
 ) -> User:
     if not verify_password(current_password, user.password_hash):
         raise InvalidCurrentPasswordError()
+    if verify_password(new_password, user.password_hash):
+        raise SamePasswordError()
 
     user.password_hash = hash_password(new_password)
     await invalidate_reset_tokens(db, user.id)
     await revoke_all_for_user(db, user.id, REASON_PASSWORD_CHANGE)
+    recipient = user.email
     await db.commit()
 
     logger.info("password changed for user %s", user.id)
+    await _queue_message(recipient, password_changed_message())
     return user

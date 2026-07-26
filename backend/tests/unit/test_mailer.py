@@ -2,20 +2,25 @@ import asyncio
 import logging
 import smtplib
 import threading
+import time
 
 import pytest
 
 from src.config import settings
 from src.modules.mail import (
+    MAIL_QUEUE_ENV_FLAG,
     ConsoleMailer,
     Mailer,
     MailError,
     MailMessage,
     MailNotConfiguredError,
     SmtpMailer,
+    dispatch_mail,
+    drain_pending_mail,
     get_mailer,
     password_reset_link,
     password_reset_message,
+    queue_enabled,
 )
 
 pytestmark = pytest.mark.unit
@@ -249,3 +254,50 @@ async def test_console_mailer_send_is_awaitable_and_returns_none():
 
     assert result is None
     assert asyncio.iscoroutinefunction(ConsoleMailer.send)
+
+
+def test_mail_queue_is_disabled_unless_explicitly_turned_on(monkeypatch):
+    monkeypatch.delenv(MAIL_QUEUE_ENV_FLAG, raising=False)
+    monkeypatch.delattr(settings, "mail_queue_enabled", raising=False)
+
+    assert queue_enabled() is False
+
+
+def test_mail_queue_reads_the_environment_flag(monkeypatch):
+    monkeypatch.delattr(settings, "mail_queue_enabled", raising=False)
+    monkeypatch.setenv(MAIL_QUEUE_ENV_FLAG, "true")
+
+    assert queue_enabled() is True
+
+
+async def test_dispatch_mail_returns_before_a_slow_delivery_finishes(monkeypatch):
+    monkeypatch.delenv(MAIL_QUEUE_ENV_FLAG, raising=False)
+    monkeypatch.delattr(settings, "mail_queue_enabled", raising=False)
+    finished = []
+
+    async def _slow(to, subject, text, html):
+        await asyncio.sleep(0.2)
+        finished.append(to)
+
+    started = time.perf_counter()
+    await dispatch_mail(_slow, "user@example.com", "s", "t", None)
+    elapsed = time.perf_counter() - started
+
+    assert elapsed < 0.1
+    assert finished == []
+
+    await drain_pending_mail()
+    assert finished == ["user@example.com"]
+
+
+async def test_dispatch_mail_completes_an_instant_delivery_before_returning(monkeypatch):
+    monkeypatch.delenv(MAIL_QUEUE_ENV_FLAG, raising=False)
+    monkeypatch.delattr(settings, "mail_queue_enabled", raising=False)
+    delivered = []
+
+    async def _instant(to, subject, text, html):
+        delivered.append((to, subject))
+
+    await dispatch_mail(_instant, "user@example.com", "subj", "body", None)
+
+    assert delivered == [("user@example.com", "subj")]

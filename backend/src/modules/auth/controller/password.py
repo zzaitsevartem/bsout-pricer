@@ -17,6 +17,7 @@ from src.modules.auth.service.password_service import (
     RESET_REQUESTED_DETAIL,
     InvalidCurrentPasswordError,
     PasswordResetError,
+    SamePasswordError,
     change_password,
     confirm_password_reset,
     request_password_reset,
@@ -28,7 +29,10 @@ logger = logging.getLogger(__name__)
 
 password_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-PASSWORD_RESET_DONE_DETAIL = "Пароль изменён. Все прежние сеансы завершены."
+PASSWORD_RESET_DONE_DETAIL = (
+    "Пароль изменён. Прежние сеансы отозваны: обновить их больше нельзя, "
+    "а уже выданные токены доступа перестанут работать в течение 15 минут."
+)
 
 
 @password_router.post(
@@ -56,6 +60,8 @@ async def password_reset_confirm(
 ):
     try:
         await confirm_password_reset(db, body.token, body.new_password)
+    except SamePasswordError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.detail)
     except PasswordResetError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.detail)
 
@@ -72,6 +78,8 @@ async def password_change(
     try:
         await change_password(db, current_user, body.current_password, body.new_password)
     except InvalidCurrentPasswordError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.detail)
+    except SamePasswordError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.detail)
 
     user_agent, ip_address = _client_info(request)

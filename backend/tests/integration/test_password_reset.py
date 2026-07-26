@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import logging
 import statistics
@@ -5,17 +6,25 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.config import settings
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import User
 from src.modules.auth.model.verification import VerificationToken
+from src.modules.auth.schema.password import MIN_PASSWORD_LENGTH
 from src.modules.auth.service.auth import verify_password
 from src.modules.auth.service.password_service import (
     PURPOSE_PASSWORD_RESET,
+    RESET_MAIL_MAX_PER_WINDOW,
+    RESET_REQUESTED_DETAIL,
+    RESET_TOKEN_WINDOW,
+    PasswordResetError,
+    confirm_password_reset,
     hash_reset_token,
 )
+from src.modules.mail import PASSWORD_CHANGED_SUBJECT
 
 pytestmark = pytest.mark.integration
 
@@ -79,6 +88,25 @@ def _token_from_mailbox(mailbox: _CapturingMailer) -> str:
 
 async def _request_reset(client, email: str = EMAIL):
     return await client.post(REQUEST_URL, json={"email": email})
+
+
+async def _user_id(db_session, email: str = EMAIL) -> int:
+    db_session.expire_all()
+    result = await db_session.execute(select(User).where(User.email == email))
+    return result.scalar_one().id
+
+
+async def _age_reset_tokens(db_session, user_id: int, seconds: int) -> None:
+    await db_session.execute(
+        update(VerificationToken)
+        .where(
+            VerificationToken.user_id == user_id,
+            VerificationToken.purpose == PURPOSE_PASSWORD_RESET,
+        )
+        .values(created_at=datetime.now(timezone.utc) - timedelta(seconds=seconds))
+        .execution_options(synchronize_session=False)
+    )
+    await db_session.commit()
 
 
 async def _tokens_in_db(db_session, user_id: int) -> list[VerificationToken]:
@@ -227,25 +255,181 @@ async def test_reset_token_is_single_use(client, mailbox):
     assert second.status_code == 400
 
 
-async def test_previous_unused_tokens_are_invalidated_by_a_new_request(client, mailbox):
+async def test_a_second_request_inside_the_cooldown_is_a_silent_no_op(client, mailbox):
     await _register(client)
 
     await _request_reset(client)
-    stale_token = _token_from_mailbox(mailbox)
+    first_token = _token_from_mailbox(mailbox)
+
+    repeat = await _request_reset(client)
+
+    assert repeat.status_code == 202, repeat.text
+    assert repeat.json()["detail"] == RESET_REQUESTED_DETAIL
+    assert len(mailbox.messages) == 1
+
+    confirm = await client.post(
+        CONFIRM_URL, json={"token": first_token, "new_password": NEW_PASSWORD}
+    )
+    assert confirm.status_code == 200, confirm.text
+
+
+async def test_several_requests_keep_a_window_of_simultaneously_valid_tokens(
+    client, db_session, mailbox
+):
+    await _register(client)
+    user_id = await _user_id(db_session)
+
+    issued = []
+    for _ in range(RESET_TOKEN_WINDOW):
+        await _request_reset(client)
+        issued.append(_token_from_mailbox(mailbox))
+        await _age_reset_tokens(db_session, user_id, seconds=120)
+
+    assert len(set(issued)) == RESET_TOKEN_WINDOW
+
+    oldest = await client.post(CONFIRM_URL, json={"token": issued[0], "new_password": NEW_PASSWORD})
+    assert oldest.status_code == 200, oldest.text
+
+    leftover = await client.post(
+        CONFIRM_URL, json={"token": issued[-1], "new_password": "yet-another-pass"}
+    )
+    assert leftover.status_code == 400, leftover.text
+
+
+async def test_tokens_beyond_the_window_are_invalidated(client, db_session, mailbox):
+    await _register(client)
+    user_id = await _user_id(db_session)
+
+    issued = []
+    for _ in range(RESET_TOKEN_WINDOW):
+        await _request_reset(client)
+        issued.append(_token_from_mailbox(mailbox))
+        await _age_reset_tokens(db_session, user_id, seconds=120)
+
+    await _age_reset_tokens(db_session, user_id, seconds=3700)
     await _request_reset(client)
-    fresh_token = _token_from_mailbox(mailbox)
+    newest = _token_from_mailbox(mailbox)
 
-    assert stale_token != fresh_token
-
-    stale = await client.post(
-        CONFIRM_URL, json={"token": stale_token, "new_password": NEW_PASSWORD}
+    evicted = await client.post(
+        CONFIRM_URL, json={"token": issued[0], "new_password": NEW_PASSWORD}
     )
-    assert stale.status_code == 400
+    assert evicted.status_code == 400, evicted.text
 
-    fresh = await client.post(
-        CONFIRM_URL, json={"token": fresh_token, "new_password": NEW_PASSWORD}
-    )
+    fresh = await client.post(CONFIRM_URL, json={"token": newest, "new_password": NEW_PASSWORD})
     assert fresh.status_code == 200, fresh.text
+
+
+async def test_hourly_quota_caps_mail_sent_to_one_recipient(client, db_session, mailbox):
+    await _register(client)
+    user_id = await _user_id(db_session)
+
+    statuses = []
+    for _ in range(RESET_MAIL_MAX_PER_WINDOW + 3):
+        resp = await _request_reset(client)
+        statuses.append(resp.status_code)
+        await _age_reset_tokens(db_session, user_id, seconds=120)
+
+    assert set(statuses) == {202}
+    assert len(mailbox.messages) == RESET_MAIL_MAX_PER_WINDOW
+
+
+async def test_two_concurrent_confirms_redeem_the_token_only_once(client, db_engine, mailbox):
+    await _register(client)
+    await _request_reset(client)
+    raw_token = _token_from_mailbox(mailbox)
+
+    factory = async_sessionmaker(db_engine, expire_on_commit=False)
+
+    async def _confirm(password: str) -> bool:
+        async with factory() as session:
+            try:
+                await confirm_password_reset(session, raw_token, password)
+            except PasswordResetError:
+                return False
+            return True
+
+    outcomes = await asyncio.gather(_confirm("first-new-pass"), _confirm("second-new-pass"))
+
+    assert sum(1 for ok in outcomes if ok) == 1, outcomes
+
+    async with factory() as fresh:
+        user = (await fresh.execute(select(User).where(User.email == EMAIL))).scalar_one()
+    assert (
+        sum(verify_password(p, user.password_hash) for p in ("first-new-pass", "second-new-pass"))
+        == 1
+    )
+
+
+async def test_reset_confirm_notifies_the_owner_by_mail(client, mailbox):
+    await _register(client)
+    await _request_reset(client)
+    raw_token = _token_from_mailbox(mailbox)
+
+    resp = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": NEW_PASSWORD})
+    assert resp.status_code == 200, resp.text
+
+    notification = mailbox.messages[-1]
+    assert notification["to"] == EMAIL
+    assert notification["subject"] == PASSWORD_CHANGED_SUBJECT
+
+
+async def test_password_change_notifies_the_owner_by_mail(client, mailbox):
+    session = await _register(client)
+
+    resp = await client.post(
+        CHANGE_URL,
+        json={"current_password": PASSWORD, "new_password": NEW_PASSWORD},
+        headers=_auth(session["access_token"]),
+    )
+    assert resp.status_code == 200, resp.text
+
+    notification = mailbox.messages[-1]
+    assert notification["to"] == EMAIL
+    assert notification["subject"] == PASSWORD_CHANGED_SUBJECT
+
+
+async def test_password_change_rejects_the_current_password_as_the_new_one(client, mailbox):
+    session = await _register(client)
+
+    resp = await client.post(
+        CHANGE_URL,
+        json={"current_password": PASSWORD, "new_password": PASSWORD},
+        headers=_auth(session["access_token"]),
+    )
+
+    assert resp.status_code == 400, resp.text
+    assert mailbox.messages == []
+
+
+async def test_reset_confirm_rejects_the_current_password_as_the_new_one(client, mailbox):
+    await _register(client)
+    await _request_reset(client)
+    raw_token = _token_from_mailbox(mailbox)
+
+    resp = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": PASSWORD})
+    assert resp.status_code == 400, resp.text
+
+    retry = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": NEW_PASSWORD})
+    assert retry.status_code == 200, retry.text
+
+
+async def test_short_passwords_are_rejected_by_both_endpoints(client, mailbox):
+    session = await _register(client)
+    await _request_reset(client)
+    raw_token = _token_from_mailbox(mailbox)
+
+    short = "s3cr3t"
+    assert len(short) < MIN_PASSWORD_LENGTH
+
+    change = await client.post(
+        CHANGE_URL,
+        json={"current_password": PASSWORD, "new_password": short},
+        headers=_auth(session["access_token"]),
+    )
+    assert change.status_code == 422, change.text
+
+    confirm = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": short})
+    assert confirm.status_code == 422, confirm.text
 
 
 async def test_expired_reset_token_is_rejected(client, db_session, mailbox):

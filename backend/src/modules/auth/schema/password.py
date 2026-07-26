@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from src.modules.auth.schema.auth import PASSWORD_TOO_LONG_MESSAGE
 from src.modules.auth.service.auth import password_exceeds_bcrypt_limit
 
-MIN_PASSWORD_LENGTH = 6
+MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128
 MAX_RESET_TOKEN_LENGTH = 512
 

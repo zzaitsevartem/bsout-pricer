@@ -10,6 +10,7 @@ from src.config import settings
 from src.database import async_session_factory
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import Subscription
+from src.modules.auth.service.password_service import deliver_mail
 from src.modules.parser.service.parser_service import parser_service
 from src.modules.parser.service.parsers import register_default_parsers
 from src.modules.tracking.service.alert_service import AlertService
@@ -34,6 +35,17 @@ async def sync_prices(ctx) -> dict:
     stats["notifications"] = len(notifications)
     logger.info("sync_prices: %s", stats)
     return stats
+
+
+async def send_password_mail(
+    ctx,
+    to: str,
+    subject: str,
+    text: str,
+    html: str | None = None,
+) -> dict:
+    await deliver_mail(to, subject, text, html)
+    return {"delivered": True}
 
 
 async def _expire_subscriptions(db: AsyncSession) -> dict:
@@ -79,7 +91,13 @@ async def cleanup_refresh_tokens(ctx, db: AsyncSession | None = None) -> dict:
 class WorkerSettings:
     redis_settings = RedisSettings(host=settings.redis_host, port=settings.redis_port)
     on_startup = startup
-    functions = [sync_catalog, sync_prices, expire_subscriptions, cleanup_refresh_tokens]
+    functions = [
+        sync_catalog,
+        sync_prices,
+        expire_subscriptions,
+        cleanup_refresh_tokens,
+        send_password_mail,
+    ]
     cron_jobs = [
         cron(sync_catalog, hour=3, minute=0),
         cron(sync_prices, hour={7, 13, 19}, minute=30),

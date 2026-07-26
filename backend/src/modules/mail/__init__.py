@@ -9,6 +9,14 @@ from src.modules.mail.service.mailer import (
     SmtpMailer,
     get_mailer,
 )
+from src.modules.mail.service.queue import (
+    MAIL_QUEUE_ENV_FLAG,
+    MAIL_QUEUE_JOB,
+    close_mail_queue,
+    dispatch_mail,
+    drain_pending_mail,
+    queue_enabled,
+)
 from src.modules.mail.service.templates import (
     PASSWORD_CHANGED_SUBJECT,
     PASSWORD_RESET_PATH,
@@ -23,6 +31,8 @@ from src.modules.mail.service.templates import (
 __all__ = [
     "CONSOLE_BACKEND",
     "MAIL_BACKENDS",
+    "MAIL_QUEUE_ENV_FLAG",
+    "MAIL_QUEUE_JOB",
     "SMTP_BACKEND",
     "ConsoleMailer",
     "MailError",
@@ -33,8 +43,12 @@ __all__ = [
     "PASSWORD_RESET_PATH",
     "PASSWORD_RESET_SUBJECT",
     "SmtpMailer",
+    "close_mail_queue",
+    "dispatch_mail",
+    "drain_pending_mail",
     "frontend_link",
     "get_mailer",
+    "queue_enabled",
     "password_changed_message",
     "password_reset_link",
     "password_reset_message",
