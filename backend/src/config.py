@@ -17,10 +17,12 @@ class Settings(BaseSettings):
 
     redis_host: str = "localhost"
     redis_port: int = 6379
+    redis_password: str | None = None
 
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/0"
+        auth = f":{self.redis_password}@" if self.redis_password else ""
+        return f"redis://{auth}{self.redis_host}:{self.redis_port}/0"
 
     jwt_secret_key: str = "change-me-to-a-random-secret"
     jwt_algorithm: str = "HS256"
@@ -39,6 +41,8 @@ class Settings(BaseSettings):
     yookassa_webhook_secret: str | None = None
 
     frontend_base_url: str = "http://localhost:3000"
+    cors_origins_raw: str = "http://localhost:3000"
+    log_level: str = "INFO"
 
     smtp_host: str | None = None
     smtp_port: int = 465
@@ -59,3 +63,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def cors_origins() -> list[str]:
+    raw = settings.cors_origins_raw or ""
+    origins = [item.strip() for item in raw.split(",") if item.strip()]
+    return origins or ["http://localhost:3000"]

@@ -3,8 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import settings
+from src.config import cors_origins, settings
+from src.logging_config import configure_logging
 from src.middleware.rate_limit import RateLimitMiddleware
+from src.middleware.request_id import RequestIdMiddleware
 from src.modules.admin.controller import admin_router
 from src.modules.auth.controller import auth_router
 from src.modules.auth.service.security import validate_security_settings
@@ -28,9 +30,20 @@ async def lifespan(app: FastAPI):
 
 
 validate_security_settings(settings)
+configure_logging(getattr(settings, "log_level", "INFO"))
 register_default_parsers()
 
-app = FastAPI(title="BScout API", lifespan=lifespan)
+_docs_enabled = settings.debug
+
+app = FastAPI(
+    title="BScout API",
+    lifespan=lifespan,
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
+)
+
+app.add_middleware(RequestIdMiddleware)
 
 app.add_middleware(
     RateLimitMiddleware,
@@ -40,7 +53,7 @@ app.add_middleware(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

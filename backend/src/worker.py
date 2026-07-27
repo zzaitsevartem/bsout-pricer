@@ -15,6 +15,7 @@ from src.modules.parser.service.parser_service import parser_service
 from src.modules.parser.service.parsers import register_default_parsers
 from src.modules.tracking.service.alert_service import AlertService
 from src.modules.tracking.service.price_refresh import refresh_tracked_offers
+from src.modules.tracking.service.retention import run_retention
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +89,23 @@ async def cleanup_refresh_tokens(ctx, db: AsyncSession | None = None) -> dict:
         return await _cleanup_refresh_tokens(session)
 
 
+async def _prune_history(db: AsyncSession) -> dict:
+    return await run_retention(db)
+
+
+async def prune_history(ctx, db: AsyncSession | None = None) -> dict:
+    if db is not None:
+        return await _prune_history(db)
+    async with async_session_factory() as session:
+        return await _prune_history(session)
+
+
 class WorkerSettings:
-    redis_settings = RedisSettings(host=settings.redis_host, port=settings.redis_port)
+    redis_settings = RedisSettings(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        password=settings.redis_password,
+    )
     on_startup = startup
     functions = [
         sync_catalog,
@@ -97,10 +113,12 @@ class WorkerSettings:
         expire_subscriptions,
         cleanup_refresh_tokens,
         send_password_mail,
+        prune_history,
     ]
     cron_jobs = [
         cron(sync_catalog, hour=3, minute=0),
         cron(sync_prices, hour={7, 13, 19}, minute=30),
         cron(expire_subscriptions, minute=5),
         cron(cleanup_refresh_tokens, hour=4, minute=30),
+        cron(prune_history, weekday="sun", hour=4, minute=45, timeout=3600),
     ]
