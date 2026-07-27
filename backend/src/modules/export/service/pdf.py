@@ -1,9 +1,10 @@
 import importlib.util
 import io
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-FONT_NAME = "DejaVuSans"
+FONT_NAME = "BScoutCyrillic"
 FONT_FILENAME = "DejaVuSans.ttf"
 
 FONT_SEARCH_DIRS = (
@@ -13,6 +14,11 @@ FONT_SEARCH_DIRS = (
     "/usr/local/share/fonts",
     "/Library/Fonts",
     "/System/Library/Fonts/Supplemental",
+)
+
+FONT_FALLBACK_FILES = (
+    "/Library/Fonts/Arial Unicode.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
 )
 
 LIBRARY_MISSING_MESSAGE = (
@@ -27,6 +33,40 @@ FONT_MISSING_MESSAGE = (
 
 MAX_COLUMN_CHARS = 60
 
+GLYPH_FALLBACKS = {
+    "\u20bd": "руб.",
+    "\u2014": "-",
+    "\u2013": "-",
+    "\u00a0": " ",
+}
+
+_missing_glyphs_cache: set[str] | None = None
+
+
+def _missing_glyphs(font_path: str) -> set[str]:
+    global _missing_glyphs_cache
+    if _missing_glyphs_cache is not None:
+        return _missing_glyphs_cache
+    try:
+        from reportlab.pdfbase.ttfonts import TTFontFile
+
+        supported = TTFontFile(font_path).charToGlyph
+    except Exception:
+        _missing_glyphs_cache = set(GLYPH_FALLBACKS)
+        return _missing_glyphs_cache
+    _missing_glyphs_cache = {ch for ch in GLYPH_FALLBACKS if ord(ch) not in supported}
+    return _missing_glyphs_cache
+
+
+def sanitize_for_font(value: str, font_path: str) -> str:
+    missing = _missing_glyphs(font_path)
+    if not missing:
+        return value
+    cleaned = value
+    for char in missing:
+        cleaned = cleaned.replace(char, GLYPH_FALLBACKS[char])
+    return cleaned
+
 
 class PdfUnavailableError(RuntimeError):
     pass
@@ -37,10 +77,16 @@ def is_reportlab_available() -> bool:
 
 
 def find_cyrillic_font() -> str | None:
+    configured = os.getenv("EXPORT_PDF_FONT_PATH")
+    if configured and Path(configured).is_file():
+        return configured
     for directory in FONT_SEARCH_DIRS:
         candidate = Path(directory) / FONT_FILENAME
         if candidate.is_file():
             return str(candidate)
+    for fallback in FONT_FALLBACK_FILES:
+        if Path(fallback).is_file():
+            return fallback
     return None
 
 
@@ -69,8 +115,13 @@ def render_table_pdf(title: str, header: list[str], rows: list[list[str]]) -> by
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+    font_path = find_cyrillic_font()
     if FONT_NAME not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(TTFont(FONT_NAME, find_cyrillic_font()))
+        pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
+
+    title = sanitize_for_font(title, font_path)
+    header = [sanitize_for_font(cell, font_path) for cell in header]
+    rows = [[sanitize_for_font(cell, font_path) for cell in row] for row in rows]
 
     title_style = ParagraphStyle(
         name="BScoutTitle",

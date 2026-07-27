@@ -40,6 +40,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UVICORN_WORKERS=2 \
     FORWARDED_ALLOW_IPS="*"
 
+# fonts-dejavu-core нужен для PDF-экспорта: шрифты из поставки reportlab
+# (Bitstream Vera) НЕ содержат кириллицы, и русские названия товаров
+# превратились бы в пустые прямоугольники. Пакет весит ~1 МБ.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 # Непривилегированный пользователь: процесс приложения не должен быть root.
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app
