@@ -20,10 +20,18 @@ type SearchLayoutProps = {
   controls: SearchControls;
   facets: CatalogFacets;
   summary: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
 };
 
-export function SearchLayout({ state, controls, facets, summary, children }: SearchLayoutProps) {
+export function SearchLayout({
+  state,
+  controls,
+  facets,
+  summary,
+  actions,
+  children,
+}: SearchLayoutProps) {
   const chips: { key: FilterKey; label: string }[] = [];
   if (state.quality_tier_id !== undefined) {
     chips.push({
@@ -121,26 +129,29 @@ export function SearchLayout({ state, controls, facets, summary, children }: Sea
 
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <span className="text-[15px] text-body-subtle">{summary}</span>
-            <div className="flex items-center gap-2">
-              <label htmlFor="catalog-sort" className="text-[15px] text-body-subtle">
-                Сортировка:
-              </label>
-              <div className="relative">
-                <select
-                  id="catalog-sort"
-                  value={state.sort_by}
-                  onChange={(event) =>
-                    controls.onSortChange(event.target.value as CatalogSortOption)
-                  }
-                  className="appearance-none pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-body-subtle pointer-events-none" />
+            <div className="flex items-center gap-4 flex-wrap">
+              {actions}
+              <div className="flex items-center gap-2">
+                <label htmlFor="catalog-sort" className="text-[15px] text-body-subtle">
+                  Сортировка:
+                </label>
+                <div className="relative">
+                  <select
+                    id="catalog-sort"
+                    value={state.sort_by}
+                    onChange={(event) =>
+                      controls.onSortChange(event.target.value as CatalogSortOption)
+                    }
+                    className="appearance-none pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-body-subtle pointer-events-none" />
+                </div>
               </div>
             </div>
           </div>

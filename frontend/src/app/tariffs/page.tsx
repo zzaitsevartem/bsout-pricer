@@ -56,7 +56,7 @@ const ROWS: { label: string; value: (plan: PlanResponse) => string; bold?: boole
   { label: 'Магазины в поиске', value: (plan) => String(plan.stores) },
   { label: 'Умный поиск (fuzzy)', value: (plan) => yesNo(plan.fuzzySearch) },
   { label: 'Уведомления о снижении цены', value: (plan) => yesNo(plan.priceAlerts) },
-  { label: 'Экспорт отчётов (PDF/CSV)', value: (plan) => yesNo(plan.exportReports) },
+  { label: 'Экспорт отчётов (CSV)', value: (plan) => yesNo(plan.exportReports) },
   { label: 'Поддержка', value: (plan) => plan.supportRu },
 ];
 

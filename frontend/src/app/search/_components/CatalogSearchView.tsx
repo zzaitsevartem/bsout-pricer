@@ -3,8 +3,11 @@
 import React, { useMemo } from 'react';
 import { useCatalogSearch } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
+import { useExportCatalog } from '@/models/export';
+import type { ExportCatalogParams } from '@/models/export';
 import { cn } from '@/shared/lib/utils';
 import { SearchLayout } from '@/app/search/_components/SearchLayout';
+import { ExportCsvButton, ExportNotice } from '@/app/search/_components/CatalogExport';
 import { CatalogResultCard } from '@/app/search/_components/CatalogResultCard';
 import { ResultsSkeleton } from '@/app/search/_components/ResultsSkeleton';
 import { Pagination } from '@/app/search/_components/Pagination';
@@ -54,8 +57,20 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
     [state.q],
   );
 
+  const exportParams = useMemo<ExportCatalogParams>(
+    () => ({
+      q: state.q || undefined,
+      device_id: state.device_id,
+      part_type_id: state.part_type_id,
+      quality_tier_id: state.quality_tier_id,
+      sort_by: state.sort_by,
+    }),
+    [state.q, state.device_id, state.part_type_id, state.quality_tier_id, state.sort_by],
+  );
+
   const results = useCatalogSearch(params);
   const facetsQuery = useCatalogSearch(facetParams);
+  const exportCatalog = useExportCatalog();
 
   const facets = useMemo(
     () => (facetsQuery.data ? collectFacets(facetsQuery.data.results) : EMPTY_FACETS),
@@ -120,8 +135,23 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
     );
   }
 
+  const hasResults = (results.data?.results.length ?? 0) > 0;
+
   return (
-    <SearchLayout state={state} controls={controls} facets={facets} summary={summary}>
+    <SearchLayout
+      state={state}
+      controls={controls}
+      facets={facets}
+      summary={summary}
+      actions={
+        <ExportCsvButton
+          mutation={exportCatalog}
+          params={exportParams}
+          disabled={!hasResults || results.isFetching}
+        />
+      }
+    >
+      {exportCatalog.error && <ExportNotice error={exportCatalog.error} />}
       {content}
     </SearchLayout>
   );
