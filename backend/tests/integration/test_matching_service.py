@@ -246,3 +246,27 @@ async def test_known_part_unknown_device_routes_to_review(db_session):
     assert offer.product_id is None
     assert stats.review == 1
     assert stats.unmatched == 0
+
+
+async def test_device_gap_report_surfaces_review_offers(db_session):
+    await seed_all(db_session)
+    store = Store(name="GapTest", slug="gap-test", website_url="https://gt.example")
+    db_session.add(store)
+    await db_session.flush()
+
+    offer = await ParserService.upsert_offer(
+        db_session,
+        store.id,
+        ParseResult(
+            source_sku="G1",
+            title="Дисплей для Blackberry Passport (копия)",
+            price_retail=Decimal("1000.00"),
+            url="https://gt.example/1",
+        ),
+    )
+    dicts = await load_dictionaries(db_session)
+    await MatchingService.match_offer(db_session, offer, dicts, MatchStats())
+
+    report = await MatchingService.device_gap_report(db_session, limit=10)
+
+    assert ("Blackberry Passport", 1) in report

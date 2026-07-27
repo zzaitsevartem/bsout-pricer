@@ -153,26 +153,34 @@ async def test_logout_revokes_refresh_token(client, db_session):
     assert resp.json()["detail"] == "Refresh token has been revoked"
 
 
-async def test_logout_is_idempotent(client, db_session):
+async def test_logout_is_idempotent_and_kills_the_access_token(client, db_session):
     body = await _register(client, "logout-twice@example.com")
 
     first = await client.post("/api/auth/logout", headers=_auth(body["access_token"]))
-    second = await client.post(
+    replayed = await client.post(
         "/api/auth/logout",
         headers=_auth(body["access_token"]),
         json={"refresh_token": body["refresh_token"]},
     )
-    third = await client.post(
-        "/api/auth/logout",
-        headers=_auth(body["access_token"]),
-        json={"refresh_token": "garbage"},
-    )
 
     assert first.status_code == 204
-    assert second.status_code == 204
-    assert third.status_code == 204
+    assert replayed.status_code == 401, (
+        "после выхода access-токен обязан быть мёртв, иначе украденный токен живёт "
+        f"ещё 15 минут: {replayed.status_code}"
+    )
 
-    assert (await _refresh(client, body["refresh_token"])).status_code == 401
+    login = await client.post(
+        "/api/auth/login",
+        json={"email": "logout-twice@example.com", "password": PASSWORD},
+    )
+    assert login.status_code == 200, login.text
+    fresh = login.json()
+    again = await client.post(
+        "/api/auth/logout",
+        headers=_auth(fresh["access_token"]),
+        json={"refresh_token": "garbage"},
+    )
+    assert again.status_code == 204, "повторный выход с мусорным refresh не должен падать"
 
 
 async def test_logout_with_refresh_body_revokes_only_that_family(client, db_session):

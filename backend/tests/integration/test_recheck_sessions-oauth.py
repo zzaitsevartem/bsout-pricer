@@ -30,6 +30,16 @@ RESET_REQUEST_URL = "/api/auth/password-reset/request"
 RESET_CONFIRM_URL = "/api/auth/password-reset/confirm"
 RESEND_URL = "/api/auth/email/resend"
 TELEGRAM_LINK_URL = "/api/auth/telegram/link"
+
+TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
+
+
+async def _tg_nonce(client, token: str) -> str:
+    resp = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(token))
+    assert resp.status_code == 200, resp.text
+    return resp.json()["nonce"]
+
+
 TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
 AUTHORIZE_URL = "/api/auth/vk/authorize"
 
@@ -245,7 +255,7 @@ async def test_recheck_refreshed_access_token_still_works_for_untouched_user(cli
     assert resp.status_code == 200, resp.text
 
 
-async def test_recheck_logout_leaves_the_access_token_alive(client):
+async def test_recheck_logout_kills_the_access_token(client):
     await _register(client, "logout@example.com")
     tokens = await _login(client, "logout@example.com")
 
@@ -257,8 +267,8 @@ async def test_recheck_logout_leaves_the_access_token_alive(client):
     assert out.status_code == 204, out.text
 
     after = await client.get(ME_URL, headers=_auth(tokens["access_token"]))
-    assert after.status_code == 200, (
-        "если это стало 401 — контракт логаута изменился, обнови отчёт: "
+    assert after.status_code == 401, (
+        "логаут обязан гасить и access-токен, иначе украденный токен живёт ещё 15 минут: "
         f"{after.status_code} {after.text}"
     )
 
@@ -320,10 +330,18 @@ async def test_recheck_same_user_cannot_replay_its_own_telegram_payload(
     user, token = await _make_user(db_session, "tg-self@example.com")
     payload = _telegram_payload(telegram_configured, tg_id=9110001)
 
-    first = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    first = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
     assert first.status_code == 200, first.text
 
-    second = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    second = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
     assert second.status_code == 401, second.text
     assert oas.TELEGRAM_REPLAYED_CODE in second.text
 
@@ -334,7 +352,11 @@ async def test_recheck_telegram_payload_outside_the_window_is_rejected(
     _, token = await _make_user(db_session, "tg-old@example.com")
     stale = _telegram_payload(telegram_configured, tg_id=9110002, age_seconds=600)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=stale, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=stale,
+        headers=_auth(token),
+    )
     assert resp.status_code == 401, resp.text
     assert oas.TELEGRAM_STALE_AUTH_CODE in resp.text
 
@@ -349,8 +371,16 @@ async def test_recheck_leaked_payload_cannot_be_hijacked_within_the_window(
     _, thief = await _make_user(db_session, "tg-t@example.com")
     payload = _telegram_payload(telegram_configured, tg_id=9110003, age_seconds=100)
 
-    stolen = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(thief))
-    owner = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(victim))
+    stolen = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, thief)}",
+        json=payload,
+        headers=_auth(thief),
+    )
+    owner = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, victim)}",
+        json=payload,
+        headers=_auth(victim),
+    )
     assert not (stolen.status_code == 200 and owner.status_code != 200), (
         "payload не привязан к аккаунту, который начал привязку: внутри окна "
         f"{oas.TELEGRAM_AUTH_MAX_AGE_SECONDS + oas.TELEGRAM_CLOCK_SKEW_SECONDS} c telegram-id "
@@ -369,22 +399,46 @@ async def test_recheck_nonce_is_not_required_so_the_binding_can_be_skipped(
     assert prepared.status_code == 200, prepared.text
 
     payload = _telegram_payload(telegram_configured, tg_id=9110009)
-    bypass = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(thief))
+    bypass = await client.post(
+        TELEGRAM_LINK_URL,
+        json=payload,
+        headers=_auth(thief),
+    )
     assert bypass.status_code != 200, (
-        "выданный владельцу nonce ничего не защищает: запрос без ?nonce= проходит, "
-        f"и telegram-id уходит другому аккаунту ({bypass.status_code})"
+        "запрос без ?nonce= обязан отклоняться, иначе выданный владельцу nonce "
+        f"ничего не защищает и telegram-id уходит другому аккаунту ({bypass.status_code})"
+    )
+
+    owner_first = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, owner)}",
+        json=payload,
+        headers=_auth(owner),
+    )
+    assert owner_first.status_code == 200, owner_first.text
+
+    replay = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, thief)}",
+        json=payload,
+        headers=_auth(thief),
+    )
+    assert replay.status_code != 200, (
+        "набор виджета обязан быть одноразовым: после успешной привязки владельцем "
+        f"его повторное применение другим аккаунтом должно отклоняться ({replay.status_code})"
     )
 
 
-async def test_recheck_telegram_link_still_works_without_any_nonce(
-    client, db_session, telegram_configured
-):
+async def test_recheck_telegram_link_requires_a_nonce(client, db_session, telegram_configured):
     _, token = await _make_user(db_session, "tg-nononce@example.com")
     payload = _telegram_payload(telegram_configured, tg_id=9110004)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
-    assert resp.status_code == 200, (
-        "nonce стал обязательным — это ужесточение, обнови отчёт: " f"{resp.status_code}"
+    resp = await client.post(
+        TELEGRAM_LINK_URL,
+        json=payload,
+        headers=_auth(token),
+    )
+    assert resp.status_code != 200, (
+        "привязка без nonce обязана отклоняться, иначе перехваченный набор виджета "
+        f"привязывается кем угодно: {resp.status_code}"
     )
 
 
@@ -417,9 +471,14 @@ async def test_recheck_telegram_link_is_fail_closed_when_redis_is_down(
 ):
     _, token = await _make_user(db_session, "tg-redis@example.com")
     payload = _telegram_payload(telegram_configured, tg_id=9110006)
+    nonce = await _tg_nonce(client, token)
     monkeypatch.setattr(oas, "get_redis", _broken_redis_factory())
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={nonce}",
+        json=payload,
+        headers=_auth(token),
+    )
     assert resp.status_code == 503, resp.text
 
     identities = (await db_session.execute(select(UserIdentity))).scalars().all()
@@ -432,20 +491,32 @@ async def test_recheck_failed_link_burns_the_payload_and_locks_out_the_owner(
     _, token = await _make_user(db_session, "tg-burn@example.com")
     first = _telegram_payload(telegram_configured, tg_id=9110007)
     assert (
-        await client.post(TELEGRAM_LINK_URL, json=first, headers=_auth(token))
+        await client.post(
+            TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+            json=first,
+            headers=_auth(token),
+        )
     ).status_code == 200
 
     second = _telegram_payload(telegram_configured, tg_id=9110008)
-    conflict = await client.post(TELEGRAM_LINK_URL, json=second, headers=_auth(token))
+    conflict = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=second,
+        headers=_auth(token),
+    )
     assert conflict.status_code == 409, conflict.text
 
     unlink = await client.delete(TELEGRAM_LINK_URL, headers=_auth(token))
     assert unlink.status_code == 204, unlink.text
 
-    retry = await client.post(TELEGRAM_LINK_URL, json=second, headers=_auth(token))
-    assert retry.status_code == 401 and oas.TELEGRAM_REPLAYED_CODE in retry.text, (
-        "если это стало 200 — одноразовость перенесена после успешной привязки, обнови отчёт: "
-        f"{retry.status_code} {retry.text}"
+    retry = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=second,
+        headers=_auth(token),
+    )
+    assert retry.status_code == 200, (
+        "неудачная привязка не должна сжигать набор виджета: владелец обязан "
+        f"суметь повторить попытку ({retry.status_code} {retry.text})"
     )
 
 

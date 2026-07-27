@@ -270,5 +270,7 @@ async def revoke_session(db: AsyncSession, user_id: int, raw_token: str | None) 
         if jti:
             stored = await get_token_by_jti(db, jti)
             if stored is not None and stored.user_id == user_id:
-                return await revoke_family(db, stored.family_id, REASON_LOGOUT)
-    return await revoke_all_for_user(db, user_id, REASON_LOGOUT, invalidate_access=False)
+                revoked = await revoke_family(db, stored.family_id, REASON_LOGOUT)
+                await invalidate_access_tokens(user_id)
+                return revoked
+    return await revoke_all_for_user(db, user_id, REASON_LOGOUT)

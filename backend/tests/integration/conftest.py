@@ -20,24 +20,55 @@ def _test_database_url() -> str:
     return settings.database_url.rsplit("/", 1)[0] + "/bscout_test"
 
 
+_SCHEMA_READY = False
+
+
 @pytest_asyncio.fixture
 async def db_engine():
+    global _SCHEMA_READY
+
     engine = create_async_engine(_test_database_url(), echo=False)
     try:
         async with engine.begin() as conn:
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS citext"))
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
+            if not _SCHEMA_READY:
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS citext"))
+                await conn.run_sync(Base.metadata.drop_all)
+                await conn.run_sync(Base.metadata.create_all)
+                _SCHEMA_READY = True
+            else:
+                for table in reversed(Base.metadata.sorted_tables):
+                    await conn.execute(table.delete())
     except Exception as exc:  # noqa: BLE001
         await engine.dispose()
         pytest.skip(
             f"integration DB unavailable ({exc}); run `docker compose up -d` and create bscout_test"
         )
     yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def drain_mail_tasks():
+    yield
+    from src.modules.mail.service.queue import drain_pending_mail
+
+    try:
+        await drain_pending_mail()
+    except Exception:
+        pass
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def flush_test_redis():
+    from src.modules.cache.service.redis_cache import get_redis
+
+    for _ in range(1):
+        try:
+            await (get_redis()).flushdb()
+        except Exception:
+            pass
+    yield
 
 
 @pytest_asyncio.fixture(autouse=True)

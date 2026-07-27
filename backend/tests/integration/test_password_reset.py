@@ -225,7 +225,7 @@ async def test_reset_token_has_one_hour_ttl(client, db_session, mailbox):
     await _register(client)
     await _request_reset(client)
 
-    rows = await _tokens_in_db(db_session, 1)
+    rows = await _tokens_in_db(db_session, await _user_id(db_session))
     assert rows
     expires_at = rows[0].expires_at
     if expires_at.tzinfo is None:

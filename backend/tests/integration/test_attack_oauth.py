@@ -28,6 +28,16 @@ AUTHORIZE_URL = "/api/auth/vk/authorize"
 CALLBACK_URL = "/api/auth/vk/callback"
 VK_LINK_URL = "/api/auth/vk/link"
 TELEGRAM_LINK_URL = "/api/auth/telegram/link"
+
+TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
+
+
+async def _tg_nonce(client, token: str) -> str:
+    resp = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(token))
+    assert resp.status_code == 200, resp.text
+    return resp.json()["nonce"]
+
+
 CONFIRM_URL = "/api/auth/email/confirm"
 RESEND_URL = "/api/auth/email/resend"
 PAYMENT_SUBSCRIBE_URL = "/api/payment/subscribe"
@@ -249,8 +259,16 @@ async def test_telegram_identity_cannot_be_stolen_by_replaying_a_leaked_payload(
 
     leaked = _telegram_payload(telegram_configured, tg_id=515151, age_seconds=3600)
 
-    stolen = await client.post(TELEGRAM_LINK_URL, json=leaked, headers=_auth(attacker_token))
-    owner = await client.post(TELEGRAM_LINK_URL, json=leaked, headers=_auth(victim_token))
+    stolen = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, attacker_token)}",
+        json=leaked,
+        headers=_auth(attacker_token),
+    )
+    owner = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, victim_token)}",
+        json=leaked,
+        headers=_auth(victim_token),
+    )
 
     assert not (stolen.status_code == 200 and owner.status_code == 409), (
         "a leaked/observed Telegram widget payload stays valid for 24h and is not bound to the "
@@ -267,10 +285,18 @@ async def test_telegram_payload_cannot_be_replayed_by_a_second_account(
 
     payload = _telegram_payload(telegram_configured, tg_id=424242)
 
-    first = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(victim_token))
+    first = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, victim_token)}",
+        json=payload,
+        headers=_auth(victim_token),
+    )
     assert first.status_code == 200, first.text
 
-    replay = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(attacker_token))
+    replay = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, attacker_token)}",
+        json=payload,
+        headers=_auth(attacker_token),
+    )
 
     assert replay.status_code in (401, 409), (
         "the very same signed Telegram payload must not be replayable by a different account, "
@@ -294,7 +320,11 @@ async def test_telegram_forged_signature_with_raw_token_key_is_rejected(
         telegram_configured.encode(), check.encode(), hashlib.sha256
     ).hexdigest()
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert resp.status_code == 401, resp.text
 
@@ -307,7 +337,11 @@ async def test_telegram_extra_field_must_be_inside_signature(
     payload = _telegram_payload(telegram_configured, tg_id=606)
     payload["is_premium"] = "true"
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert (
         resp.status_code == 401
@@ -322,7 +356,11 @@ async def test_telegram_id_cannot_be_swapped_while_keeping_signature(
     payload = _telegram_payload(telegram_configured, tg_id=111)
     payload["id"] = 222
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert resp.status_code == 401, resp.text
 
@@ -334,7 +372,11 @@ async def test_telegram_link_without_bot_token_never_skips_verification(
     _, token = await _make_user(db_session, "tg-unconfigured@example.com", verified=True)
 
     payload = _telegram_payload(BOT_TOKEN, tg_id=333)
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + "?nonce=any-nonce-value",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert resp.status_code == 503, resp.text
     assert resp.json()["detail"]["code"] == "telegram_not_configured"
@@ -346,7 +388,11 @@ async def test_telegram_missing_hash_is_rejected(client, db_session, telegram_co
     payload = _telegram_payload(telegram_configured, tg_id=444)
     payload.pop("hash")
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert resp.status_code in (401, 422), resp.text
 
@@ -356,7 +402,11 @@ async def test_telegram_stale_payload_is_rejected(client, db_session, telegram_c
 
     payload = _telegram_payload(telegram_configured, tg_id=888, age_seconds=90000)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(token))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _tg_nonce(client, token)}",
+        json=payload,
+        headers=_auth(token),
+    )
 
     assert resp.status_code == 401, resp.text
     assert resp.json()["detail"]["code"] == "telegram_stale_auth"

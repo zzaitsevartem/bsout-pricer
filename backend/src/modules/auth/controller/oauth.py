@@ -154,17 +154,16 @@ async def telegram_prepare(current_user: User = Depends(get_current_user)):
 @router.post("/telegram/link", response_model=IdentityResponse)
 async def telegram_link(
     body: TelegramLinkRequest,
-    nonce: str | None = Query(default=None, max_length=256),
+    nonce: str = Query(min_length=1, max_length=256),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     fields = body.signed_fields()
     try:
         verify_telegram_auth(fields, body.hash)
-        if nonce is not None:
-            await consume_telegram_nonce(nonce, current_user.id)
-        await consume_telegram_payload(body.hash)
+        await consume_telegram_nonce(nonce, current_user.id)
         identity = await link_telegram_identity(db, current_user, fields)
+        await consume_telegram_payload(body.hash)
     except OAuthError as exc:
         raise _http_error(exc)
     return IdentityResponse.model_validate(identity)

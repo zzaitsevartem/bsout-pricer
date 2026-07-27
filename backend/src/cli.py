@@ -40,6 +40,11 @@ async def _run_match(only_unmatched: bool) -> dict:
             return await MatchingService.match_all(session, only_unmatched=only_unmatched)
 
 
+async def _run_gaps(limit: int) -> list[tuple[str, int]]:
+    async with async_session_factory() as session:
+        return await MatchingService.device_gap_report(session, limit=limit)
+
+
 async def create_admin(
     db: AsyncSession,
     email: str,
@@ -101,6 +106,10 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("seed", help="idempotently seed catalog, stores and categories")
     match_parser = subparsers.add_parser("match", help="match store offers to canonical products")
     match_parser.add_argument("--all", action="store_true", help="rematch already linked offers")
+    gaps_parser = subparsers.add_parser(
+        "gaps", help="report top unrecognized devices from review-status offers"
+    )
+    gaps_parser.add_argument("--limit", type=int, default=30)
     admin_parser = subparsers.add_parser(
         "create-admin",
         help=f"create an administrator; password comes from {ADMIN_PASSWORD_ENV} or a prompt",
@@ -123,6 +132,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "match":
         stats = asyncio.run(_run_match(only_unmatched=not args.all))
         print("match: " + " ".join(f"{key}={value}" for key, value in stats.items()))
+        return 0
+    if args.command == "gaps":
+        rows = asyncio.run(_run_gaps(args.limit))
+        if not rows:
+            print("gaps: no review-status offers")
+            return 0
+        for phrase, count in rows:
+            print(f"{count:4d}  {phrase}")
         return 0
     if args.command == "create-admin":
         try:

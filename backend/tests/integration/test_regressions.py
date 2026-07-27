@@ -208,12 +208,18 @@ async def test_expired_subscription_does_not_block_resubscribing(client, db_sess
     )
     await db_session.flush()
 
-    resp = await client.post(
+    user.email_verified_at = datetime.now(timezone.utc)
+    await db_session.flush()
+
+    resp = await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(token))
+
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["status"] == "pending"
+
+    users_path = await client.post(
         "/api/users/me/subscription", json={"plan": "basic"}, headers=_auth(token)
     )
-
-    assert resp.status_code == 201
-    assert resp.json()["plan"] == "basic"
+    assert users_path.status_code == 402, "подписка не должна выдаваться в обход оплаты"
 
 
 async def test_active_subscription_still_blocks_duplicate(client, db_session):

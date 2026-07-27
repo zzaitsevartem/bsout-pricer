@@ -124,6 +124,15 @@ async def _state(client, token: str | None = None) -> str:
     return resp.json()["state"]
 
 
+TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
+
+
+async def _telegram_nonce(client, access: str) -> str:
+    resp = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(access))
+    assert resp.status_code == 200, resp.text
+    return resp.json()["nonce"]
+
+
 def _telegram_payload(bot_token: str, *, tg_id: int = 777, age_seconds: int = 0) -> dict:
     payload = {
         "id": tg_id,
@@ -397,7 +406,11 @@ async def test_telegram_link_accepts_a_valid_signature(client, db_session, teleg
     user, access = await _make_user(db_session, "tg@example.com")
     payload = _telegram_payload(telegram_configured)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code in (200, 201), resp.text
     body = resp.json()
@@ -418,7 +431,11 @@ async def test_telegram_link_rejects_a_forged_signature(client, db_session, tele
     payload = _telegram_payload(telegram_configured)
     payload["id"] = 999
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code == 401, resp.text
     assert resp.json()["detail"]["code"] == "telegram_bad_signature"
@@ -436,7 +453,11 @@ async def test_telegram_link_rejects_signature_made_with_raw_token(
         telegram_configured.encode(), check.encode(), hashlib.sha256
     ).hexdigest()
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code == 401, resp.text
     assert resp.json()["detail"]["code"] == "telegram_bad_signature"
@@ -446,7 +467,11 @@ async def test_telegram_link_rejects_stale_auth_date(client, db_session, telegra
     _user, access = await _make_user(db_session, "stale@example.com")
     payload = _telegram_payload(telegram_configured, age_seconds=60 * 60 * 25)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code == 401, resp.text
     assert resp.json()["detail"]["code"] == "telegram_stale_auth"
@@ -456,7 +481,11 @@ async def test_telegram_link_rejects_future_auth_date(client, db_session, telegr
     _user, access = await _make_user(db_session, "future@example.com")
     payload = _telegram_payload(telegram_configured, age_seconds=-60 * 60)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    resp = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code == 401, resp.text
     assert resp.json()["detail"]["code"] == "telegram_stale_auth"
@@ -467,7 +496,14 @@ async def test_telegram_link_is_unavailable_without_bot_token(client, db_session
     _user, access = await _make_user(db_session, "nobot@example.com")
     payload = _telegram_payload(BOT_TOKEN)
 
-    resp = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    prepare = await client.post(TELEGRAM_PREPARE_URL, headers=_auth(access))
+    assert prepare.status_code == 503, prepare.text
+
+    resp = await client.post(
+        TELEGRAM_LINK_URL + "?nonce=any-nonce-value",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert resp.status_code == 503, resp.text
     assert resp.json()["detail"]["code"] == "telegram_not_configured"
@@ -491,7 +527,7 @@ async def test_telegram_link_conflicts_when_taken_by_another_user(
     _other, other_access = await _make_user(db_session, "tg-other@example.com")
 
     resp = await client.post(
-        TELEGRAM_LINK_URL,
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, other_access)}",
         json=_telegram_payload(telegram_configured, tg_id=7771),
         headers=_auth(other_access),
     )
@@ -503,7 +539,7 @@ async def test_telegram_link_conflicts_when_taken_by_another_user(
 async def test_telegram_unlink_removes_identity(client, db_session, telegram_configured):
     user, access = await _make_user(db_session, "tg-unlink@example.com")
     await client.post(
-        TELEGRAM_LINK_URL,
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
         json=_telegram_payload(telegram_configured, tg_id=7772),
         headers=_auth(access),
     )
@@ -523,11 +559,19 @@ async def test_telegram_payload_is_single_use(client, db_session, telegram_confi
     _user, access = await _make_user(db_session, "tg-once@example.com")
     payload = _telegram_payload(telegram_configured, tg_id=7781)
 
-    first = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    first = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
     assert first.status_code in (200, 201), first.text
 
     await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
-    replay = await client.post(TELEGRAM_LINK_URL, json=payload, headers=_auth(access))
+    replay = await client.post(
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
+        json=payload,
+        headers=_auth(access),
+    )
 
     assert replay.status_code == 401, replay.text
     assert replay.json()["detail"]["code"] == "telegram_replayed_auth"
@@ -537,7 +581,7 @@ async def test_telegram_auth_date_window_is_two_minutes(client, db_session, tele
     _user, access = await _make_user(db_session, "tg-window@example.com")
 
     fresh = await client.post(
-        TELEGRAM_LINK_URL,
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
         json=_telegram_payload(telegram_configured, tg_id=7782, age_seconds=30),
         headers=_auth(access),
     )
@@ -545,7 +589,7 @@ async def test_telegram_auth_date_window_is_two_minutes(client, db_session, tele
 
     await client.request("DELETE", TELEGRAM_LINK_URL, headers=_auth(access))
     stale = await client.post(
-        TELEGRAM_LINK_URL,
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
         json=_telegram_payload(telegram_configured, tg_id=7783, age_seconds=300),
         headers=_auth(access),
     )
@@ -658,7 +702,7 @@ async def test_vk_only_account_can_set_a_password_and_then_unlink(
 async def test_telegram_unlink_is_allowed_without_password(client, db_session, telegram_configured):
     user, access = await _make_user(db_session, "tg-nopass@example.com", password=None)
     linked = await client.post(
-        TELEGRAM_LINK_URL,
+        TELEGRAM_LINK_URL + f"?nonce={await _telegram_nonce(client, access)}",
         json=_telegram_payload(telegram_configured, tg_id=7773),
         headers=_auth(access),
     )

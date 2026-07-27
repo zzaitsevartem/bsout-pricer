@@ -14,6 +14,9 @@ class PlanEnum(str, enum.Enum):
     advanced = "advanced"
 
 
+plan_enum = Enum(PlanEnum, name="planenum")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -51,7 +54,7 @@ class Subscription(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    plan: Mapped[PlanEnum] = mapped_column(Enum(PlanEnum), nullable=False)
+    plan: Mapped[PlanEnum] = mapped_column(plan_enum, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

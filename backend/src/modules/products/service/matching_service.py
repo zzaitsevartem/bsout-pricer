@@ -1,3 +1,5 @@
+import re
+from collections import Counter
 from dataclasses import dataclass
 
 from sqlalchemy import Select, func, select, update
@@ -11,6 +13,8 @@ from src.modules.products.model.product import Cluster, MatchCandidate, Product,
 AUTO_THRESHOLD = 0.8
 CANDIDATE_THRESHOLD = 0.5
 PROTECTED_STATUSES = ("manual", "rejected")
+
+_DEVICE_PHRASE_RE = re.compile(r"(?:для|for)\s+(.+?)(?:\s*\(|\+|,|$)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -285,6 +289,21 @@ class MatchingService:
 
         await MatchingService.recalc_cluster_aggregates(db)
         return stats.as_dict()
+
+    @staticmethod
+    async def device_gap_report(db: AsyncSession, limit: int = 30) -> list[tuple[str, int]]:
+        titles = (
+            (await db.execute(select(StoreOffer.title).where(StoreOffer.match_status == "review")))
+            .scalars()
+            .all()
+        )
+        counter: Counter[str] = Counter()
+        for title in titles:
+            match = _DEVICE_PHRASE_RE.search(title)
+            phrase = (match.group(1).strip() if match else title).strip()[:60]
+            if phrase:
+                counter[phrase] += 1
+        return counter.most_common(limit)
 
     @staticmethod
     async def recalc_cluster_aggregates(

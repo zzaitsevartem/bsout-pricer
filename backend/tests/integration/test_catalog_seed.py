@@ -73,7 +73,8 @@ async def test_seed_all_covers_expected_volume(db_session):
 
     assert counts["PartType"] == len(PART_TYPES)
     assert counts["QualityTier"] == len(QUALITY_TIERS)
-    assert counts["Brand"] == len(BRANDS) == 10
+    assert counts["Brand"] == len(BRANDS)
+    assert counts["Brand"] >= 10
     assert counts["Device"] == len(DEVICES)
     assert counts["Device"] >= 40
     assert counts["Color"] == len(COLORS)

@@ -122,7 +122,7 @@ async def test_attack_reset_request_kills_victim_token_denial_of_recovery(client
     )
 
 
-async def test_attack_reset_token_has_no_row_lock_and_is_redeemed_twice(client, mailbox, db_engine):
+async def test_attack_reset_token_cannot_be_redeemed_twice_concurrently(client, mailbox, db_engine):
     await _register(client)
     await client.post(REQUEST_URL, json={"email": VICTIM})
     token = _token_from(mailbox)
@@ -131,39 +131,31 @@ async def test_attack_reset_token_has_no_row_lock_and_is_redeemed_twice(client, 
 
     factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
-    async with factory() as first, factory() as second:
-        loaded_first = await ps._load_usable_reset_token(first, token)
-        try:
-            loaded_second = await ps._load_usable_reset_token(second, token)
-        except ps.PasswordResetError:
-            pytest.fail("unreachable")
+    async def redeem(new_password: str):
+        async with factory() as session:
+            try:
+                await ps.confirm_password_reset(session, token, new_password)
+                await session.commit()
+                return True
+            except Exception:
+                await session.rollback()
+                return False
 
-        assert loaded_first.id == loaded_second.id
-
-        user_first = (
-            await first.execute(select(User).where(User.id == loaded_first.user_id))
-        ).scalar_one()
-        user_first.password_hash = ps.hash_password("attacker-pass")
-        loaded_first.used_at = ps._now()
-        await ps.revoke_all_for_user(first, user_first.id, "password_reset")
-        await first.commit()
-
-        user_second = (
-            await second.execute(select(User).where(User.id == loaded_second.user_id))
-        ).scalar_one()
-        user_second.password_hash = ps.hash_password("legit-pass")
-        loaded_second.used_at = ps._now()
-        await ps.revoke_all_for_user(second, user_second.id, "password_reset")
-        await second.commit()
+    outcomes = await asyncio.gather(
+        redeem("attacker-pass"), redeem("legit-pass"), return_exceptions=True
+    )
+    succeeded = [o for o in outcomes if o is True]
 
     async with factory() as fresh:
         victim = (await fresh.execute(select(User).where(User.email == VICTIM))).scalar_one()
 
-    assert not verify_password("legit-pass", victim.password_hash), (
-        "один и тот же токен погашен дважды: _load_usable_reset_token читает строку "
-        "без SELECT ... FOR UPDATE и без атомарного UPDATE ... WHERE used_at IS NULL, "
-        "поэтому при нескольких воркерах uvicorn обе транзакции проходят"
+    assert len(succeeded) == 1, (
+        "одноразовый токен сброса обязан погаситься ровно один раз даже при одновременных "
+        f"подтверждениях, иначе при нескольких воркерах пароль перезапишут дважды: {outcomes}"
     )
+    assert verify_password("attacker-pass", victim.password_hash) != verify_password(
+        "legit-pass", victim.password_hash
+    ), "в базе должен остаться ровно один из двух паролей, а не смесь состояний"
 
 
 async def test_attack_host_header_does_not_leak_into_reset_link(client, mailbox):

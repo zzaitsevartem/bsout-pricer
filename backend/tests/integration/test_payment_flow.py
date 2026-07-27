@@ -21,13 +21,16 @@ def _auth(user: User) -> dict[str, str]:
     return {"Authorization": f"Bearer {create_access_token(user.id)}"}
 
 
-async def _make_user(db, email: str, *, is_admin: bool = False) -> User:
+async def _make_user(
+    db, email: str, *, is_admin: bool = False, email_verified: bool = True
+) -> User:
     user = User(
         email=email,
         password_hash="x",
         full_name="Pay User",
         is_active=True,
         is_admin=is_admin,
+        email_verified_at=datetime.now(timezone.utc) if email_verified else None,
     )
     db.add(user)
     await db.flush()

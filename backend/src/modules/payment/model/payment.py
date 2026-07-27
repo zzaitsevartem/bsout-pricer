@@ -1,12 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
-from src.modules.auth.model.user import PlanEnum
+from src.modules.auth.model.user import PlanEnum, plan_enum
 
 PAYMENT_STATUSES = ("pending", "succeeded", "canceled", "failed", "refunded")
 
@@ -27,7 +27,7 @@ class Payment(Base):
     subscription_id: Mapped[int | None] = mapped_column(
         ForeignKey("subscriptions.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    plan: Mapped[PlanEnum] = mapped_column(Enum(PlanEnum), nullable=False)
+    plan: Mapped[PlanEnum] = mapped_column(plan_enum, nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="RUB", nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False, index=True)
