@@ -67,10 +67,17 @@ def create_refresh_token(
 
 def decode_token(token: str) -> dict | None:
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        return payload
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+            options={"require_exp": True, "verify_exp": True},
+        )
     except JWTError:
         return None
+    if payload.get("exp") is None:
+        return None
+    return payload
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
@@ -140,9 +147,15 @@ async def grant_trial_subscription(db: AsyncSession, user: User) -> Subscription
     return subscription
 
 
+DUMMY_PASSWORD_HASH = hash_password("bscout-timing-equaliser")
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     user = await get_user_by_email(db, email)
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None:
+        verify_password(password, DUMMY_PASSWORD_HASH)
+        return None
+    if not verify_password(password, user.password_hash):
         return None
     if not user.is_active:
         return None

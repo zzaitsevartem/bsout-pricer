@@ -387,3 +387,52 @@ async def test_attack_refresh_tokens_really_dead_after_reset(client, mailbox, db
 
     replay = await client.post(REFRESH_URL, json={"refresh_token": session_tokens["refresh_token"]})
     assert replay.status_code == 401, replay.text
+
+
+async def test_login_timing_does_not_reveal_existing_accounts(client):
+    import time as _time
+
+    await _register(client)
+
+    async def measure(email: str) -> float:
+        started = _time.perf_counter()
+        await client.post(
+            "/api/auth/login", json={"email": email, "password": "definitely-wrong-pass"}
+        )
+        return _time.perf_counter() - started
+
+    known_samples = [await measure(VICTIM) for _ in range(3)]
+    unknown_samples = [await measure("no-such-user-here@example.com") for _ in range(3)]
+    known = min(known_samples)
+    unknown = min(unknown_samples)
+    ratio = max(known, unknown) / max(min(known, unknown), 1e-6)
+
+    assert ratio < 3, (
+        "время ответа /auth/login выдаёт существование аккаунта: "
+        f"известный {known * 1000:.0f} мс против неизвестного {unknown * 1000:.0f} мс "
+        f"(разница в {ratio:.1f} раз) — по секундомеру перебирается список чужих email"
+    )
+
+
+async def test_reuse_detection_also_kills_access_tokens(client):
+    await _register(client)
+    stolen = (
+        await client.post("/api/auth/login", json={"email": VICTIM, "password": PASSWORD})
+    ).json()
+
+    rotated = await client.post(
+        "/api/auth/refresh", json={"refresh_token": stolen["refresh_token"]}
+    )
+    assert rotated.status_code == 200, rotated.text
+    attacker_access = rotated.json()["access_token"]
+
+    replay = await client.post("/api/auth/refresh", json={"refresh_token": stolen["refresh_token"]})
+    assert replay.status_code == 401, replay.text
+
+    after = await client.get(
+        "/api/users/me", headers={"Authorization": f"Bearer {attacker_access}"}
+    )
+    assert after.status_code == 401, (
+        "детект кражи обязан гасить и access-токен, иначе украденная сессия живёт "
+        f"ещё 15 минут после срабатывания защиты: {after.status_code}"
+    )

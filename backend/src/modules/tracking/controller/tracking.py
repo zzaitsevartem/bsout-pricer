@@ -61,7 +61,7 @@ async def get_tracking_usage(
 @router.get("", response_model=TrackedProductListResponse, dependencies=GATED)
 async def list_tracked_products(
     is_active: bool | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
+    page: int = Query(default=1, ge=1, le=100_000),
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

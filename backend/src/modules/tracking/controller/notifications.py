@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 @router.get("", response_model=NotificationListResponse)
 async def list_notifications(
     unread: bool | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
+    page: int = Query(default=1, ge=1, le=100_000),
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),

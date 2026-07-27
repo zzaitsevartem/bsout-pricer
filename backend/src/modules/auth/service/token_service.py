@@ -229,6 +229,7 @@ async def _load_usable_token(db: AsyncSession, payload: dict) -> RefreshToken:
         raise TokenError(INVALID_TOKEN_DETAIL)
     if stored.replaced_by_jti is not None:
         await revoke_family(db, stored.family_id, REASON_REUSE)
+        await invalidate_access_tokens(stored.user_id)
         await db.commit()
         raise TokenError(REUSE_DETAIL)
     if stored.revoked_at is not None:

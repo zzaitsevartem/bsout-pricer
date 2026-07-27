@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
 
-    debug: bool = True
+    debug: bool = False
     app_name: str = "BScout API"
 
     rate_limit_max_requests: int = 120
