@@ -5,6 +5,7 @@ export * as categoryModel from './category';
 export * as productModel from './product';
 export * as catalogModel from './catalog';
 export * as searchModel from './search';
+export * as exportModel from './export';
 export * as paymentModel from './payment';
 export * as adminModel from './admin';
 export * as parserModel from './parser';
