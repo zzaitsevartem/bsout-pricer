@@ -66,6 +66,13 @@ class MatchCandidateListResponse(BaseModel):
     per_page: int
 
 
+class ReviewOfferListResponse(BaseModel):
+    results: list[ModerationOfferRef]
+    total: int
+    page: int
+    per_page: int
+
+
 class OfferStateResponse(BaseModel):
     id: int
     product_id: int | None = None

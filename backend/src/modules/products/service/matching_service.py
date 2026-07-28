@@ -16,6 +16,9 @@ PROTECTED_STATUSES = ("manual", "rejected")
 
 _DEVICE_PHRASE_RE = re.compile(r"(?:для|for)\s+(.+?)(?:\s*\(|\+|,|$)", re.IGNORECASE)
 
+_MODEL_SUFFIXES = ("plus", "ultra", "pro", "max", "fe", "mini", "lite", "nfc")
+_SUFFIX_RE = re.compile(r"\b(" + "|".join(_MODEL_SUFFIXES) + r")\b", re.IGNORECASE)
+
 
 @dataclass(frozen=True)
 class MatchOutcome:
@@ -304,6 +307,49 @@ class MatchingService:
             if phrase:
                 counter[phrase] += 1
         return counter.most_common(limit)
+
+    @staticmethod
+    async def precision_report(db: AsyncSession, limit: int = 30) -> list[dict]:
+        rows = (
+            await db.execute(
+                select(StoreOffer.id, StoreOffer.title, Device.name, Device.id)
+                .join(Product, Product.id == StoreOffer.product_id)
+                .join(Cluster, Cluster.id == Product.cluster_id)
+                .join(Device, Device.id == Cluster.device_id)
+                .where(StoreOffer.match_status == "auto", StoreOffer.is_active.is_(True))
+            )
+        ).all()
+
+        suspicious: list[dict] = []
+        for offer_id, title, device_name, device_id in rows:
+            in_title = {m.lower() for m in _SUFFIX_RE.findall(title or "")}
+            in_device = {m.lower() for m in _SUFFIX_RE.findall(device_name or "")}
+            missing = sorted(in_title - in_device)
+            if missing:
+                suspicious.append(
+                    {
+                        "offer_id": offer_id,
+                        "title": (title or "")[:90],
+                        "device": device_name,
+                        "device_id": device_id,
+                        "missing": missing,
+                    }
+                )
+        suspicious.sort(key=lambda row: (len(row["missing"]), row["device"]), reverse=True)
+        return suspicious[:limit]
+
+    @staticmethod
+    async def precision_stats(db: AsyncSession) -> dict:
+        total = (
+            await db.execute(
+                select(func.count())
+                .select_from(StoreOffer)
+                .where(StoreOffer.match_status == "auto", StoreOffer.is_active.is_(True))
+            )
+        ).scalar() or 0
+        suspicious = await MatchingService.precision_report(db, limit=10**6)
+        share = round(100.0 * len(suspicious) / total, 2) if total else 0.0
+        return {"auto": total, "suspicious": len(suspicious), "share_pct": share}
 
     @staticmethod
     async def recalc_cluster_aggregates(

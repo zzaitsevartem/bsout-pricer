@@ -101,6 +101,29 @@ class ModerationService:
         return results, total
 
     @staticmethod
+    async def list_review_offers(
+        db: AsyncSession, *, page: int = 1, per_page: int = 20
+    ) -> tuple[list[ModerationOfferRef], int]:
+        total = (
+            await db.execute(
+                select(func.count())
+                .select_from(StoreOffer)
+                .where(StoreOffer.match_status == "review")
+            )
+        ).scalar() or 0
+
+        stmt = (
+            select(StoreOffer, Store)
+            .join(Store, Store.id == StoreOffer.store_id)
+            .where(StoreOffer.match_status == "review")
+            .order_by(StoreOffer.last_seen_at.desc(), StoreOffer.id.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        rows = (await db.execute(stmt)).all()
+        return [_offer_ref(offer, store) for offer, store in rows], total
+
+    @staticmethod
     async def _get_store(db: AsyncSession, store_id: int) -> Store | None:
         return await db.get(Store, store_id)
 

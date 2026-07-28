@@ -447,3 +447,28 @@ async def test_anonymous_requests_are_rejected(client, db_session):
     assert queue.status_code == 403
     assert unlink.status_code == 403
     assert offer.match_status == "unmatched"
+
+
+async def test_review_offers_endpoint_lists_only_review_status(client, db_session):
+    store = await _make_store(db_session)
+    headers = await _admin_headers(db_session)
+    review = await _make_offer(
+        db_session, store, sku="RV-1", title="Дисплей Blackberry Passport", match_status="review"
+    )
+    await _make_offer(db_session, store, sku="AU-1", match_status="auto")
+
+    resp = await client.get("/api/admin/review-offers", headers=headers)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 1
+    assert len(body["results"]) == 1
+    item = body["results"][0]
+    assert item["id"] == review.id
+    assert item["match_status"] == "review"
+    assert item["store"]["slug"] == store.slug
+
+
+async def test_review_offers_endpoint_requires_admin(client, db_session):
+    resp = await client.get("/api/admin/review-offers")
+    assert resp.status_code == 403

@@ -45,6 +45,13 @@ async def _run_gaps(limit: int) -> list[tuple[str, int]]:
         return await MatchingService.device_gap_report(session, limit=limit)
 
 
+async def _run_precision(limit: int) -> tuple[dict, list[dict]]:
+    async with async_session_factory() as session:
+        stats = await MatchingService.precision_stats(session)
+        rows = await MatchingService.precision_report(session, limit=limit)
+        return stats, rows
+
+
 async def create_admin(
     db: AsyncSession,
     email: str,
@@ -110,6 +117,17 @@ def _build_parser() -> argparse.ArgumentParser:
         "gaps", help="report top unrecognized devices from review-status offers"
     )
     gaps_parser.add_argument("--limit", type=int, default=30)
+    precision_parser = subparsers.add_parser(
+        "precision",
+        help="report auto-matched offers whose title carries a model suffix the device lacks",
+    )
+    precision_parser.add_argument("--limit", type=int, default=30)
+    precision_parser.add_argument(
+        "--max-share",
+        type=float,
+        default=None,
+        help="exit with code 1 if the suspicious share exceeds this percentage",
+    )
     admin_parser = subparsers.add_parser(
         "create-admin",
         help=f"create an administrator; password comes from {ADMIN_PASSWORD_ENV} or a prompt",
@@ -140,6 +158,22 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         for phrase, count in rows:
             print(f"{count:4d}  {phrase}")
+        return 0
+
+    if args.command == "precision":
+        stats, rows = asyncio.run(_run_precision(args.limit))
+        print(
+            f"precision: auto={stats['auto']} suspicious={stats['suspicious']} "
+            f"({stats['share_pct']}%)"
+        )
+        for row in rows:
+            print(f"  [{','.join(row['missing'])}] -> {row['device']} | {row['title']}")
+        if args.max_share is not None and stats["share_pct"] > args.max_share:
+            print(
+                f"precision: share {stats['share_pct']}% exceeds limit {args.max_share}%",
+                file=sys.stderr,
+            )
+            return 1
         return 0
     if args.command == "create-admin":
         try:

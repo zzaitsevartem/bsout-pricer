@@ -10,6 +10,7 @@ from src.modules.admin.schema.moderation import (
     MatchCandidateListResponse,
     OfferLinkRequest,
     OfferLinkResponse,
+    ReviewOfferListResponse,
 )
 from src.modules.admin.schema.offer_import import OfferImportItem, OfferImportResponse
 from src.modules.admin.service.admin_service import AdminService
@@ -98,6 +99,17 @@ async def list_match_candidates(
         per_page=per_page,
     )
     return MatchCandidateListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.get("/review-offers", response_model=ReviewOfferListResponse)
+async def list_review_offers(
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    results, total = await ModerationService.list_review_offers(db, page=page, per_page=per_page)
+    return ReviewOfferListResponse(results=results, total=total, page=page, per_page=per_page)
 
 
 @router.post("/match-candidates/{candidate_id}/approve", response_model=CandidateDecisionResponse)
