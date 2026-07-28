@@ -1020,6 +1020,17 @@ DEVICES: list[tuple[str, str, str, list[str]]] = [
         ["infinix gt 20 pro", "infinix infinix gt 20 pro"],
     ),
     ("Infinix", "Infinix GT 30", "infinix-gt-30", ["infinix gt 30", "infinix infinix gt 30"]),
+    ("Xiaomi", "Mi 11 Lite", "xiaomi-mi-11-lite", ["mi 11 lite", "xiaomi mi 11 lite", "11 lite"]),
+    ("Xiaomi", "Pad 5", "xiaomi-pad-5", ["xiaomi pad 5", "mi pad 5", "pad 5"]),
+    ("Xiaomi", "Pad 5 Pro", "xiaomi-pad-5-pro", ["xiaomi pad 5 pro", "mi pad 5 pro", "pad 5 pro"]),
+    ("Xiaomi", "POCO X3 NFC", "xiaomi-poco-x3-nfc", ["poco x3 nfc", "x3 nfc"]),
+    ("Xiaomi", "POCO X3 Pro", "xiaomi-poco-x3-pro", ["poco x3 pro", "x3 pro"]),
+    (
+        "Samsung",
+        "Galaxy S6 Edge Plus",
+        "samsung-galaxy-s6-edge-plus",
+        ["galaxy s6 edge plus", "s6 edge plus", "g928"],
+    ),
 ]
 
 COLORS: dict[str, tuple[str, list[str]]] = {
