@@ -1,7 +1,9 @@
 import argparse
 import asyncio
 import getpass
+import json
 import os
+import pathlib
 import sys
 from collections.abc import Callable
 
@@ -43,6 +45,20 @@ async def _run_match(only_unmatched: bool) -> dict:
 async def _run_gaps(limit: int) -> list[tuple[str, int]]:
     async with async_session_factory() as session:
         return await MatchingService.device_gap_report(session, limit=limit)
+
+
+async def _run_import(path: str) -> dict:
+    from src.modules.admin.service.offer_import_service import OfferImportService
+
+    rows = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    async with async_session_factory() as session:
+        result = await OfferImportService.import_offers(session, rows)
+        await session.commit()
+        return {
+            "created": result.created,
+            "updated": result.updated,
+            "errors": len(result.errors),
+        }
 
 
 async def _run_precision(limit: int) -> tuple[dict, list[dict]]:
@@ -117,6 +133,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "gaps", help="report top unrecognized devices from review-status offers"
     )
     gaps_parser.add_argument("--limit", type=int, default=30)
+    import_parser = subparsers.add_parser("import", help="import store offers from a json file")
+    import_parser.add_argument(
+        "--path", default="data/fixtures/demo_offers.json", help="path to the offers json"
+    )
     precision_parser = subparsers.add_parser(
         "precision",
         help="report auto-matched offers whose title carries a model suffix the device lacks",
@@ -159,6 +179,14 @@ def main(argv: list[str] | None = None) -> int:
         for phrase, count in rows:
             print(f"{count:4d}  {phrase}")
         return 0
+
+    if args.command == "import":
+        stats = asyncio.run(_run_import(args.path))
+        print(
+            f"import: created={stats['created']} updated={stats['updated']} "
+            f"errors={stats['errors']}"
+        )
+        return 1 if stats["errors"] else 0
 
     if args.command == "precision":
         stats, rows = asyncio.run(_run_precision(args.limit))
