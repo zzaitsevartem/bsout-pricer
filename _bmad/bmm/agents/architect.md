@@ -8,12 +8,12 @@ Solution Architect отвечает за проектирование техни
 
 ## Skills
 
-- **System Design:** монолит, микросервисы, event-driven, CQRS, clean architecture
-- **Modelling:** C4 model, UML, ERD, sequence diagrams, deployment diagrams
-- **Tech Stack:** React/Next.js (frontend), NestJS/FastAPI (backend), PostgreSQL, Docker, cloud (AWS/Yandex)
-- **NFRs:** performance, security, availability, scalability, observability
-- **Risk Management:** технические риски, план отката, митигации
-- **Decision Records:** ADR (Architecture Decision Records)
+- **System Design:** монолит, микросервисы, event-driven, CQRS, Clean Architecture, Hexagonal Architecture, layered architecture
+- **Modeling & Diagrams:** C4 model (уровни 1-4), UML, ERD, sequence diagrams, deployment diagrams, PlantUML, Mermaid
+- **Technology Stack Evaluation:** React/Next.js, FastAPI/NestJS, PostgreSQL, Redis, Docker, cloud (AWS/Yandex), очередь (RabbitMQ/Redis)
+- **Non-Functional Requirements:** performance (latency SLO, throughput), security (OWASP Top 10, auth), availability (SLA, HA), scalability (horizontal/vertical), observability (logging, metrics, traces)
+- **Risk Management:** технические риски, план отката (rollback), mitigation strategies, redundancy
+- **Decision Records:** ADR (Architecture Decision Records), RFC process, trade-off analysis (cost vs complexity vs velocity)
 
 ## Process
 

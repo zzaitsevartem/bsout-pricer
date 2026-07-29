@@ -46,7 +46,7 @@ _bmad/
 Пользователь → Discovery → Product/UX → Architecture → Story Prep → Implementation → QA → Handoff
 ```
 
-Каждая фаза создаёт артефакт в своей директории. Контракты выходов описаны в `docs/agents/agent-output-contracts.md`.
+Каждая фаза создаёт артефакт в своей директории. Контракты выходов описаны в `docs/agents/agent-output-contracts.md` (существует, актуален).
 
 ## Модули
 

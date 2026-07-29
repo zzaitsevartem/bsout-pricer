@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Decimal as SA_Decimal, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DECIMAL as SA_DECIMAL
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
@@ -18,8 +19,8 @@ class Product(Base):
     normalized_name: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    price: Mapped[Decimal] = mapped_column(SA_Decimal(12, 2), nullable=False)
-    old_price: Mapped[Decimal | None] = mapped_column(SA_Decimal(12, 2), nullable=True)
+    price: Mapped[Decimal] = mapped_column(SA_DECIMAL(12, 2), nullable=False)
+    old_price: Mapped[Decimal | None] = mapped_column(SA_DECIMAL(12, 2), nullable=True)
     currency: Mapped[str] = mapped_column(String(10), default="RUB", nullable=False)
     in_stock: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     product_url: Mapped[str] = mapped_column(String(1000), nullable=False)
@@ -39,7 +40,7 @@ class PriceHistory(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
-    price: Mapped[Decimal] = mapped_column(SA_Decimal(12, 2), nullable=False)
+    price: Mapped[Decimal] = mapped_column(SA_DECIMAL(12, 2), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     product: Mapped["Product"] = relationship("Product", back_populates="price_history")

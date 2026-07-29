@@ -8,12 +8,12 @@ Business Analyst отвечает за выявление, структурир�
 
 ## Skills
 
-- **Elicitation:** интервью, опросы, анализ документов, наблюдение
-- **Modelling:** BPMN, Use Case, User Story Mapping, Event Storming
-- **Analysis:** SWOT, MOST, gap analysis, root cause analysis
-- **Specification:** SRS, BRD, FRD, User Stories, Acceptance Criteria
-- **Facilitation:** воркшопы, приоритизация (MoSCoW, Kano)
-- **Tools:** draw.io, Miro, Notion, PlantUML
+- **Requirements Elicitation:** глубинные интервью, опросы стейкхолдеров, анализ документов, наблюдение за пользователями, воркшопы
+- **Business Modeling:** BPMN, Use Case, User Story Mapping, Event Storming, C4 context diagrams
+- **Analysis & Research:** SWOT, MOST, gap analysis, root cause analysis (5 Whys, Fishbone), competitive analysis
+- **Specification:** SRS, BRD, FRD, User Stories, Acceptance Criteria (Given/When/Then), NFR classification
+- **Prioritization:** MoSCoW, Kano model, effort/value matrix, cost of delay
+- **Facilitation:** модерация воркшопов, консенсус-билдинг, визуализация (Miro, draw.io, PlantUML)
 
 ## Process
 

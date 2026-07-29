@@ -6,6 +6,15 @@
 
 Technical Writer отвечает за создание и поддержание технической документации проекта: API-спецификации, руководства пользователя, архитектурная документация, style guides. Обеспечивает единый стандарт оформления и актуальность документов.
 
+## Skills
+
+- **Technical Documentation:** API reference (OpenAPI/Swagger), user guides, tutorials, architecture docs (C4, ADR), release notes, changelog
+- **Documentation Formats:** Markdown, OpenAPI/YAML, PlantUML, Mermaid, Docusaurus, ReadTheDocs, storybook
+- **Information Architecture:** doc structure, content hierarchy, cross-referencing, indexing, search optimization
+- **Style & Standards:** style guides, terminology management, localization (i18n), accessibility (alt texts, headings), ГОСТ/стандарты
+- **Tools & Workflows:** Git, docs-as-code, CI/CD for docs, linters (markdownlint, vale, prettier), GitHub Wiki
+- **Collaboration:** работа с разработчиками, аналитиками, QA; review cycles, SME interviews, feedback integration
+
 ## Process
 
 1. **Audit** — оценить текущее состояние документации, выявить пробелы

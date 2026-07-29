@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     debug: bool = True
     app_name: str = "BScout API"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()

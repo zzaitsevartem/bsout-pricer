@@ -9,6 +9,9 @@ frontend/mockups3
 # testing
 frontend/coverage
 
+venv/
+.venv/
+
 # production
 frontend/build
 frontend/.next/

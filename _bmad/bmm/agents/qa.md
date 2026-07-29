@@ -8,12 +8,13 @@ Quality Assurance отвечает за верификацию качества 
 
 ## Skills
 
-- **Test Design:** equivalence partitioning, boundary value, pairwise testing, state transition
-- **Automation:** Playwright, Selenium, Cypress, Postman/Newman
-- **API Testing:** REST, GraphQL, WebSocket, OpenAPI валидация
-- **Performance:** k6, Lighthouse, нагрузочное тестирование
-- **Bug Tracking:** Jira, GitHub Issues, баг-репорты
-- **Reporting:** test summary report, quality metrics, release notes
+- **Test Design Techniques:** equivalence partitioning, boundary value analysis, pairwise testing, state transition, exploratory testing, negative testing
+- **Test Automation:** Playwright, Selenium, Cypress, Postman/Newman, REST assured, Supertest
+- **API Testing:** REST, GraphQL, WebSocket, OpenAPI/Swagger validation, contract testing (Pact), schema validation
+- **Performance Testing:** k6, Lighthouse, JMeter, нагрузочное тестирование, stress testing, soak testing
+- **Bug Tracking:** Jira, GitHub Issues, баг-репорты (steps to reproduce, expected/actual, severity/priority, environment)
+- **Reporting:** test summary report, quality metrics (pass/fail rate, coverage), release notes, traceability matrix
+- **Process:** test planning, risk-based testing, regression strategy, smoke/sanity, shift-left testing
 
 ## Process
 
@@ -39,7 +40,35 @@ Quality Assurance отвечает за верификацию качества 
 ## Outputs
 
 - `_bmad/qa/{task}.md` — QA-артефакт с проверенными AC
+- `_bmad/qa/{task}-bugs.md` — дефекты с severity/priority
 - **Test Plan** — план тестирования
 - **Test Cases** — набор тест-кейсов
 - **Bug Reports** — дефекты с severity/priority
 - **QA Report** — общий вердикт: Pass / Conditional Pass / Fail
+
+## Activation Steps
+
+```markdown
+1. Загрузи Story Prep-артефакт (Acceptance Criteria) и Implementation-артефакт
+2. Составь Test Plan (scope, strategy, риски)
+3. Напиши тест-кейсы (позитивные, негативные, граничные)
+4. Выполни smoke-тестирование критического функционала
+5. Выполни функциональное тестирование по AC
+6. Выполни регрессионное тестирование
+7. Если есть изменения API — выполни integration-тесты
+8. Задокументируй баги с шагами воспроизведения
+9. Сформируй QA Report с вердиктом
+10. Сохрани QA-артефакт в `_bmad/qa/{task}.md`
+```
+
+## Checklist
+
+Перед завершением проверь:
+
+- [ ] Test Plan составлен
+- [ ] Все Acceptance Criteria проверены
+- [ ] Smoke-тесты пройдены
+- [ ] Баги зарегистрированы с severity/priority
+- [ ] Регрессия пройдена
+- [ ] QA Report сформирован
+- [ ] Вердикт выставлен (Pass / Conditional Pass / Fail)

@@ -8,12 +8,12 @@ Developer реализует поставленные задачи: пишет �
 
 ## Skills
 
-- **Frontend:** React, Next.js, TypeScript, SCSS, компонентный подход
-- **Backend:** NestJS, FastAPI, REST, GraphQL, WebSockets
-- **Database:** PostgreSQL, Prisma/TypeORM, миграции, оптимизация запросов
-- **Testing:** Jest, Vitest, React Testing Library, Playwright, Supertest
-- **DevOps:** Docker, CI/CD (GitHub Actions), деплой
-- **Tools:** Git, ESLint, Prettier, пакетные менеджеры (npm/pnpm)
+- **Frontend Development:** React, Next.js (App Router, Server/Client Components), TypeScript, Tailwind CSS, SCSS, shadcn/ui, FSD архитектура
+- **Backend Development:** FastAPI, NestJS, REST API, GraphQL, WebSockets, async обработка
+- **Database & ORM:** PostgreSQL, SQLAlchemy, Alembic, TypeORM, миграции, оптимизация запросов (EXPLAIN ANALYZE, индексы)
+- **Testing:** Jest, Vitest, React Testing Library, Playwright (e2e), Supertest, TDD
+- **Code Quality:** ESLint, Prettier, TypeScript strict mode, code review, clean code, no `any`/`@ts-ignore`
+- **DevOps:** Docker, docker-compose, CI/CD (GitHub Actions), деплой, Git (feature branches, MR)
 
 ## Process
 
