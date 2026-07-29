@@ -2,8 +2,9 @@
 
 import React, { useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/shared/providers/ThemeProvider';
 
-const MASK = '250, 249, 245';
+const MASK_FALLBACK = '#FAF9F5';
 const R_START = 8;
 const R_END = 128;
 const R_VARY = 0.45;
@@ -20,11 +21,17 @@ interface Stamp {
   rmax: number;
 }
 
+function readMaskColor(): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--color-ivory').trim();
+  return value || MASK_FALLBACK;
+}
+
 function initCanvas(heroEl: HTMLElement, canvasEl: HTMLCanvasElement, carveInk: Function) {
   const canHover = window.matchMedia('(hover: hover)').matches;
   if (!canHover) return;
 
   const context = canvasEl.getContext('2d')!;
+  const maskColor = readMaskColor();
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   let w = 0;
@@ -45,7 +52,7 @@ function initCanvas(heroEl: HTMLElement, canvasEl: HTMLCanvasElement, carveInk: 
     canvasEl.style.height = h + 'px';
     context.setTransform(DPR, 0, 0, DPR, 0, 0);
     context.globalCompositeOperation = 'source-over';
-    context.fillStyle = `rgb(${MASK})`;
+    context.fillStyle = maskColor;
     context.fillRect(0, 0, w, h);
   }
   resize();
@@ -84,7 +91,7 @@ function initCanvas(heroEl: HTMLElement, canvasEl: HTMLCanvasElement, carveInk: 
     const totalLife = LIFETIME + FADE_LIFETIME;
 
     context.globalCompositeOperation = 'source-over';
-    context.fillStyle = `rgb(${MASK})`;
+    context.fillStyle = maskColor;
     context.fillRect(0, 0, w, h);
 
     context.globalCompositeOperation = 'destination-out';
@@ -156,6 +163,7 @@ function initCanvas(heroEl: HTMLElement, canvasEl: HTMLCanvasElement, carveInk: 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { theme } = useTheme();
 
   const carveInk = useCallback((
     context: CanvasRenderingContext2D,
@@ -190,14 +198,14 @@ const Hero: React.FC = () => {
     const canvasEl = canvasRef.current;
     if (!heroEl || !canvasEl) return;
     return initCanvas(heroEl, canvasEl, carveInk);
-  }, [carveInk]);
+  }, [carveInk, theme]);
 
   return (
     <section
       ref={heroRef}
       className="relative h-[656px] pt-16 overflow-hidden isolate max-md:h-auto max-md:min-h-[425px]"
     >
-      <div className="absolute inset-0 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat z-0" />
+      <div className="absolute inset-0 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat z-0 dark:brightness-[0.35]" />
 
       <canvas
         ref={canvasRef}

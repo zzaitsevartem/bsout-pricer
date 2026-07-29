@@ -147,11 +147,7 @@ const Prices: React.FC = () => {
                       <div
                         className={`absolute right-0 top-full mt-2 w-[280px] p-3 rounded-xl text-[13px] leading-[1.5] shadow-lg border pointer-events-none opacity-0 scale-95 transition-all duration-200 origin-top-right group-hover:opacity-100 group-hover:scale-100 ${
                           activeTooltip === plan.plan ? '!opacity-100 !scale-100' : ''
-                        } ${
-                          isAdvanced
-                            ? 'bg-ivory text-body border-border-light'
-                            : 'bg-white text-body border-border-light'
-                        }`}
+                        } bg-ivory text-body border-border-light`}
                         role="tooltip"
                       >
                         <ul className="list-none m-0 p-0">

@@ -9,6 +9,7 @@ import { $isAuth } from '@/shared/config/store';
 import { useMe } from '@/models/user';
 import { useLogout } from '@/models/auth';
 import { useUnreadNotificationCount } from '@/models/notification';
+import { ThemeToggle } from './ThemeToggle';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,10 +43,9 @@ const Header: React.FC = () => {
             alt="BScout"
             width={140}
             height={48}
-            className="h-12 w-auto"
+            className="h-12 w-auto brightness-0 contrast-100 dark:invert"
             priority
             unoptimized
-            style={{ filter: 'brightness(0) contrast(100)' }}
           />
         </Link>
 
@@ -68,6 +68,7 @@ const Header: React.FC = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {!isAuth && (
             <>
               <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
@@ -133,6 +134,7 @@ const Header: React.FC = () => {
               </ul>
             </nav>
             <div className="flex flex-col items-center gap-4">
+              <ThemeToggle />
               {!isAuth && (
                 <>
                   <Link href="/login" className="btn-secondary" onClick={closeMenu}>Войти</Link>
