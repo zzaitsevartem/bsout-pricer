@@ -3,9 +3,12 @@
 import { Suspense, useCallback, useState, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useUnit } from 'effector-react';
 import { useProductSearch } from '@/models/product';
 import { useStores } from '@/models/store';
 import { useCategories } from '@/models/category';
+import { useSubscription } from '@/models/user';
+import { $isAuth } from '@/models/auth';
 import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
 import { SearchBar, SearchFilters } from '@/features/search';
@@ -43,6 +46,10 @@ function SearchPageContent() {
     page,
     per_page: 20,
   });
+
+  const isAuth = useUnit($isAuth);
+  const { data: subscription } = useSubscription({ enabled: isAuth });
+  const isPremium = isAuth && !!subscription?.is_active;
 
   const { data: stores } = useStores();
   const { data: categories } = useCategories();
@@ -167,6 +174,7 @@ function SearchPageContent() {
               sortBy={sortBy}
               isLoading={isLoading}
               isError={isError}
+              isPremium={isPremium}
               onPageChange={handlePageChange}
               onSortChange={handleSortChange}
             />

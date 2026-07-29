@@ -12,6 +12,7 @@ type SearchResultsProps = {
   sortBy: string;
   isLoading: boolean;
   isError: boolean;
+  isPremium: boolean;
   onPageChange: (page: number) => void;
   onSortChange: (sortBy: string) => void;
 };
@@ -178,6 +179,7 @@ export function SearchResults({
   sortBy,
   isLoading,
   isError,
+  isPremium,
   onPageChange,
   onSortChange,
 }: SearchResultsProps) {
@@ -230,6 +232,34 @@ export function SearchResults({
             <div className="text-body-muted text-[15px] mb-1">Ничего не найдено</div>
             <div className="text-body-muted text-[13px]">Попробуйте изменить параметры поиска</div>
           </div>
+        </div>
+      )}
+
+      {/* Premium upsell banner for non-subscribers with limited results */}
+      {!isPremium && !isLoading && !isError && products.length > 0 && (
+        <div className="mb-8 p-6 bg-olive rounded-[16px] flex items-center justify-between gap-4 max-md:flex-col max-md:text-center shadow-lg">
+          <div className="flex items-start gap-4 max-md:flex-col max-md:items-center">
+            <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-[18px] font-bold text-white mb-1">
+                {total > products.length
+                  ? `Найдено ${total} товаров — показано только ${products.length}`
+                  : `Это только предпросмотр`}
+              </div>
+              <div className="text-[15px] text-white/80 max-w-[480px]">
+                {total > products.length
+                  ? `Оформите подписку, чтобы видеть все результаты с полным доступом к истории цен.`
+                  : `Оформите подписку для полного доступа к поиску и истории цен.`}
+              </div>
+            </div>
+          </div>
+          <Link href="/tariffs" className="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-olive font-bold text-[15px] rounded-[12px] no-underline whitespace-nowrap shrink-0 hover:bg-white/90 transition-colors shadow-md">
+            Выбрать тариф →
+          </Link>
         </div>
       )}
 

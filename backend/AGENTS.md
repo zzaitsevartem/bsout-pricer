@@ -29,7 +29,7 @@ src/
 ├── main.py                    # FastAPI app, CORS, подключение роутеров
 ├── config.py                  # pydantic-settings из .env
 ├── database.py                # async engine + sessionmaker + Base + get_db
-├── seed.py                    # Seed-скрипт (2 users, 5 stores, 5 categories, 10 products)
+├── seed.py                    # Seed-скрипт (2 users, 5 stores: ТГСМ/Профи/Либерти/ГринСпарк/Дивизион, 5 категорий запчастей, 10 товаров)
 └── modules/
     ├── shared/                # Общие зависимости
     │   └── deps.py            # get_current_user, get_current_admin, require_active_subscription
@@ -82,9 +82,12 @@ src/
 | Модель | Поля |
 |--------|------|
 | **User** | id, email, password_hash, full_name, phone, company, is_admin |
+| **Магазины (seed)** | ТГСМ (tgssm), Профи (profi), Либерти (liberty), ГринСпарк (greenspark), Дивизион (divizion) |
+| **Категории (seed)** | Дисплеи, Аккумуляторы, Стекло и корпуса, Шлейфы и разъёмы, Инструмент |
 | **Subscription** | id, user_id, plan (trial/basic/advanced), start_date, end_date, auto_renew, is_active |
 | **Plan** | id, slug, name, price, period, discount, featured, features (JSON), tooltips (JSON) |
 | **Store** | id, name, slug, website_url, logo_url, is_active |
+| **Store slugs** | `tgssm` (ТГСМ), `profi` (Профи), `liberty` (Либерти), `greenspark` (ГринСпарк), `divizion` (Дивизион) |
 | **Category** | id, name, slug |
 | **Product** | id, store_id, category_id, external_id, name, normalized_name, description, image_url, price, old_price, currency, in_stock, product_url, last_updated |
 | **PriceHistory** | id, product_id, price, recorded_at |
@@ -103,7 +106,14 @@ src/
 | GET | /api/categories |
 | GET | /api/plans |
 
-### Требуют аутентификации (14)
+### Публичные с preview (3)
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | /api/products | Поиск (preview 3 товара без подписки, полный доступ с подпиской) |
+| GET | /api/products/{id} | Детальная товара (публично) |
+| GET | /api/stores | Список магазинов |
+
+### Требуют аутентификации (10)
 | Method | Path | Описание |
 |--------|------|----------|
 | POST | /api/auth/logout | Blacklist refresh token |
@@ -111,15 +121,16 @@ src/
 | PATCH | /api/users/me | Обновление профиля |
 | GET | /api/users/me/subscription | Текущая подписка |
 | POST | /api/users/me/subscription | Создание/обновление подписки |
-| GET | /api/products | Поиск (q, store, category, price range, in_stock, sort, pagination) |
-| GET | /api/products/{id} | Детальная товара |
-| GET | /api/products/{id}/price-history | История цен |
 | GET | /api/search/history | История поиска |
 | POST | /api/payment/subscribe | Оплата |
 | POST | /api/payment/cancel | Отмена |
 | GET | /api/admin/stats | Статистика (admin) |
 | GET | /api/admin/users | Список пользователей (admin) |
-| GET | /api/admin/users/{id} | Пользователь по ID (admin) |
+
+### Требуют подписки (1)
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | /api/products/{id}/price-history | История цен (требует active subscription) |
 
 ### Требуют прав администратора (8)
 | Method | Path |

@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUnit } from 'effector-react';
 import { $isAuth, $user, $authPending, userLoggedOut, useLogout } from '@/models/auth';
+import { useTheme } from '@/shared/providers/ThemeProvider';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   navCta?: 'login' | 'register' | 'logout' | 'profile' | 'auto';
@@ -25,6 +27,7 @@ const Header: React.FC<HeaderProps> = ({
   const pending = useUnit($authPending);
   const logoutMutation = useLogout();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -110,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({
             height={48}
             className="h-12 w-auto"
             priority
-            style={{ filter: 'brightness(0) contrast(100)' }}
+            style={{ filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'brightness(0) contrast(100)' }}
           />
         </Link>
 
@@ -139,6 +142,7 @@ const Header: React.FC<HeaderProps> = ({
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {renderDesktopCta()}
         </div>
 
@@ -156,6 +160,7 @@ const Header: React.FC<HeaderProps> = ({
           ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
           <div className="flex flex-col items-center justify-center h-full gap-8">
+            <ThemeToggle />
             <nav>
               <ul className="flex flex-col items-center gap-8 list-none p-0">
                 {[

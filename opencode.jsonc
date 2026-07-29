@@ -1,13 +1,3 @@
 {
-  // BScout Pricer — OpenCode Configuration
-  // Регистрирует BMAD-агентов и команды для AI-ассистентов
-  "$schema": "https://opencode.ai/schema.json",
-  "agents": {
-    "includes": [".opencode/agent/*.md"],
-    "excludes": []
-  },
-  "commands": {
-    "includes": [".opencode/command/*.md"],
-    "excludes": []
-  }
+  "$schema": "https://opencode.ai/config.json"
 }

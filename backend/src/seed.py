@@ -54,11 +54,11 @@ async def seed():
 
         # --- Stores ---
         stores = [
-            Store(name="Ozon", slug="ozon", website_url="https://www.ozon.ru", logo_url="https://cdn.ozon.ru/seller/logo.png"),
-            Store(name="Wildberries", slug="wildberries", website_url="https://www.wildberries.ru", logo_url="https://static.wbstatic.net/seller/logo.png"),
-            Store(name="Яндекс Маркет", slug="yandex-market", website_url="https://market.yandex.ru", logo_url="https://market-static.yandex.ru/logo.png"),
-            Store(name="DNS", slug="dns", website_url="https://www.dns-shop.ru", logo_url="https://static.dns-shop.ru/logo.png"),
-            Store(name="М.Видео", slug="mvideo", website_url="https://www.mvideo.ru", logo_url="https://cdn.mvideo.ru/logo.png"),
+            Store(name="ТГСМ", slug="tgssm", website_url="https://taggsm.ru", logo_url="/logos/taggsm.webp"),
+            Store(name="Профи", slug="profi", website_url="https://siriust.ru", logo_url="/logos/profi.webp"),
+            Store(name="Либерти", slug="liberty", website_url="https://liberty-part.ru", logo_url="/logos/liberty.webp"),
+            Store(name="ГринСпарк", slug="greenspark", website_url="https://greenspark.ru", logo_url="/logos/greenspark.webp"),
+            Store(name="Дивизион", slug="divizion", website_url="https://divizion126.ru", logo_url="/logos/divizion.webp"),
         ]
         db.add_all(stores)
         await db.flush()
@@ -66,11 +66,11 @@ async def seed():
 
         # --- Categories ---
         categories = [
-            Category(name="Смартфоны", slug="smartphones"),
-            Category(name="Ноутбуки", slug="laptops"),
-            Category(name="Наушники", slug="headphones"),
-            Category(name="Игровые консоли", slug="gaming-consoles"),
-            Category(name="Умные часы", slug="smartwatches"),
+            Category(name="Дисплеи", slug="displays"),
+            Category(name="Аккумуляторы", slug="batteries"),
+            Category(name="Стекло и корпуса", slug="glass-cases"),
+            Category(name="Шлейфы и разъёмы", slug="cables-connectors"),
+            Category(name="Инструмент", slug="tools"),
         ]
         db.add_all(categories)
         await db.flush()
@@ -78,61 +78,60 @@ async def seed():
 
         # --- Products ---
         products_data = [
-            # Smartphones
-            Product(store_id=store_ids["ozon"], category_id=cat_ids["smartphones"], external_id="iphone15-pro-ozon",
-                    name='iPhone 15 Pro 256GB Natural Titanium', normalized_name='iphone 15 pro 256gb natural titanium',
-                    price=129999.00, old_price=139999.00, currency="RUB", in_stock=True,
-                    image_url="https://cdn.ozon.ru/iphone15pro.jpg",
-                    product_url="https://www.ozon.ru/product/iphone15pro/"),
-            Product(store_id=store_ids["wildberries"], category_id=cat_ids["smartphones"], external_id="samsung-s24-ultra-wb",
-                    name='Samsung Galaxy S24 Ultra 512GB', normalized_name='samsung galaxy s24 ultra 512gb',
-                    price=119999.00, old_price=134999.00, currency="RUB", in_stock=True,
-                    image_url="https://static.wbstatic.net/s24ultra.jpg",
-                    product_url="https://www.wildberries.ru/product/s24ultra/"),
-            Product(store_id=store_ids["dns"], category_id=cat_ids["smartphones"], external_id="xiaomi-14-pro-dns",
-                    name='Xiaomi 14 Pro 256GB', normalized_name='xiaomi 14 pro 256gb',
-                    price=79999.00, currency="RUB", in_stock=True,
-                    image_url="https://static.dns-shop.ru/xiaomi14pro.jpg",
-                    product_url="https://www.dns-shop.ru/product/xiaomi14pro/"),
-            # Laptops
-            Product(store_id=store_ids["mvideo"], category_id=cat_ids["laptops"], external_id="macbook-pro-m3-mvideo",
-                    name='MacBook Pro 14" M3 Pro 18GB/512GB', normalized_name='macbook pro 14 m3 pro 18gb 512gb',
-                    price=249999.00, old_price=279999.00, currency="RUB", in_stock=True,
-                    image_url="https://cdn.mvideo.ru/macbookpro14.jpg",
-                    product_url="https://www.mvideo.ru/product/macbookpro14/"),
-            Product(store_id=store_ids["yandex-market"], category_id=cat_ids["laptops"], external_id="thinkpad-x1-ym",
-                    name='Lenovo ThinkPad X1 Carbon Gen 11', normalized_name='lenovo thinkpad x1 carbon gen 11',
-                    price=189999.00, currency="RUB", in_stock=True,
-                    image_url="https://market-static.yandex.ru/thinkpadx1.jpg",
-                    product_url="https://market.yandex.ru/product/thinkpadx1/"),
-            # Headphones
-            Product(store_id=store_ids["ozon"], category_id=cat_ids["headphones"], external_id="airpods-pro-2-ozon",
-                    name='Apple AirPods Pro 2nd Gen USB-C', normalized_name='apple airpods pro 2nd gen usb c',
-                    price=21999.00, old_price=24999.00, currency="RUB", in_stock=True,
-                    image_url="https://cdn.ozon.ru/airpodspro2.jpg",
-                    product_url="https://www.ozon.ru/product/airpodspro2/"),
-            Product(store_id=store_ids["wildberries"], category_id=cat_ids["headphones"], external_id="sony-wh1000xm5-wb",
-                    name='Sony WH-1000XM5 Black', normalized_name='sony wh 1000xm5 black',
-                    price=32999.00, currency="RUB", in_stock=True,
-                    image_url="https://static.wbstatic.net/wh1000xm5.jpg",
-                    product_url="https://www.wildberries.ru/product/wh1000xm5/"),
-            # Gaming consoles
-            Product(store_id=store_ids["dns"], category_id=cat_ids["gaming-consoles"], external_id="ps5-slim-dns",
-                    name='Sony PlayStation 5 Slim Digital Edition', normalized_name='sony playstation 5 slim digital edition',
-                    price=59999.00, currency="RUB", in_stock=True,
-                    image_url="https://static.dns-shop.ru/ps5slim.jpg",
-                    product_url="https://www.dns-shop.ru/product/ps5slim/"),
-            Product(store_id=store_ids["mvideo"], category_id=cat_ids["gaming-consoles"], external_id="xbox-series-x-mvideo",
-                    name='Microsoft Xbox Series X 1TB', normalized_name='microsoft xbox series x 1tb',
-                    price=55999.00, old_price=61999.00, currency="RUB", in_stock=True,
-                    image_url="https://cdn.mvideo.ru/xboxseriesx.jpg",
-                    product_url="https://www.mvideo.ru/product/xboxseriesx/"),
-            # Smartwatches
-            Product(store_id=store_ids["yandex-market"], category_id=cat_ids["smartwatches"], external_id="apple-watch-ultra2-ym",
-                    name='Apple Watch Ultra 2 49mm', normalized_name='apple watch ultra 2 49mm',
-                    price=79999.00, currency="RUB", in_stock=True,
-                    image_url="https://market-static.yandex.ru/watchultra2.jpg",
-                    product_url="https://market.yandex.ru/product/watchultra2/"),
+            # Displays
+            Product(store_id=store_ids["tgssm"], category_id=cat_ids["displays"], external_id="disp-iphone13-tgssm",
+                    name='Дисплей iPhone 13 (оригинал)', normalized_name='дисплей iphone 13 оригинал',
+                    price=4500.00, old_price=5200.00, currency="RUB", in_stock=True,
+                    image_url="https://taggsm.ru/img/disp-iphone13.jpg",
+                    product_url="https://taggsm.ru/product/disp-iphone13/"),
+            Product(store_id=store_ids["profi"], category_id=cat_ids["displays"], external_id="disp-iphone13-profi",
+                    name='Дисплей iPhone 13 (оригинал)', normalized_name='дисплей iphone 13 оригинал',
+                    price=4800.00, currency="RUB", in_stock=True,
+                    image_url="https://siriust.ru/img/disp-iphone13.jpg",
+                    product_url="https://siriust.ru/product/disp-iphone13/"),
+            Product(store_id=store_ids["liberty"], category_id=cat_ids["displays"], external_id="disp-iphone13-liberty",
+                    name='Дисплей iPhone 13 (оригинал)', normalized_name='дисплей iphone 13 оригинал',
+                    price=5100.00, currency="RUB", in_stock=True,
+                    image_url="https://liberty-part.ru/img/disp-iphone13.jpg",
+                    product_url="https://liberty-part.ru/product/disp-iphone13/"),
+            Product(store_id=store_ids["tgssm"], category_id=cat_ids["displays"], external_id="disp-samsung-s23-tgssm",
+                    name='Дисплей Samsung Galaxy S23', normalized_name='дисплей samsung galaxy s23',
+                    price=6200.00, old_price=6900.00, currency="RUB", in_stock=True,
+                    image_url="https://taggsm.ru/img/disp-s23.jpg",
+                    product_url="https://taggsm.ru/product/disp-s23/"),
+            # Batteries
+            Product(store_id=store_ids["profi"], category_id=cat_ids["batteries"], external_id="bat-iphone13-profi",
+                    name='Аккумулятор iPhone 13 (1715 mAh)', normalized_name='аккумулятор iphone 13 1715 mah',
+                    price=1200.00, currency="RUB", in_stock=True,
+                    image_url="https://siriust.ru/img/bat-iphone13.jpg",
+                    product_url="https://siriust.ru/product/bat-iphone13/"),
+            Product(store_id=store_ids["greenspark"], category_id=cat_ids["batteries"], external_id="bat-iphone13-greenspark",
+                    name='Аккумулятор iPhone 13 (1715 mAh)', normalized_name='аккумулятор iphone 13 1715 mah',
+                    price=1350.00, currency="RUB", in_stock=False,
+                    image_url="https://greenspark.ru/img/bat-iphone13.jpg",
+                    product_url="https://greenspark.ru/product/bat-iphone13/"),
+            Product(store_id=store_ids["divizion"], category_id=cat_ids["batteries"], external_id="bat-iphone11-divizion",
+                    name='Аккумулятор iPhone 11 (3110 mAh)', normalized_name='аккумулятор iphone 11 3110 mah',
+                    price=1500.00, currency="RUB", in_stock=True,
+                    image_url="https://divizion126.ru/img/bat-iphone11.jpg",
+                    product_url="https://divizion126.ru/product/bat-iphone11/"),
+            # Glass & cases
+            Product(store_id=store_ids["tgssm"], category_id=cat_ids["glass-cases"], external_id="glass-iphone13-tgssm",
+                    name='Защитное стекло iPhone 13', normalized_name='защитное стекло iphone 13',
+                    price=350.00, currency="RUB", in_stock=True,
+                    image_url="https://taggsm.ru/img/glass-iphone13.jpg",
+                    product_url="https://taggsm.ru/product/glass-iphone13/"),
+            Product(store_id=store_ids["liberty"], category_id=cat_ids["glass-cases"], external_id="case-iphone15-liberty",
+                    name='Чехол iPhone 15 силиконовый', normalized_name='чехол iphone 15 силиконовый',
+                    price=890.00, old_price=1200.00, currency="RUB", in_stock=True,
+                    image_url="https://liberty-part.ru/img/case-iphone15.jpg",
+                    product_url="https://liberty-part.ru/product/case-iphone15/"),
+            # Cables & connectors
+            Product(store_id=store_ids["profi"], category_id=cat_ids["cables-connectors"], external_id="flex-charge-type-c-profi",
+                    name='Шлейф зарядки Type-C универсальный', normalized_name='шлейф зарядки type c универсальный',
+                    price=450.00, currency="RUB", in_stock=True,
+                    image_url="https://siriust.ru/img/flex-type-c.jpg",
+                    product_url="https://siriust.ru/product/flex-type-c/"),
         ]
         db.add_all(products_data)
         await db.flush()

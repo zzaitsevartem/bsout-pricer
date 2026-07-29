@@ -6,6 +6,42 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-ivory: #FAF9F5;
+    --color-ivory-elevated: #F0EEE6;
+    --color-ivory-warm: #E3DACC;
+    --color-slate: #141413;
+    --color-slate-soft: #1F1F1D;
+    --color-slate-medium: #282825;
+    --color-body: #3D3D3A;
+    --color-body-subtle: #5E5D59;
+    --color-body-muted: #87867F;
+    --color-border-default: #B0AEA5;
+    --color-border-light: #E3DACC;
+    --color-border-subtle: #D1CFC5;
+    --color-border-light-subtle: #E8E6DC;
+  }
+
+  .dark {
+    --color-ivory: #1A1A18;
+    --color-ivory-elevated: #242422;
+    --color-ivory-warm: #2E2E2B;
+    --color-slate: #E8E6DC;
+    --color-slate-soft: #D1CFC5;
+    --color-slate-medium: #B0AEA5;
+    --color-body: #D1CFC5;
+    --color-body-subtle: #B0AEA5;
+    --color-body-muted: #87867F;
+    --color-border-default: #5E5D59;
+    --color-border-light: #3D3D3A;
+    --color-border-subtle: #3D3D3A;
+    --color-border-light-subtle: #282825;
+  }
+
+  html {
+    transition: background-color 0.25s ease;
+  }
+
   html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
@@ -13,8 +49,8 @@
 
   body {
     font-family: 'Raleway', 'DM Sans', system-ui, sans-serif;
-    color: #3D3D3A;
-    background: #FAF9F5;
+    color: var(--color-body);
+    background: var(--color-ivory);
     line-height: 1.5;
   }
 }
@@ -37,7 +73,7 @@
   }
 
   .btn-primary:hover {
-    @apply bg-[#0A0A0A] text-ivory;
+    filter: brightness(0.92);
   }
 
   .btn-secondary {
@@ -45,7 +81,7 @@
   }
 
   .btn-secondary:hover {
-    @apply bg-[#F4EBD7] text-slate;
+    @apply bg-ivory-elevated;
   }
 
   .btn-ghost {

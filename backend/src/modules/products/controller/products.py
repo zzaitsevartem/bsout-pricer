@@ -2,18 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.middleware.subscription_guard import require_active_subscription
 from src.modules.products.schema.product import (
     PriceHistoryResponse,
-    ProductCreateRequest,
     ProductListResponse,
     ProductResponse,
 )
 from src.modules.products.service.product_service import ProductService
-from src.modules.shared import get_current_user
+from src.modules.shared.deps import get_optional_user, has_active_subscription
 from src.modules.stores.service.store_service import StoreService
 
 router = APIRouter(prefix="/api/products", tags=["products"])
+
+PREVIEW_LIMIT = 3
 
 
 @router.get("", response_model=ProductListResponse)
@@ -28,9 +28,16 @@ async def search_products(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
-    _subscription=Depends(require_active_subscription),
+    user=Depends(get_optional_user),
 ):
+    has_sub = await has_active_subscription(db, user)
+
+    # Non-subscribers: force page=1 and cap per_page at PREVIEW_LIMIT
+    if not has_sub:
+        page = 1
+        if per_page > PREVIEW_LIMIT:
+            per_page = PREVIEW_LIMIT
+
     products, total = await ProductService.search(
         db=db,
         query=q,
@@ -80,8 +87,7 @@ async def search_products(
 async def get_product(
     product_id: int,
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
-    _subscription=Depends(require_active_subscription),
+    user=Depends(get_optional_user),
 ):
     product = await ProductService.get_by_id(db, product_id)
     if product is None:
@@ -115,10 +121,17 @@ async def get_product(
 async def get_price_history(
     product_id: int,
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
-    _subscription=Depends(require_active_subscription),
+    user=Depends(get_optional_user),
 ):
     product = await ProductService.get_by_id(db, product_id)
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    has_sub = await has_active_subscription(db, user)
+    if not has_sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Active subscription required for price history",
+        )
+
     return await ProductService.get_price_history(db, product_id)
