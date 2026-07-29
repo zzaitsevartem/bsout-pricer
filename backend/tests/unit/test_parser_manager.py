@@ -11,7 +11,7 @@ class _StubParser(BaseParser):
     async def search(self, query):
         return []
 
-    async def update_catalog(self):
+    async def update_catalog(self, limit=None):
         return []
 
 

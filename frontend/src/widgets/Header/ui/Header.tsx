@@ -8,13 +8,16 @@ import { useUnit } from 'effector-react';
 import { $isAuth } from '@/shared/config/store';
 import { useMe } from '@/models/user';
 import { useLogout } from '@/models/auth';
+import { useUnreadNotificationCount } from '@/models/notification';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const isAuth = useUnit($isAuth);
   const { data: me } = useMe({ enabled: isAuth });
+  const { data: unread } = useUnreadNotificationCount({ enabled: isAuth });
   const logout = useLogout();
+  const unreadCount = unread?.unread_count ?? 0;
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -76,6 +79,18 @@ const Header: React.FC = () => {
               {me?.is_admin && (
                 <Link href="/admin" className="btn-ghost btn-sm">Админка</Link>
               )}
+              <Link
+                href="/account/notifications"
+                className="btn-ghost btn-sm relative inline-flex items-center"
+                aria-label={unreadCount > 0 ? `Уведомления: ${unreadCount} непрочитанных` : 'Уведомления'}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[11px] font-medium bg-clay text-ivory">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               <Link href="/account" className="btn-secondary btn-sm inline-flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Кабинет
@@ -129,6 +144,9 @@ const Header: React.FC = () => {
                   {me?.is_admin && (
                     <Link href="/admin" className="btn-ghost" onClick={closeMenu}>Админка</Link>
                   )}
+                  <Link href="/account/notifications" className="btn-ghost" onClick={closeMenu}>
+                    Уведомления{unreadCount > 0 ? ` (${unreadCount > 99 ? '99+' : unreadCount})` : ''}
+                  </Link>
                   <Link href="/account" className="btn-secondary" onClick={closeMenu}>Кабинет</Link>
                   <button onClick={handleLogout} disabled={logout.isPending} className="btn-primary disabled:opacity-60">Выйти</button>
                 </>

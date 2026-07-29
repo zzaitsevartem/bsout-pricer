@@ -22,6 +22,104 @@ import {
 
 const COLUMNS = ['Магазин', 'Статус', 'Товаров', 'Последний запуск', 'Действия'];
 
+const DEFAULT_RUN_LIMIT = 500;
+const MAX_RUN_LIMIT = 100000;
+
+function parseLimit(raw: string): number | null {
+  if (raw.trim() === '') {
+    return null;
+  }
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > MAX_RUN_LIMIT) {
+    return null;
+  }
+  return value;
+}
+
+function RunScopeControls({
+  fullSync,
+  limitInput,
+  disabled,
+  onFullSyncChange,
+  onLimitChange,
+}: {
+  fullSync: boolean;
+  limitInput: string;
+  disabled: boolean;
+  onFullSyncChange: (value: boolean) => void;
+  onLimitChange: (value: string) => void;
+}) {
+  const limit = parseLimit(limitInput);
+  const limitInvalid = limitInput.trim() !== '' && limit === null;
+
+  const scopeHint = fullSync
+    ? 'Весь каталог целиком — 3–4 часа на магазин. Запускать только ночью.'
+    : `Будет обработано до ${formatNumber(limit ?? DEFAULT_RUN_LIMIT)} позиций${
+        limit === null ? ' (значение по умолчанию)' : ''
+      }.`;
+
+  return (
+    <div className="border border-border-default bg-ivory-elevated px-4 py-3 mb-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <label className="inline-flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fullSync}
+            disabled={disabled}
+            onChange={(event) => onFullSyncChange(event.target.checked)}
+            className="hidden peer"
+          />
+          <span className="w-[18px] h-[18px] border border-body-muted bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate peer-disabled:opacity-60 transition-colors">
+            <svg
+              width="12"
+              height="6"
+              viewBox="0 0 12 6"
+              fill="none"
+              className="hidden peer-checked:block stroke-ivory"
+            >
+              <path
+                d="M1 3L4 6L11 1"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <span className="text-[14px] text-body">Полный обход каталога</span>
+        </label>
+
+        <label className="inline-flex items-center gap-2">
+          <span className="text-[14px] text-body">Лимит позиций</span>
+          <input
+            type="number"
+            min={1}
+            max={MAX_RUN_LIMIT}
+            step={1}
+            value={limitInput}
+            disabled={disabled || fullSync}
+            onChange={(event) => onLimitChange(event.target.value)}
+            placeholder={String(DEFAULT_RUN_LIMIT)}
+            className="w-[110px] px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </label>
+      </div>
+
+      <p className="text-[13px] text-body-subtle mt-2">{scopeHint}</p>
+      {limitInvalid && (
+        <p className="text-[13px] text-clay mt-1">
+          Лимит должен быть целым числом от 1 до {formatNumber(MAX_RUN_LIMIT)} — пока применяется
+          значение по умолчанию ({formatNumber(DEFAULT_RUN_LIMIT)}).
+        </p>
+      )}
+      <p className="text-[13px] text-clay mt-1">
+        Запрос синхронный: браузер ждёт конца обхода. Прогон дольше минуты вернёт ошибку сети, хотя
+        парсер продолжит работу на сервере — результат смотрите по колонке «Товаров» после
+        обновления страницы.
+      </p>
+    </div>
+  );
+}
+
 function parserBadge(parser: ParserStatusResponse) {
   if (parser.is_running) {
     return { label: 'Выполняется', className: BADGE_WARNING };
@@ -90,13 +188,24 @@ export function ParsersTable() {
   const parsers = useParsers();
   const runOne = useRunParser();
   const runAll = useRunParser();
+  const [fullSync, setFullSync] = React.useState(false);
+  const [limitInput, setLimitInput] = React.useState('');
 
   const rows = parsers.data ?? [];
   const busy = runOne.isPending || runAll.isPending;
 
+  const buildRequest = (storeSlug: string) => {
+    const limit = fullSync ? null : parseLimit(limitInput);
+    return {
+      store_slug: storeSlug,
+      full_sync: fullSync,
+      ...(limit === null ? {} : { limit }),
+    };
+  };
+
   const handleRunAll = async () => {
     for (let i = 0; i < rows.length; i += 1) {
-      await runAll.mutateAsync({ store_slug: rows[i].store_slug }).catch(() => null);
+      await runAll.mutateAsync(buildRequest(rows[i].store_slug)).catch(() => null);
     }
   };
 
@@ -113,6 +222,14 @@ export function ParsersTable() {
           {runAll.isPending ? 'Запуск…' : 'Запустить все'}
         </button>
       </div>
+
+      <RunScopeControls
+        fullSync={fullSync}
+        limitInput={limitInput}
+        disabled={busy}
+        onFullSyncChange={setFullSync}
+        onLimitChange={setLimitInput}
+      />
 
       {runOne.isError && (
         <p className="text-[14px] text-clay mb-3">{runErrorMessage(runOne.error)}</p>
@@ -162,7 +279,7 @@ export function ParsersTable() {
                   key={parser.store_slug}
                   parser={parser}
                   isPending={runOne.isPending && runOne.variables?.store_slug === parser.store_slug}
-                  onRun={(storeSlug) => runOne.mutate({ store_slug: storeSlug })}
+                  onRun={(storeSlug) => runOne.mutate(buildRequest(storeSlug))}
                 />
               ))
             )}

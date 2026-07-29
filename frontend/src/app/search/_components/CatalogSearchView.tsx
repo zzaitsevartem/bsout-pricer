@@ -7,7 +7,7 @@ import { useExportCatalog } from '@/models/export';
 import type { ExportCatalogParams } from '@/models/export';
 import { cn } from '@/shared/lib/utils';
 import { SearchLayout } from '@/app/search/_components/SearchLayout';
-import { ExportCsvButton, ExportNotice } from '@/app/search/_components/CatalogExport';
+import { ExportCsvButton, ExportNotice } from '@/widgets/CatalogExport/ui/CatalogExport';
 import { CatalogResultCard } from '@/app/search/_components/CatalogResultCard';
 import { ResultsSkeleton } from '@/app/search/_components/ResultsSkeleton';
 import { Pagination } from '@/app/search/_components/Pagination';

@@ -28,6 +28,8 @@ async def run_parser(
         )
 
     try:
-        return await parser_service.run_one(db, body.store_slug, full_sync=body.full_sync)
+        return await parser_service.run_one(
+            db, body.store_slug, full_sync=body.full_sync, limit=body.limit
+        )
     except ParserError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc

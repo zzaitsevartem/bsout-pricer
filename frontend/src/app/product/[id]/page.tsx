@@ -9,6 +9,7 @@ import { OffersTable } from '@/app/product/[id]/_components/OffersTable';
 import { PriceStats } from '@/app/product/[id]/_components/PriceStats';
 import { PriceHistory } from '@/app/product/[id]/_components/PriceHistory';
 import { Alternatives } from '@/app/product/[id]/_components/Alternatives';
+import { TrackButton } from '@/widgets/TrackButton/ui/TrackButton';
 import {
   CHIP,
   apiErrorMessage,
@@ -128,9 +129,12 @@ export default function ProductComparisonPage({ params }: { params: { id: string
       <Breadcrumbs current={product.canonical_name} />
 
       <header className="mb-8">
-        <h1 className="text-[32px] font-bold text-slate mb-3 leading-tight">
-          {product.canonical_name}
-        </h1>
+        <div className="flex items-start justify-between gap-4 mb-3 max-md:flex-col">
+          <h1 className="text-[32px] font-bold text-slate leading-tight">
+            {product.canonical_name}
+          </h1>
+          <TrackButton productId={productId} className="flex-shrink-0" />
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {product.brand && <span className={CHIP}>{product.brand.name}</span>}

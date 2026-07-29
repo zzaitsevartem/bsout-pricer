@@ -4,6 +4,13 @@ import httpx
 import pytest
 
 from src.modules.parser.service.exceptions import ParserConnectionError, ParserParseError
+from src.modules.parser.service.parser_service import (
+    DEFAULT_RUN_LIMIT,
+    FULL_SYNC_LOCK_TTL,
+    LOCK_TTL,
+    resolve_catalog_limit,
+    resolve_lock_ttl,
+)
 from src.modules.parser.service.utils import (
     compare_products,
     normalize_name,
@@ -12,6 +19,28 @@ from src.modules.parser.service.utils import (
 )
 
 pytestmark = pytest.mark.unit
+
+
+def test_partial_run_is_capped_by_default():
+    assert resolve_catalog_limit(full_sync=False, limit=None) == DEFAULT_RUN_LIMIT
+
+
+def test_full_sync_removes_the_cap():
+    assert resolve_catalog_limit(full_sync=True, limit=None) is None
+
+
+def test_explicit_limit_wins_over_full_sync():
+    assert resolve_catalog_limit(full_sync=True, limit=10) == 10
+    assert resolve_catalog_limit(full_sync=False, limit=10) == 10
+
+
+def test_uncapped_run_holds_the_lock_longer_than_a_full_crawl():
+    assert resolve_lock_ttl(None) == FULL_SYNC_LOCK_TTL
+    assert FULL_SYNC_LOCK_TTL >= 4 * 3600
+
+
+def test_capped_run_keeps_the_short_lock():
+    assert resolve_lock_ttl(DEFAULT_RUN_LIMIT) == LOCK_TTL
 
 
 @pytest.mark.parametrize(

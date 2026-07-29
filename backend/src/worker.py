@@ -25,7 +25,7 @@ async def startup(ctx) -> None:
 
 
 async def sync_catalog(ctx) -> list[dict]:
-    return await parser_service.run_all()
+    return await parser_service.run_all(full_sync=True)
 
 
 async def sync_prices(ctx) -> dict:

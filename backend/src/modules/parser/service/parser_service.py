@@ -14,6 +14,8 @@ from src.modules.stores.model.store import Store
 
 STATUS_TTL = 86400
 LOCK_TTL = 3600
+FULL_SYNC_LOCK_TTL = 6 * 3600
+DEFAULT_RUN_LIMIT = 500
 
 
 def _status_key(slug: str) -> str:
@@ -22,6 +24,16 @@ def _status_key(slug: str) -> str:
 
 def _lock_key(slug: str) -> str:
     return f"parser:lock:{slug}"
+
+
+def resolve_catalog_limit(full_sync: bool, limit: int | None) -> int | None:
+    if limit is not None:
+        return limit
+    return None if full_sync else DEFAULT_RUN_LIMIT
+
+
+def resolve_lock_ttl(catalog_limit: int | None) -> int:
+    return LOCK_TTL if catalog_limit is not None else FULL_SYNC_LOCK_TTL
 
 
 class ParserService:
@@ -134,13 +146,26 @@ class ParserService:
         await db.flush()
         return existing
 
-    async def run_one(self, db: AsyncSession, slug: str, full_sync: bool = False) -> dict:
+    async def run_one(
+        self,
+        db: AsyncSession,
+        slug: str,
+        full_sync: bool = False,
+        limit: int | None = None,
+    ) -> dict:
         parser = self._manager.get(slug)
         if parser is None:
             raise ParserError(f"parser '{slug}' not found")
 
-        if not await RedisCache.acquire_lock(_lock_key(slug), LOCK_TTL):
-            return {"store_slug": slug, "status": "already_running", "upserted": 0}
+        catalog_limit = resolve_catalog_limit(full_sync, limit)
+
+        if not await RedisCache.acquire_lock(_lock_key(slug), resolve_lock_ttl(catalog_limit)):
+            return {
+                "store_slug": slug,
+                "status": "already_running",
+                "upserted": 0,
+                "limit": catalog_limit,
+            }
 
         upserted = 0
         try:
@@ -158,7 +183,7 @@ class ParserService:
             store_id = await self._resolve_store_id(db, slug)
             parser.reset_errors()
 
-            results = await parser.update_catalog()
+            results = await parser.update_catalog(limit=catalog_limit)
             for result in results:
                 await self.upsert_offer(db, store_id, result)
                 upserted += 1
@@ -180,7 +205,12 @@ class ParserService:
                 },
                 ttl=STATUS_TTL,
             )
-            return {"store_slug": slug, "status": "done", "upserted": upserted}
+            return {
+                "store_slug": slug,
+                "status": "done",
+                "upserted": upserted,
+                "limit": catalog_limit,
+            }
         except Exception as exc:
             await RedisCache.set(
                 _status_key(slug),
@@ -197,19 +227,21 @@ class ParserService:
         finally:
             await RedisCache.release_lock(_lock_key(slug))
 
-    async def _run_isolated(self, slug: str) -> dict:
+    async def _run_isolated(self, slug: str, full_sync: bool, limit: int | None) -> dict:
         async with async_session_factory() as session:
             try:
-                result = await self.run_one(session, slug)
+                result = await self.run_one(session, slug, full_sync=full_sync, limit=limit)
                 await session.commit()
                 return result
             except Exception as exc:
                 await session.rollback()
                 return {"store_slug": slug, "status": "error", "error": str(exc)}
 
-    async def run_all(self) -> list[dict]:
+    async def run_all(self, full_sync: bool = False, limit: int | None = None) -> list[dict]:
         slugs = [parser.store_slug for parser in self._manager.get_all()]
-        return list(await asyncio.gather(*(self._run_isolated(slug) for slug in slugs)))
+        return list(
+            await asyncio.gather(*(self._run_isolated(slug, full_sync, limit) for slug in slugs))
+        )
 
 
 parser_service = ParserService()

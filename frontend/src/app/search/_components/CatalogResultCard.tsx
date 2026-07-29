@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { CatalogItemResponse } from '@/models/catalog';
 import { formatPrice, offersLabel, storesLabel } from '@/app/search/_components/lib';
+import { TrackButton } from '@/widgets/TrackButton/ui/TrackButton';
 
 function deviceLabel(item: CatalogItemResponse): string | null {
   const parts = [item.brand?.name, item.device?.name].filter(Boolean);
@@ -48,6 +49,9 @@ export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
         )}
         <div className="text-[13px] text-body-subtle">
           {storesLabel(item.stores_count)} · {offersLabel(item.offers_count)}
+        </div>
+        <div className="mt-2 flex justify-end">
+          <TrackButton productId={item.id} size="sm" />
         </div>
       </div>
     </div>

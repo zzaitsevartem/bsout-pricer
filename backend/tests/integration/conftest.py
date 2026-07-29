@@ -61,22 +61,26 @@ async def drain_mail_tasks():
 
 @pytest_asyncio.fixture(autouse=True)
 async def flush_test_redis():
-    from src.modules.cache.service.redis_cache import get_redis
+    import src.modules.cache.service.redis_cache as redis_cache_module
 
-    for _ in range(1):
-        try:
-            await (get_redis()).flushdb()
-        except Exception:
-            pass
+    redis_cache_module._cache = None
+    try:
+        await redis_cache_module.get_redis().flushdb()
+    except Exception:
+        pass
     yield
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_redis_singleton():
-    yield
-    from src.modules.cache.service.redis_cache import close_redis
+    import src.modules.cache.service.redis_cache as redis_cache_module
 
-    await close_redis()
+    yield
+    try:
+        await redis_cache_module.close_redis()
+    except Exception:
+        pass
+    redis_cache_module._cache = None
 
 
 @pytest.fixture(autouse=True)
