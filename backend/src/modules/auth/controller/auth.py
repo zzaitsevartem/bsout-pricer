@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.modules.auth.model.user import User
-from src.modules.auth.schema.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenResponse
+from src.modules.auth.schema.auth import LoginRequest, LogoutRequest, RefreshRequest, RegisterRequest, TokenResponse
 from src.modules.auth.service.auth import (
     authenticate_user,
     create_access_token,
@@ -69,5 +71,16 @@ async def refresh(body: RefreshRequest):
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(current_user: User = Depends(get_current_user)):
+async def logout(
+    body: LogoutRequest,
+    current_user: User = Depends(get_current_user),
+):
+    payload = decode_token(body.refresh_token)
+    if payload is not None and payload.get("type") == "refresh":
+        exp = payload.get("exp")
+        now = datetime.now(timezone.utc)
+        if exp and exp > now.timestamp():
+            ttl = int(exp - now.timestamp())
+            token_key = f"blacklist:{body.refresh_token}"
+            await RedisCache.set(token_key, "revoked", ttl=ttl)
     return None

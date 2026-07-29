@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
+from src.middleware.subscription_guard import require_active_subscription
 from src.modules.products.schema.product import (
     PriceHistoryResponse,
     ProductCreateRequest,
@@ -28,6 +29,7 @@ async def search_products(
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
+    _subscription=Depends(require_active_subscription),
 ):
     products, total = await ProductService.search(
         db=db,
@@ -75,7 +77,12 @@ async def search_products(
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-async def get_product(product_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+async def get_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    _subscription=Depends(require_active_subscription),
+):
     product = await ProductService.get_by_id(db, product_id)
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
@@ -105,7 +112,12 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_db), user=
 
 
 @router.get("/{product_id}/price-history", response_model=list[PriceHistoryResponse])
-async def get_price_history(product_id: int, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+async def get_price_history(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    _subscription=Depends(require_active_subscription),
+):
     product = await ProductService.get_by_id(db, product_id)
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")

@@ -1,6 +1,6 @@
 # Аудит проекта BScout
 
-Дата: 2026-07-29
+Дата: 2026-07-29 (обновлено)
 
 ---
 
@@ -10,8 +10,10 @@
 |-----------|--------|
 | Backend (FastAPI) | 11 модулей, 30 эндпоинтов, 8 SQLAlchemy моделей (+ Plan) |
 | Frontend (Next.js 14) | 11 страниц, FSD-структура, effector + TanStack Query |
-| Docker (PostgreSQL + Redis) | docker-compose.yml в корне проекта |
-| Alembic | Настроен, 2 миграции (init + plans table с seed) |
+| Docker (PostgreSQL + Redis) | ✅ **Запущен** (bscout-postgres + bscout-redis) |
+| Alembic | ✅ 2 миграции применены к живой БД |
+| Seed data | ✅ 2 пользователя, 5 магазинов, 5 категорий, 10 товаров, 60 записей истории цен |
+| Backend tests | ✅ **19/19 тестов проходят** (pytest + SQLite + mock Redis) |
 | Интеграция фронта и бэка | Auth (login/register) — готово, Header — auth-aware, Dashboard — живые товары, Prices — планы с бэка |
 | Парсеры | BaseParser ABC + ParserManager, реальных парсеров нет |
 
@@ -78,7 +80,7 @@
 | `/product` | Детальная | `GET /api/products/{id}`, `/price-history` | ❌ Mock | Жёстко зашитые данные |
 | `/faq` | FAQ | — (лендинг) | ✅ Не требует API | Статика |
 | `/contacts` | Контакты | — | ❌ Форма не отправляет | Статика |
-| `/account` | Профиль | `GET /api/users/me`, `PATCH /api/users/me` | ❌ Mock | Жёстко зашитые данные |
+| `/account` | Профиль | `GET /api/users/me`, `PATCH /api/users/me` | ✅ **Готова** | useMe + useUpdateMe + react-hook-form |
 | `/subscription` | Подписка | `GET /me/subscription`, `POST /api/payment/*` | ❌ Mock | Жёстко зашитые данные |
 | `/admin` | Админка | `GET /api/admin/*`, `GET /api/admin/parsers` | ❌ Mock | Жёстко зашитые данные |
 
@@ -139,8 +141,9 @@ src/
 - [x] Axios interceptor — Bearer + refresh token при 401
 - [x] Effector store — `$isAuth`, `$user`, `$authPending`
 - [x] Logout — очистка localStorage + сброс стора
+- [x] **ProtectedRoute** — guard для /account, /subscription, /admin
+- [x] **Account page** — useMe + useUpdateMe + react-hook-form редактирование
 - [ ] **Redirect на /login при 401** — пока не реализован (кроме axios interceptor)
-- [ ] **Защита роутов** — /account, /subscription, /admin должны редиректить без токена
 
 ### 4.2 Поиск (/search) — следующая очередь
 - [ ] Связать поле поиска с `GET /api/products?q=...`
@@ -159,8 +162,8 @@ src/
 - [ ] Кнопка «Перейти в магазин» — ссылка на `product_url`
 
 ### 4.4 Профиль (/account)
-- [ ] Загружать реальные данные через `useMe()`
-- [ ] Форма редактирования — `PATCH /api/users/me`
+- [x] Загружать реальные данные через `useMe()`
+- [x] Форма редактирования — `PATCH /api/users/me` (react-hook-form + zod)
 - [ ] История поиска — `GET /api/search/history`
 - [ ] Недавно просмотренные — пока нет бэка (нужна отдельная модель)
 - [ ] Саб-роуты (/account/history, /account/settings) — не существуют
@@ -177,10 +180,10 @@ src/
 - [ ] Парсеры — `GET /api/admin/parsers`, `POST /api/admin/parsers/run`
 
 ### 4.7 Технический долг
-- [ ] **SubscriptionGuard на бэке** — не прикручен к роутам продуктов
-- [ ] **Logout на бэке** — не пишет refresh в Redis blacklist
+- [x] **SubscriptionGuard на бэке** — прикручен к products/search/price-history
+- [x] **Logout на бэке** — пишет refresh в Redis blacklist с TTL
+- [x] **Seed данные** — stores, categories, admin user, тестовые продукты (✅)
 - [ ] **Guard для тарифов** — Пробный (10 товаров), Базовый (100), Продвинутый (безлимит)
-- [ ] **Seed данные** — stores, categories, admin user, тестовые продукты
 - [ ] **shadcn/ui** — не установлен (только Radix примитивы в package.json)
 - [ ] **404 страница** — не кастомная
 - [ ] **Loading states** — нет skeleton/spinner на загружаемых страницах
@@ -192,17 +195,18 @@ src/
 
 | # | Задача | Статус |
 |---|--------|--------|
-| 1 | **Docker** — запустить PostgreSQL + Redis | ❌ Не запущен |
-| 2 | **Alembic миграции** — применить `alembic upgrade head` | ✅ 2 миграции готовы, не применены |
+| 1 | **Docker** — запустить PostgreSQL + Redis | ✅ **Запущен** |
+| 2 | **Alembic миграции** — применить `alembic upgrade head` | ✅ Применены |
 | 3 | **Plan model** — таблица планов с seed (trial/basic/advanced) | ✅ Миграция + seed |
-| 4 | **Logout** — запись refresh в Redis blacklist | ❌ |
-| 5 | **SubscriptionGuard** — прикрутить к products/search | ❌ |
-| 6 | **Fuzzy search** — pg_trgm для продвинутого тарифа | ❌ |
-| 7 | **Реальные парсеры** — TGSM, Profi, Liberty, GreenSpark, Divizion | ❌ |
-| 8 | **Seed scripts** — stores, categories, admin user, тестовые продукты | ❌ |
-| 9 | **Pagination helper** — вынести в shared | ❌ |
-| 10 | **Error handling** — глобальный exception handler | ❌ |
-| 11 | **Search history сохранение** — триггерить при поиске | ❌ |
+| 4 | **Logout** — запись refresh в Redis blacklist | ✅ Реализован |
+| 5 | **SubscriptionGuard** — прикрутить к products/search | ✅ Прикручен |
+| 6 | **Seed scripts** — stores, categories, admin user, тестовые продукты | ✅ **Созданы** |
+| 7 | **PATCH /users/me** — MissingGreenlet fix (db.refresh) | ✅ **Починено** |
+| 8 | **Fuzzy search** — pg_trgm для продвинутого тарифа | ❌ |
+| 9 | **Реальные парсеры** — TGSM, Profi, Liberty, GreenSpark, Divizion | ❌ |
+| 10 | **Pagination helper** — вынести в shared | ❌ |
+| 11 | **Error handling** — глобальный exception handler | ❌ |
+| 12 | **Search history сохранение** — триггерить при поиске | ❌ |
 
 ---
 
@@ -210,22 +214,26 @@ src/
 
 ```
 Backend endpoints:     30/30 = 100% (реализовано)
-Alembic:               подготовлен, 2 миграции готовы
+Alembic:               ✅ 2 миграции применены
+Backend tests:         19/19 = 100% (pytest)
+Frontend build:        ✅ 0 ошибок (pnpm build)
 Frontend pages:        11/11 = 100% (вёрстка)
-API integration:       5/11 = 45% (login + register + tariffs + Dashboard + Prices)
+API integration:       6/11 = 55% (login + register + tariffs + Dashboard + Prices + Account)
   ├── /                ✅ Dashboard (useProductSearch) + Prices (usePlans)
   ├── /login           ✅ 100%
   ├── /register        ✅ 100%
   ├── /tariffs         ✅ 100% (usePlans + useSubscription)
+  ├── /account         ✅ 100% (useMe + useUpdateMe + react-hook-form)
   ├── /search          ❌ 0%
   ├── /product         ❌ 0%
-  ├── /account         ❌ 0%
   ├── /subscription    ❌ 0%
   ├── /admin           ❌ 0%
   ├── /contacts        ❌ 0% (форма не отправляет)
   └── /faq             ✅ не требует API
-Auth system:           ✅ 90% (логин/регистрация/logout/Header — готово)
-Docker:                ❌ Не запущен (PG + Redis + бэк не запущены)
+Auth system:           ✅ 95% (логин/регистрация/logout/Header/профиль — готово)
+Docker:                ✅ Запущен (bscout-postgres + bscout-redis)
+Backend server:        ✅ Запущен на :8000
+Seed data:             ✅ 2 user, 5 stores, 5 categories, 10 products, 60 price history
 Parsers:               0/5 = 0%
 ```
 
@@ -233,8 +241,16 @@ Parsers:               0/5 = 0%
 
 ## 7. Рекомендуемый следующий шаг
 
-1. **Запустить Docker** → `docker compose up -d`
-2. **Применить миграции** → `alembic upgrade head`
-3. **Запустить бэк** → `uvicorn src.main:app --reload`
-4. **Создать seed data** → stores, categories, admin пользователь
-5. **Интегрировать поиск** `/search` → `GET /api/products`
+### Интеграция страниц фронта с API
+
+1. **Интегрировать поиск** `/search` → `GET /api/products` (фильтры, пагинация, сортировка)
+2. **Интегрировать детальную товара** `/product` → `GET /api/products/{id}` + `/price-history`
+3. **Интегрировать подписку** `/subscription` → живая подписка + POST /api/payment/*
+4. **Интегрировать админку** `/admin` → `GET /api/admin/*`
+
+### Технические улучшения
+
+5. **Fuzzy search (pg_trgm)** — для продвинутого тарифа
+6. **Реальные парсеры** — TGSM, Profi, Liberty, GreenSpark, Divizion
+7. **Глобальный error handling** — exception handler в main.py
+8. **Проверить работает ли frontend против живого бэка** (запустить оба и пройти сценарии)
