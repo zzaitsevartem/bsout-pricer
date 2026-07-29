@@ -1,6 +1,6 @@
 # Аудит проекта BScout
 
-Дата: 2026-07-13
+Дата: 2026-07-29
 
 ---
 
@@ -8,248 +8,233 @@
 
 | Компонент | Статус |
 |-----------|--------|
-| Backend (FastAPI) | Реализована полная структура, 29 эндпоинтов, 12 модулей, 7 моделей |
-| Frontend (Next.js) | 11 страниц свёрстано (mock-данные), shadcn/ui не установлен |
-| Docker (PostgreSQL + Redis) | Готов (docker-compose.yml) |
-| Миграции (Alembic) | НЕ настроены |
-| Интеграция фронта и бэка | НЕ реализована |
-| Парсеры | Базовая инфраструктура готова, реальных парсеров нет |
+| Backend (FastAPI) | 11 модулей, 30 эндпоинтов, 8 SQLAlchemy моделей (+ Plan) |
+| Frontend (Next.js 14) | 11 страниц, FSD-структура, effector + TanStack Query |
+| Docker (PostgreSQL + Redis) | docker-compose.yml в корне проекта |
+| Alembic | Настроен, 2 миграции (init + plans table с seed) |
+| Интеграция фронта и бэка | Auth (login/register) — готово, Header — auth-aware, Dashboard — живые товары, Prices — планы с бэка |
+| Парсеры | BaseParser ABC + ParserManager, реальных парсеров нет |
 
 ---
 
-## 2. Backend — что реализовано
+## 2. Backend — полный список эндпоинтов
 
-### 2.1 Структура (модульная MVC)
+### Публичные (7)
+| Метод | Путь | Доступ |
+|-------|------|--------|
+| GET | /api/health | Public |
+| POST | /api/auth/register | Public |
+| POST | /api/auth/login | Public |
+| POST | /api/auth/refresh | Public |
+| GET | /api/stores | Public |
+| GET | /api/categories | Public |
+| GET | /api/plans | Public |
 
-```
-backend/src/
-├── main.py                    # FastAPI app + CORS + RateLimit + 10 роутеров
-├── config.py                  # pydantic-settings из .env
-├── database.py                # async engine + session + Base + get_db
-├── middleware/
-│   ├── rate_limit.py          # IP-based rate limiter (120 req/min)
-│   └── subscription_guard.py  # Guard для проверки подписки (не используется)
-└── modules/
-    ├── shared/deps.py         # get_current_user, get_current_admin (JWT)
-    ├── health/                # GET /api/health
-    ├── auth/                  # Регистрация, логин, refresh, logout
-    ├── users/                 # Профиль, подписка
-    ├── stores/                # CRUD магазинов (admin)
-    ├── categories/            # CRUD категорий (admin)
-    ├── products/              # Поиск товаров с фильтрами, история цен
-    ├── search/                # История поиска
-    ├── admin/                 # Статистика, управление пользователями
-    ├── payment/               # Заглушка оплаты (создание/отмена подписки)
-    ├── parser/                # Базовая инфраструктура (BaseParser, ParserManager)
-    └── cache/                 # Redis cache сервис
-```
+### Требуют аутентификации (11)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | /api/auth/logout | Выход (требует Bearer) |
+| GET | /api/users/me | Профиль текущего пользователя |
+| PATCH | /api/users/me | Обновление профиля |
+| GET | /api/users/me/subscription | Текущая подписка |
+| POST | /api/users/me/subscription | Создание подписки |
+| GET | /api/products | Поиск товаров (q, store, category, price range, sort, pagination) |
+| GET | /api/products/{id} | Детальная товара |
+| GET | /api/products/{id}/price-history | История цен |
+| GET | /api/search/history | История поиска пользователя |
+| POST | /api/payment/subscribe | Оплата подписки |
+| POST | /api/payment/cancel | Отмена подписки |
 
-### 2.2 Модели БД (7 моделей)
-
-| Модель | Таблица | Связи |
-|--------|---------|-------|
-| User | users | 1:N -> Subscription, 1:N -> SearchHistory |
-| Subscription | subscriptions | N:1 -> User |
-| Store | stores | 1:N -> Product |
-| Category | categories | 1:N -> Product |
-| Product | products | N:1 -> Store, N:1 -> Category, 1:N -> PriceHistory |
-| PriceHistory | price_history | N:1 -> Product |
-| SearchHistory | search_history | N:1 -> User |
-
-### 2.3 Эндпоинты (29 total)
-
-**Публичные (6):**
+### Требуют прав администратора (12)
 | Метод | Путь |
-|--------|------|
-| GET | /api/health |
-| POST | /api/auth/register |
-| POST | /api/auth/login |
-| POST | /api/auth/refresh |
-| GET | /api/stores |
-| GET | /api/categories |
-
-**Требуют аутентификации (11):**
-| Метод | Путь |
-|--------|------|
-| POST | /api/auth/logout |
-| GET | /api/users/me |
-| PATCH | /api/users/me |
-| GET | /api/users/me/subscription |
-| POST | /api/users/me/subscription |
-| GET | /api/products |
-| GET | /api/products/{id} |
-| GET | /api/products/{id}/price-history |
-| GET | /api/search/history |
-| POST | /api/payment/subscribe |
-| POST | /api/payment/cancel |
-
-**Требуют прав администратора (12):**
-| Метод | Путь |
-|--------|------|
-| POST | /api/stores |
-| PATCH | /api/stores/{id} |
-| POST | /api/categories |
-| PATCH | /api/categories/{id} |
-| GET | /api/admin/stats |
-| GET | /api/admin/users |
-| GET | /api/admin/users/{id} |
-| POST | /api/admin/users/{id}/toggle-active |
-| GET | /api/admin/parsers |
-| POST | /api/admin/parsers/run |
-| GET | /api/stores/{id} |
-| GET | /api/categories/{id} |
-
-### 2.4 Аутентификация
-
-- JWT access token (15 мин) + refresh token (30 дней)
-- bcrypt (passlib) для паролей
-- Bearer token через HTTPAuthorizationCredentials
-- Refresh token blacklist через Redis (проверка на /refresh)
-- logout пока не пишет в blacklist
-
-### 2.5 Инфраструктура
-
-- Docker: PostgreSQL 16 + Redis 7
-- Poetry для зависимостей
-- Rate limiting: 120 запросов/мин по IP
-- Redis cache: get/set/delete/exists/expire с TTL и JSON
+|-------|------|
+| POST | /api/stores | Создание магазина |
+| PATCH | /api/stores/{id} | Обновление магазина |
+| GET | /api/stores/{id} | Детальная магазина |
+| POST | /api/categories | Создание категории |
+| PATCH | /api/categories/{id} | Обновление категории |
+| GET | /api/categories/{id} | Детальная категории |
+| GET | /api/admin/stats | Статистика дашборда |
+| GET | /api/admin/users | Список пользователей |
+| GET | /api/admin/users/{id} | Пользователь по ID |
+| POST | /api/admin/users/{id}/toggle-active | Блокировка/разблокировка |
+| GET | /api/admin/parsers | Статус парсеров |
+| POST | /api/admin/parsers/run | Запуск парсера |
 
 ---
 
-## 3. Frontend — что реализовано
+## 3. Frontend — постраничный аудит интеграции
 
-### 3.1 Страницы (11 total)
+### 3.1 Статус API-интеграции
 
-| Роут | Страница | Статус |
-|------|----------|--------|
-| `/` | Главная (лендинг) | ✅ Готов |
-| `/login` | Вход | ✅ Вёрстка |
-| `/register` | Регистрация | ✅ Вёрстка |
-| `/search` | Поиск запчастей | ✅ Вёрстка |
-| `/product` | Детальная товара | ✅ Вёрстка |
-| `/tariffs` | Сравнение тарифов | ✅ Вёрстка |
-| `/faq` | FAQ | ✅ Вёрстка |
-| `/contacts` | Контакты | ✅ Вёрстка |
-| `/account` | Личный кабинет | ✅ Вёрстка |
-| `/subscription` | Управление подпиской | ✅ Вёрстка |
-| `/admin` | Админ-панель | ✅ Вёрстка |
+| Роут | Страница | Backend API | Интеграция | Data source |
+|------|----------|-------------|------------|-------------|
+| `/` | Главная (Dashboard) | `GET /api/products?per_page=4` | ✅ **Готова** | useProductSearch (auth → живые товары, иначе статика) |
+| `/` | Главная (Prices) | `GET /api/plans` + `GET /me/subscription` | ✅ **Готова** | usePlans + useSubscription |
+| `/login` | Вход | `POST /api/auth/login` | ✅ **Готова** | React Hook Form + zod + useLogin |
+| `/register` | Регистрация | `POST /api/auth/register` | ✅ **Готова** | React Hook Form + zod + useRegister |
+| `/tariffs` | Тарифы | `GET /api/plans` + `GET /me/subscription` | ✅ **Готова** | usePlans + useSubscription |
+| `/search` | Поиск | `GET /api/products` | ❌ Mock | Жёстко зашитые 5 товаров |
+| `/product` | Детальная | `GET /api/products/{id}`, `/price-history` | ❌ Mock | Жёстко зашитые данные |
+| `/faq` | FAQ | — (лендинг) | ✅ Не требует API | Статика |
+| `/contacts` | Контакты | — | ❌ Форма не отправляет | Статика |
+| `/account` | Профиль | `GET /api/users/me`, `PATCH /api/users/me` | ❌ Mock | Жёстко зашитые данные |
+| `/subscription` | Подписка | `GET /me/subscription`, `POST /api/payment/*` | ❌ Mock | Жёстко зашитые данные |
+| `/admin` | Админка | `GET /api/admin/*`, `GET /api/admin/parsers` | ❌ Mock | Жёстко зашитые данные |
 
-### 3.2 Дизайн-система
+### 3.2 Структура FSD
 
-- Tailwind CSS с кастомными цветами (ivory, slate, clay, olive, sky, fig), шрифтами (Raleway, DM Sans, Lexend, Montserrat), анимациями (scroll, shimmer)
-- Google Fonts подключены
-- Адаптивность: max-md, max-lg, max-[480px]
-- Прокси `/api/*` -> `localhost:8000`
-
-### 3.3 Виджеты
-
-- Header (client component, sticky, бургер-меню)
-- Footer (server component, 4 колонки)
-- Hero (Canvas-эффект "дырок", CTA)
-- Carousel (бегущая строка партнёров)
-- Advantages (3 карточки)
-- Dashboard (с mockup-таблицей)
-- Prices (3 тарифа, featured подсветка)
-- BannerAccount (финальный CTA)
+```
+src/
+├── app/                        # 11 страниц (App Router)
+│   ├── layout.tsx              # Providers (QueryProvider + AuthGate)
+│   ├── page.tsx                # Главная — Dashboard (useProductSearch) + Prices (usePlans)
+│   ├── login/page.tsx          # LoginForm
+│   ├── register/page.tsx       # RegisterForm
+│   ├── search/page.tsx         # Mock-данные
+│   ├── product/page.tsx        # Mock-данные
+│   ├── tariffs/page.tsx        # usePlans + useSubscription
+│   ├── faq/page.tsx            # Статика (accordion)
+│   ├── contacts/page.tsx       # Статика
+│   ├── account/page.tsx        # Mock-данные
+│   ├── subscription/page.tsx   # Mock-данные
+│   └── admin/page.tsx          # Mock-данные
+├── features/
+│   └── auth/                   # Auth feature
+│       ├── index.ts
+│       └── ui/
+│           ├── LoginForm.tsx   # react-hook-form + zod → useLogin → effector
+│           ├── RegisterForm.tsx # react-hook-form + zod → useRegister → effector
+│           └── AuthGate.tsx    # Инициализация: useMe → effector $user
+├── models/                     # TanStack Query hooks + service + effector store
+│   ├── auth/                   # login/register/logout hooks + store ($isAuth, $user)
+│   ├── user/                   # useMe, useUpdateMe, useSubscription
+│   ├── product/                # useProducts, useProduct
+│   ├── search/                 # useSearchHistory
+│   ├── store/                  # useStores, useStore
+│   ├── category/               # useCategories, useCategory
+│   ├── plan/                   # usePlans (GET /api/plans)
+│   ├── admin/                  # useAdminStats, useAdminUsers
+│   ├── payment/                # useSubscribe, useCancelSubscription
+│   └── parser/                 # useParsers, useRunParser
+├── widgets/
+│   ├── Header/                 # Auth-aware: $isAuth → профиль/выход или вход/регистрация
+│   ├── Footer/                 # Server component
+│   └── homeWidget/             # Hero, Carousel, Advantages, Dashboard, Prices, Banner
+└── shared/
+    ├── api/axios.ts            # Axios instance + Bearer + refresh interceptor
+    ├── lib/utils.ts            # cn()
+    └── providers/              # QueryProvider + AuthGate
+```
 
 ---
 
 ## 4. Что НЕ реализовано / требует доработки
 
-### 4.1 Backend (срочное)
+### 4.1 Auth — готово
+- [x] LoginForm с react-hook-form + zod — отправляет `POST /api/auth/login`
+- [x] RegisterForm — отправляет `POST /api/auth/register`
+- [x] AuthGate — инициализация через `GET /api/users/me`
+- [x] Header — динамический (профиль если auth, вход/регистрация если нет)
+- [x] Axios interceptor — Bearer + refresh token при 401
+- [x] Effector store — `$isAuth`, `$user`, `$authPending`
+- [x] Logout — очистка localStorage + сброс стора
+- [ ] **Redirect на /login при 401** — пока не реализован (кроме axios interceptor)
+- [ ] **Защита роутов** — /account, /subscription, /admin должны редиректить без токена
 
-| # | Задача | Приоритет |
-|---|--------|-----------|
-| 1 | **Alembic** — настроить миграции (alembic.ini, env.py, первая миграция) | HIGH |
-| 2 | **Logout реальный** — запись refresh токена в Redis blacklist при logout | HIGH |
-| 3 | **SubscriptionGuard** — прикрутить к роутам продуктов (search по тарифам) | HIGH |
-| 4 | **Fuzzy search** — pg_trgm для продвинутого тарифа (ILIKE уже есть) | HIGH |
-| 5 | **Redis кэш поиска** — кэшировать результаты ProductService.search() | MEDIUM |
-| 6 | **Реальные парсеры** — TGSM, Profi, Liberty, GreenSpark, Divizion | HIGH |
-| 7 | **Seed data** — скрипты для наполнения stores, categories, admin user | MEDIUM |
-| 8 | **CORS** — добавить поддержку production origin'ов | LOW |
-| 9 | **Logging** — добавить structured logging | MEDIUM |
-| 10 | **Error handling** — глобальный exception handler | MEDIUM |
-| 11 | **Pagination helper** — вынести общую пагинацию в shared | LOW |
-| 12 | **Soft delete** — добавить deleted_at для User | LOW |
+### 4.2 Поиск (/search) — следующая очередь
+- [ ] Связать поле поиска с `GET /api/products?q=...`
+- [ ] Фильтры (store, category, price range) — передавать как query params
+- [ ] Пагинация — связать с `page` и `per_page`
+- [ ] Сортировка — связать с `sort_by`
+- [ ] Отображение `is_cheapest` из ответа API
+- [ ] Loading state (skeleton)
+- [ ] Empty state («Ничего не найдено»)
 
-### 4.2 Frontend (срочное)
+### 4.3 Детальная товара (/product)
+- [ ] Принимать `product_id` из query params
+- [ ] Загружать `GET /api/products/{id}`
+- [ ] Отображать список предложений магазинов
+- [ ] История цен — `GET /api/products/{id}/price-history`
+- [ ] Кнопка «Перейти в магазин» — ссылка на `product_url`
 
-| # | Задача | Приоритет |
-|---|--------|-----------|
-| 1 | **shadcn/ui** — установить компоненты (Button, Card, Input, etc.) | HIGH |
-| 2 | **lib/utils.ts** — создать с функцией cn() | HIGH |
-| 3 | **API-интеграция** — подключить все страницы к реальным /api/* эндпоинтам | HIGH |
-| 4 | **Аутентификация** — JWT логика на фронте (login, register, token storage) | HIGH |
-| 5 | **Глобальный layout** — вынести Header/Footer в root layout | MEDIUM |
-| 6 | **Auth Context** — React Context для пользователя и токенов | HIGH |
-| 7 | **Формы** — валидация (react-hook-form + zod), отправка на API | HIGH |
-| 8 | **Loading states** — skeleton, spinner, loading.tsx | MEDIUM |
-| 9 | **Error boundaries** — глобальная обработка ошибок | MEDIUM |
-| 10 | **SEO** — per-page metadata | LOW |
-| 11 | **Legacy SCSS** — удалить 7 файлов .module.scss (~2400 строк) | LOW |
-| 12 | **Header navCta** — исправить тип (добавить 'both') | LOW |
-| 13 | **Lucide icons** — заменить inline SVG на lucide-react | LOW |
-| 14 | **DecorativeLines** — подключить или удалить | LOW |
-| 15 | **Дубликаты img/ и public/** — синхронизировать или удалить img/ | LOW |
+### 4.4 Профиль (/account)
+- [ ] Загружать реальные данные через `useMe()`
+- [ ] Форма редактирования — `PATCH /api/users/me`
+- [ ] История поиска — `GET /api/search/history`
+- [ ] Недавно просмотренные — пока нет бэка (нужна отдельная модель)
+- [ ] Саб-роуты (/account/history, /account/settings) — не существуют
 
-### 4.3 Инфраструктура
+### 4.5 Подписка (/subscription)
+- [ ] Отображать реальную подписку — `GET /api/users/me/subscription`
+- [ ] Кнопки смены тарифа — `POST /api/payment/subscribe`
+- [ ] Отмена подписки — `POST /api/payment/cancel`
+- [ ] Способ оплаты — заглушка (нет бэка)
 
-| # | Задача | Приоритет |
-|---|--------|-----------|
-| 1 | **Dockerfile backend** — создать для прода | MEDIUM |
-| 2 | **Dockerfile frontend** — создать для прода (Next.js standalone) | MEDIUM |
-| 3 | **Full-stack docker-compose** — добавить backend/frontend сервисы | MEDIUM |
-| 4 | **Nginx** — конфигурация для прода | LOW |
-| 5 | **CI/CD** — GitHub Actions (lint, test, build) | LOW |
+### 4.6 Админка (/admin)
+- [ ] Статистика дашборда — `GET /api/admin/stats`
+- [ ] Список пользователей — `GET /api/admin/users`
+- [ ] Парсеры — `GET /api/admin/parsers`, `POST /api/admin/parsers/run`
+
+### 4.7 Технический долг
+- [ ] **SubscriptionGuard на бэке** — не прикручен к роутам продуктов
+- [ ] **Logout на бэке** — не пишет refresh в Redis blacklist
+- [ ] **Guard для тарифов** — Пробный (10 товаров), Базовый (100), Продвинутый (безлимит)
+- [ ] **Seed данные** — stores, categories, admin user, тестовые продукты
+- [ ] **shadcn/ui** — не установлен (только Radix примитивы в package.json)
+- [ ] **404 страница** — не кастомная
+- [ ] **Loading states** — нет skeleton/spinner на загружаемых страницах
+- [ ] **error.tsx** — нет глобальной обработки ошибок
 
 ---
 
-## 5. План дальнейших работ (по этапам)
+## 5. Backend — что требует доработки
 
-### Этап 2.1 — Backend API (завершение)
-- [ ] Настроить Alembic + создать первую миграцию
-- [ ] Реализовать logout (Redis blacklist)
-- [ ] Прикрутить SubscriptionGuard к products/search
-- [ ] Написать seed-скрипты (stores, categories, admin)
-- [ ] Добавить глобальный exception handler
-
-### Этап 2.2 — Frontend API-интеграция
-- [ ] Установить shadcn/ui, создать cn()
-- [ ] Реализовать AuthContext (JWT логика)
-- [ ] Интегрировать login/register с /api/auth/*
-- [ ] Интегрировать поиск с /api/products
-- [ ] Интегрировать профиль с /api/users/me
-- [ ] Интегрировать админку с /api/admin/*
-
-### Этап 3 — Парсеры
-- [ ] Реализовать TGSM парсер
-- [ ] Реализовать Profi парсер
-- [ ] Реализовать Liberty парсер
-- [ ] Реализовать GreenSpark парсер
-- [ ] Реализовать Divizion парсер
-- [ ] Настроить расписание (arq/RQ + Redis)
-
-### Этап 4-7 — Premium и Production
-- [ ] Fuzzy search (pg_trgm)
-- [ ] Dockerfile (backend + frontend)
-- [ ] Full-stack docker-compose
-- [ ] Nginx
-- [ ] CI/CD
+| # | Задача | Статус |
+|---|--------|--------|
+| 1 | **Docker** — запустить PostgreSQL + Redis | ❌ Не запущен |
+| 2 | **Alembic миграции** — применить `alembic upgrade head` | ✅ 2 миграции готовы, не применены |
+| 3 | **Plan model** — таблица планов с seed (trial/basic/advanced) | ✅ Миграция + seed |
+| 4 | **Logout** — запись refresh в Redis blacklist | ❌ |
+| 5 | **SubscriptionGuard** — прикрутить к products/search | ❌ |
+| 6 | **Fuzzy search** — pg_trgm для продвинутого тарифа | ❌ |
+| 7 | **Реальные парсеры** — TGSM, Profi, Liberty, GreenSpark, Divizion | ❌ |
+| 8 | **Seed scripts** — stores, categories, admin user, тестовые продукты | ❌ |
+| 9 | **Pagination helper** — вынести в shared | ❌ |
+| 10 | **Error handling** — глобальный exception handler | ❌ |
+| 11 | **Search history сохранение** — триггерить при поиске | ❌ |
 
 ---
 
 ## 6. Сводка
 
 ```
-Backend:    29/29 эндпоинтов = 100% (реализовано)
-Frontend:   11/11 страниц = 100% (вёрстка), 0% (API-интеграция)
-Модели БД:  7/7 = 100%
-Парсеры:    0/5 = 0%
-Alembic:    0%
-Миграции:   0/1 = 0%
-Docker:     2/4 сервисов = 50% (только PG + Redis, нет backend/frontend)
-CI/CD:      0%
+Backend endpoints:     30/30 = 100% (реализовано)
+Alembic:               подготовлен, 2 миграции готовы
+Frontend pages:        11/11 = 100% (вёрстка)
+API integration:       5/11 = 45% (login + register + tariffs + Dashboard + Prices)
+  ├── /                ✅ Dashboard (useProductSearch) + Prices (usePlans)
+  ├── /login           ✅ 100%
+  ├── /register        ✅ 100%
+  ├── /tariffs         ✅ 100% (usePlans + useSubscription)
+  ├── /search          ❌ 0%
+  ├── /product         ❌ 0%
+  ├── /account         ❌ 0%
+  ├── /subscription    ❌ 0%
+  ├── /admin           ❌ 0%
+  ├── /contacts        ❌ 0% (форма не отправляет)
+  └── /faq             ✅ не требует API
+Auth system:           ✅ 90% (логин/регистрация/logout/Header — готово)
+Docker:                ❌ Не запущен (PG + Redis + бэк не запущены)
+Parsers:               0/5 = 0%
 ```
 
-Рекомендуемый фокус: **Alembic + shadcn/ui + AuthContext + интеграция login/register** — это разблокирует дальнейшую разработку.
+---
+
+## 7. Рекомендуемый следующий шаг
+
+1. **Запустить Docker** → `docker compose up -d`
+2. **Применить миграции** → `alembic upgrade head`
+3. **Запустить бэк** → `uvicorn src.main:app --reload`
+4. **Создать seed data** → stores, categories, admin пользователь
+5. **Интегрировать поиск** `/search` → `GET /api/products`

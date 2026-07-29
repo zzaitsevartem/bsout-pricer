@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
+import { ProtectedRoute } from '../../shared/ui/ProtectedRoute';
 import { Header } from '../../widgets/Header/ui/Header';
 
-export default function AdminPage() {
+function AdminContent() {
   return (
     <>
       <Header adminBadge />
@@ -156,5 +157,13 @@ export default function AdminPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <ProtectedRoute>
+      <AdminContent />
+    </ProtectedRoute>
   );
 }

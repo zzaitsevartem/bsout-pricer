@@ -1,11 +1,94 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useUnit } from 'effector-react';
+import { $isAuth } from '../../models/auth/store';
+import { useMe, useUpdateMe, useSubscription } from '../../models/user';
+import { usePlans } from '../../models/plan';
+import { ProtectedRoute } from '../../shared/ui/ProtectedRoute';
 import { Header } from '../../widgets/Header/ui/Header';
 import { Footer } from '../../widgets/Footer/ui/Footer';
 
-export default function AccountPage() {
+const profileFormSchema = z.object({
+  full_name: z.string().min(1, 'Имя обязательно').max(255),
+  phone: z.string().max(20).optional().or(z.literal('')),
+  company: z.string().max(255).optional().or(z.literal('')),
+});
+
+type ProfileFormData = z.infer<typeof profileFormSchema>;
+
+const planNameMap: Record<string, string> = {
+  trial: 'Пробный',
+  basic: 'Базовый',
+  advanced: 'Продвинутый',
+};
+
+function AccountContent() {
+  const isAuth = useUnit($isAuth);
+  const [editing, setEditing] = useState(false);
+  const { data: user, isLoading: userLoading } = useMe({ enabled: isAuth });
+  const { data: subscription } = useSubscription({ enabled: isAuth });
+  const { data: plans } = usePlans();
+  const updateMe = useUpdateMe();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileFormSchema),
+    values: {
+      full_name: user?.full_name ?? '',
+      phone: user?.phone ?? '',
+      company: user?.company ?? '',
+    },
+  });
+
+  useEffect(() => {
+    if (user) {
+      reset({
+        full_name: user.full_name,
+        phone: user.phone ?? '',
+        company: user.company ?? '',
+      });
+    }
+  }, [user, reset]);
+
+  const onSubmit = async (data: ProfileFormData) => {
+    try {
+      await updateMe.mutateAsync({
+        full_name: data.full_name,
+        phone: data.phone || undefined,
+        company: data.company || undefined,
+      });
+      setEditing(false);
+    } catch {
+      // error handled by tanstack query
+    }
+  };
+
+  const currentPlanSlug = subscription?.is_active ? subscription.plan : null;
+  const planInfo = currentPlanSlug
+    ? plans?.find((p) => p.slug === currentPlanSlug)
+    : null;
+
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-body-muted text-sm">Загрузка профиля…</div>
+      </div>
+    );
+  }
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map((s) => s[0]).join('').slice(0, 2).toUpperCase()
+    : '??';
+
   return (
     <>
       <Header />
@@ -37,33 +120,136 @@ export default function AccountPage() {
           </aside>
 
           <main>
+            {/* Profile section */}
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">Профиль</h2>
-              <div className="flex gap-6 p-6 bg-ivory-elevated rounded-[24px] items-center flex-wrap">
-                <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-2xl font-bold text-slate">ИП</div>
-                <div>
-                  <h3 className="text-xl font-semibold text-slate mb-1">Иван Петров</h3>
-                  <p className="text-body-subtle mb-0">ivan@example.com · +7 (999) 123-45-67</p>
-                  <p className="text-[14px] text-body-subtle mt-1">Сервисный центр «РемонтПро»</p>
+
+              <div className="rounded-[24px] p-6 bg-ivory-elevated">
+                <div className="flex gap-6 items-start flex-wrap">
+                  <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-2xl font-bold text-slate flex-shrink-0">
+                    {initials}
+                  </div>
+
+                  {!editing ? (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-semibold text-slate mb-1">{user?.full_name}</h3>
+                        <p className="text-body-subtle mb-0">
+                          {user?.email}{user?.phone ? ` · ${user.phone}` : ''}
+                        </p>
+                        {user?.company && (
+                          <p className="text-[14px] text-body-subtle mt-1">{user.company}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setEditing(true)}
+                        className="btn-secondary btn-sm ml-auto"
+                      >
+                        Редактировать
+                      </button>
+                    </>
+                  ) : (
+                    <form onSubmit={handleSubmit(onSubmit)} className="flex-1 w-full">
+                      <div className="grid gap-4 max-w-md">
+                        <div>
+                          <label className="block text-[13px] font-medium text-body-muted mb-1">Имя</label>
+                          <input
+                            {...register('full_name')}
+                            className="w-full px-3 py-2 border border-border-light rounded-lg text-[15px] bg-white text-slate focus:outline-none focus:ring-2 focus:ring-slate/20"
+                          />
+                          {errors.full_name && (
+                            <p className="text-[13px] text-red-500 mt-1">{errors.full_name.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-medium text-body-muted mb-1">Email</label>
+                          <input
+                            value={user?.email ?? ''}
+                            disabled
+                            className="w-full px-3 py-2 border border-border-light rounded-lg text-[15px] bg-ivory text-body-muted cursor-not-allowed"
+                          />
+                          <p className="text-[12px] text-body-muted mt-1">Email нельзя изменить</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-medium text-body-muted mb-1">Телефон</label>
+                          <input
+                            {...register('phone')}
+                            placeholder="+7 (999) 123-45-67"
+                            className="w-full px-3 py-2 border border-border-light rounded-lg text-[15px] bg-white text-slate focus:outline-none focus:ring-2 focus:ring-slate/20"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-medium text-body-muted mb-1">Компания</label>
+                          <input
+                            {...register('company')}
+                            placeholder="Название организации"
+                            className="w-full px-3 py-2 border border-border-light rounded-lg text-[15px] bg-white text-slate focus:outline-none focus:ring-2 focus:ring-slate/20"
+                          />
+                        </div>
+
+                        <div className="flex gap-3 mt-2">
+                          <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="btn-primary btn-sm"
+                          >
+                            {isSubmitting ? 'Сохранение…' : 'Сохранить'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditing(false)}
+                            className="btn-ghost btn-sm"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+
+                        {updateMe.isError && (
+                          <p className="text-[13px] text-red-500">Ошибка при сохранении</p>
+                        )}
+                        {updateMe.isSuccess && !isSubmitting && (
+                          <p className="text-[13px] text-green-discount">Профиль обновлён</p>
+                        )}
+                      </div>
+                    </form>
+                  )}
                 </div>
-                <a href="/account/settings" className="btn-secondary btn-sm ml-auto">Редактировать</a>
               </div>
             </div>
 
+            {/* Current tariff */}
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">Текущий тариф</h2>
               <div className="rounded-[24px] p-[31px] bg-ivory-elevated flex justify-between items-center flex-wrap gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="inline-flex items-center px-4 py-[6px] text-[14px] font-semibold bg-ivory-elevated text-slate border border-slate">Базовый</span>
-                    <span className="text-[12px] text-body-muted">Активен до 15.07.2026</span>
+                    <span className="inline-flex items-center px-4 py-[6px] text-[14px] font-semibold bg-ivory-elevated text-slate border border-slate">
+                      {currentPlanSlug ? (planNameMap[currentPlanSlug] ?? currentPlanSlug) : 'Нет тарифа'}
+                    </span>
+                    {subscription && (
+                      <span className="text-[12px] text-body-muted">
+                        {subscription.is_active ? 'Активен' : 'Неактивен'}
+                        {subscription.end_date && ` до ${new Date(subscription.end_date).toLocaleDateString('ru-RU')}`}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[15px] text-body-subtle mb-0">100 товаров · 15+ поставщиков · Обновление каждые 6ч · Экспорт PDF/CSV</p>
+                  {planInfo && (
+                    <p className="text-[15px] text-body-subtle mb-0">
+                      {planInfo.price} ₽ {planInfo.period}
+                      {planInfo.features.length > 0 && ` · ${planInfo.features.slice(0, 3).join(' · ')}`}
+                    </p>
+                  )}
                 </div>
-                <a href="/subscription" className="btn-secondary btn-sm">Управлять</a>
+                <Link href="/subscription" className="btn-secondary btn-sm">
+                  Управлять
+                </Link>
               </div>
             </div>
 
+            {/* Search history — mock */}
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">История поиска</h2>
               <div className="rounded-[24px] overflow-hidden bg-ivory-elevated">
@@ -83,6 +269,7 @@ export default function AccountPage() {
               </div>
             </div>
 
+            {/* Recently viewed — mock */}
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">Недавно просмотренные</h2>
               <div className="rounded-[24px] overflow-hidden bg-ivory-elevated">
@@ -108,5 +295,13 @@ export default function AccountPage() {
       </div>
       <Footer />
     </>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <ProtectedRoute>
+      <AccountContent />
+    </ProtectedRoute>
   );
 }

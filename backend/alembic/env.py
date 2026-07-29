@@ -26,6 +26,7 @@ from src.modules.stores.model.store import Store  # noqa
 from src.modules.categories.model.category import Category  # noqa
 from src.modules.products.model.product import Product, PriceHistory  # noqa
 from src.modules.search.model.search_history import SearchHistory  # noqa
+from src.modules.plans.model.plan import Plan  # noqa
 
 target_metadata = Base.metadata
 

@@ -8,6 +8,7 @@ from src.modules.categories.controller import categories_router
 from src.modules.health.controller import health_router
 from src.modules.parser.controller import parser_router
 from src.modules.payment.controller import payment_router
+from src.modules.plans.controller import plans_router
 from src.modules.products.controller import products_router
 from src.modules.search.controller import search_router
 from src.modules.stores.controller import stores_router
@@ -34,3 +35,4 @@ app.include_router(search_router)
 app.include_router(payment_router)
 app.include_router(admin_router)
 app.include_router(parser_router)
+app.include_router(plans_router)

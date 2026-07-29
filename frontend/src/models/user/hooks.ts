@@ -1,11 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from './service';
-import type { UserUpdateRequest, SubscriptionCreateRequest } from './schema';
+import type { UserResponse, UserUpdateRequest, SubscriptionResponse, SubscriptionCreateRequest } from './schema';
 
-export function useMe() {
+export function useMe(options?: Partial<UseQueryOptions<UserResponse>>) {
   return useQuery({
     queryKey: ['user', 'me'],
     queryFn: () => userApi.getMe().then((r) => r.data),
+    ...options,
   });
 }
 
@@ -20,10 +21,11 @@ export function useUpdateMe() {
   });
 }
 
-export function useSubscription() {
+export function useSubscription(options?: Partial<UseQueryOptions<SubscriptionResponse>>) {
   return useQuery({
     queryKey: ['user', 'subscription'],
     queryFn: () => userApi.getSubscription().then((r) => r.data),
+    ...options,
   });
 }
 

@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ProtectedRoute } from '../../shared/ui/ProtectedRoute';
 import { Header } from '../../widgets/Header/ui/Header';
 import { Footer } from '../../widgets/Footer/ui/Footer';
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   return (
     <>
       <Header />
@@ -130,5 +131,13 @@ export default function SubscriptionPage() {
       </div>
       <Footer />
     </>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <ProtectedRoute>
+      <SubscriptionContent />
+    </ProtectedRoute>
   );
 }

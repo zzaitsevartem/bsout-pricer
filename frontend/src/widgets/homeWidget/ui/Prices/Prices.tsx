@@ -2,20 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useUnit } from 'effector-react';
+import { $isAuth } from '../../../../models/auth/store';
+import { useSubscription } from '../../../../models/user';
+import { usePlans } from '../../../../models/plan';
+import type { PlanResponse } from '../../../../models/plan';
 import { CircleQuestionMark } from '../../../../shared/ui/IconSVG';
 
-interface Plan {
-  name: string;
-  price: string;
-  period: string;
-  discount: string | null;
-  featured: boolean;
-  features: string[];
-  tooltip: string[];
-}
-
-const plans: Plan[] = [
+const FALLBACK_PLANS: PlanResponse[] = [
   {
+    slug: 'basic',
     name: 'Базовый',
     price: '399',
     period: '/ месяц',
@@ -27,7 +23,7 @@ const plans: Plan[] = [
       'До 100 товаров',
       'История цен — 3 месяца',
     ],
-    tooltip: [
+    tooltips: [
       'Точное + частичное совпадение',
       'До 100 отслеживаемых товаров',
       'История цен — 3 месяца',
@@ -37,6 +33,7 @@ const plans: Plan[] = [
     ],
   },
   {
+    slug: 'advanced',
     name: 'Продвинутый',
     price: '499',
     period: '/ месяц',
@@ -50,7 +47,7 @@ const plans: Plan[] = [
       'Экспорт PDF/CSV',
       'Поддержка 24/7',
     ],
-    tooltip: [
+    tooltips: [
       'Умный поиск (fuzzy) — находит при опечатках, транслитерации, другой раскладке',
       'До 500 отслеживаемых товаров',
       'Уведомления о снижении цен',
@@ -59,6 +56,7 @@ const plans: Plan[] = [
     ],
   },
   {
+    slug: 'trial',
     name: 'Пробный',
     price: '0',
     period: '/ 7 дней',
@@ -70,7 +68,7 @@ const plans: Plan[] = [
       'До 10 товаров',
       'История цен — 3 месяца',
     ],
-    tooltip: [
+    tooltips: [
       'Точное + частичное совпадение',
       'До 10 отслеживаемых товаров',
       'История цен — 3 месяца',
@@ -80,8 +78,20 @@ const plans: Plan[] = [
   },
 ];
 
+const planNameMap: Record<string, string> = {
+  trial: 'Пробный',
+  basic: 'Базовый',
+  advanced: 'Продвинутый',
+};
+
 const Prices: React.FC = () => {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const isAuth = useUnit($isAuth);
+  const { data: subscription } = useSubscription({ enabled: isAuth });
+  const { data: plansData, isLoading } = usePlans();
+
+  const plans = plansData ?? FALLBACK_PLANS;
+  const currentPlanSlug = subscription?.is_active ? subscription.plan : null;
 
   const handleTooltipToggle = (name: string) => {
     setActiveTooltip((prev) => (prev === name ? null : name));
@@ -101,25 +111,42 @@ const Prices: React.FC = () => {
             Попробуйте бесплатно в течение 7 дней. Далее выберите тариф под свои
             задачи.
           </p>
+
+          {isLoading && (
+            <p className="mt-4 text-sm text-body-muted">Загрузка тарифов…</p>
+          )}
+
+          {currentPlanSlug && (
+            <p className="mt-4 text-sm text-body-muted">
+              Ваш текущий тариф: <span className="font-semibold text-slate">{planNameMap[currentPlanSlug]}</span>
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-6 items-start max-lg:grid-cols-1 max-lg:max-w-[480px] max-lg:mx-auto">
           {plans.map((plan) => {
             const isAdvanced = plan.featured;
+            const isCurrentPlan = plan.slug === currentPlanSlug;
 
             return (
               <div
-                key={plan.name}
+                key={plan.slug}
                 className={`relative rounded-[24px] flex flex-col ${
                   isAdvanced
                     ? 'bg-slate text-ivory p-[31px] pt-[48px] z-10 -my-4 max-lg:my-0 max-lg:pt-[31px]'
                     : 'bg-ivory-elevated p-[31px]'
-                }`}
+                } ${isCurrentPlan ? 'ring-2 ring-green-discount' : ''}`}
               >
-                {/* Green badge — only for advanced */}
-                {isAdvanced && (
+                {/* Badges */}
+                {isAdvanced && !isCurrentPlan && (
                   <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 bg-green-discount text-white text-[13px] font-semibold px-4 py-[6px] rounded-full whitespace-nowrap shadow-md max-lg:static max-lg:translate-x-0 max-lg:mb-4 max-lg:rounded-lg max-lg:text-center">
                     Выбирают чаще
+                  </div>
+                )}
+
+                {isCurrentPlan && (
+                  <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 bg-slate text-white text-[13px] font-semibold px-4 py-[6px] rounded-full whitespace-nowrap shadow-md max-lg:static max-lg:translate-x-0 max-lg:mb-4 max-lg:rounded-lg max-lg:text-center">
+                    Ваш план
                   </div>
                 )}
 
@@ -152,7 +179,7 @@ const Prices: React.FC = () => {
                       role="tooltip"
                     >
                       <ul className="list-none m-0 p-0">
-                        {plan.tooltip.map((item) => (
+                        {plan.tooltips.map((item) => (
                           <li key={item} className="py-[2px]">
                             — {item}
                           </li>
@@ -222,14 +249,21 @@ const Prices: React.FC = () => {
                 </ul>
 
                 {/* CTA */}
-                {isAdvanced ? (
+                {isCurrentPlan ? (
+                  <Link
+                    href="/subscription"
+                    className="block w-full text-center py-3 text-[15px] font-medium no-underline bg-transparent text-slate border border-slate transition-colors hover:bg-ivory-elevated"
+                  >
+                    Управлять подпиской
+                  </Link>
+                ) : isAdvanced ? (
                   <Link
                     href="/register?plan=advanced"
                     className="block w-full text-center py-3 text-[15px] font-medium no-underline bg-ivory text-slate border border-ivory transition-colors hover:bg-ivory-elevated"
                   >
                     Выбрать Продвинутый
                   </Link>
-                ) : plan.name === 'Пробный' ? (
+                ) : plan.slug === 'trial' ? (
                   <Link
                     href="/register"
                     className="block w-full text-center py-3 text-[15px] font-medium no-underline bg-transparent text-slate border border-slate transition-colors hover:bg-ivory-elevated"
