@@ -8,7 +8,7 @@ import { Footer } from '../../widgets/Footer/ui/Footer';
 export default function ProductPage() {
   return (
     <>
-      <Header showProfileIcon navCta="login" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6 py-8 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">Главная</a>

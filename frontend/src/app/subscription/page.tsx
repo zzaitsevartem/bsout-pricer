@@ -8,7 +8,7 @@ import { Footer } from '../../widgets/Footer/ui/Footer';
 export default function SubscriptionPage() {
   return (
     <>
-      <Header navCta="logout" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid grid-cols-[264px_1fr] gap-8 py-8 min-h-[calc(100vh-64px)] max-md:grid-cols-1">
           <aside className="sticky top-20 self-start max-md:hidden">

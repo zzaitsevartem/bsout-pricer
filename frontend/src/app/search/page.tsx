@@ -16,7 +16,7 @@ const products = [
 export default function SearchPage() {
   return (
     <>
-      <Header showProfileIcon navCta="login" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid grid-cols-[264px_1fr] gap-8 py-8 min-h-[calc(100vh-64px)] max-lg:grid-cols-1">
           <aside className="sticky top-20 self-start max-lg:hidden">
