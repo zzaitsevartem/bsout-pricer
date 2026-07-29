@@ -1,6 +1,6 @@
 # Аудит проекта BScout
 
-Дата: 2026-07-29 (обновлено)
+Дата: 2026-07-29 (обновлено, FSD-рефакторинг + /search integration)
 
 ---
 
@@ -76,7 +76,7 @@
 | `/login` | Вход | `POST /api/auth/login` | ✅ **Готова** | React Hook Form + zod + useLogin |
 | `/register` | Регистрация | `POST /api/auth/register` | ✅ **Готова** | React Hook Form + zod + useRegister |
 | `/tariffs` | Тарифы | `GET /api/plans` + `GET /me/subscription` | ✅ **Готова** | usePlans + useSubscription |
-| `/search` | Поиск | `GET /api/products` | ❌ Mock | Жёстко зашитые 5 товаров |
+| `/search` | Поиск | `GET /api/products` | ✅ **Готова** | useProductSearch (URL params, фильтры, пагинация, сортировка) |
 | `/product` | Детальная | `GET /api/products/{id}`, `/price-history` | ❌ Mock | Жёстко зашитые данные |
 | `/faq` | FAQ | — (лендинг) | ✅ Не требует API | Статика |
 | `/contacts` | Контакты | — | ❌ Форма не отправляет | Статика |
@@ -88,30 +88,35 @@
 
 ```
 src/
-├── app/                        # 11 страниц (App Router)
+├── app/                        # 11 страниц (App Router) — тонкая композиция
 │   ├── layout.tsx              # Providers (QueryProvider + AuthGate)
-│   ├── page.tsx                # Главная — Dashboard (useProductSearch) + Prices (usePlans)
-│   ├── login/page.tsx          # LoginForm
-│   ├── register/page.tsx       # RegisterForm
-│   ├── search/page.tsx         # Mock-данные
-│   ├── product/page.tsx        # Mock-данные
-│   ├── tariffs/page.tsx        # usePlans + useSubscription
-│   ├── faq/page.tsx            # Статика (accordion)
-│   ├── contacts/page.tsx       # Статика
-│   ├── account/page.tsx        # Mock-данные
-│   ├── subscription/page.tsx   # Mock-данные
-│   └── admin/page.tsx          # Mock-данные
+│   ├── page.tsx                # 13 строк: Header + HomeWidget + Footer
+│   ├── login/page.tsx          # 40 строк: Header + LoginForm + Footer
+│   ├── register/page.tsx       # 25 строк: Header + RegisterForm + Footer
+│   ├── search/page.tsx         # 188 строк: useSearchParams → SearchBar + SearchFilters + SearchResults
+│   ├── product/page.tsx        # 9 строк: Header + ProductDetail + Footer
+│   ├── tariffs/page.tsx        # 25 строк: Header + PlanComparison + Footer
+│   ├── faq/page.tsx            # 24 строки: Header + FaqAccordion + Footer
+│   ├── contacts/page.tsx       # 26 строк: Header + ContactInfo + ContactForm + Footer
+│   ├── account/page.tsx        # 24 строки: ProtectedRoute + Header + AccountSidebar + AccountProfile + Footer
+│   ├── subscription/page.tsx   # 25 строк: ProtectedRoute + Header + AccountSidebar + SubscriptionManager + Footer
+│   └── admin/page.tsx          # 17 строк: ProtectedRoute + Header + AdminSidebar + AdminDashboard
 ├── features/
-│   └── auth/                   # Auth feature
+│   ├── auth/                   # Auth feature
+│   │   ├── index.ts
+│   │   └── ui/
+│   │       ├── LoginForm.tsx   # react-hook-form + zod → useLogin → effector
+│   │       ├── RegisterForm.tsx # react-hook-form + zod → useRegister → effector
+│   │       └── AuthGate.tsx    # Инициализация: useMe → effector $user
+│   └── search/                 # Search feature
 │       ├── index.ts
 │       └── ui/
-│           ├── LoginForm.tsx   # react-hook-form + zod → useLogin → effector
-│           ├── RegisterForm.tsx # react-hook-form + zod → useRegister → effector
-│           └── AuthGate.tsx    # Инициализация: useMe → effector $user
+│           ├── SearchBar.tsx   # Строка поиска (input + кнопка)
+│           └── SearchFilters.tsx # Сайдбар с фильтрами (store, category, price, in_stock)
 ├── models/                     # TanStack Query hooks + service + effector store
 │   ├── auth/                   # login/register/logout hooks + store ($isAuth, $user)
 │   ├── user/                   # useMe, useUpdateMe, useSubscription
-│   ├── product/                # useProducts, useProduct
+│   ├── product/                # useProductSearch, useProduct, usePriceHistory
 │   ├── search/                 # useSearchHistory
 │   ├── store/                  # useStores, useStore
 │   ├── category/               # useCategories, useCategory
@@ -119,14 +124,25 @@ src/
 │   ├── admin/                  # useAdminStats, useAdminUsers
 │   ├── payment/                # useSubscribe, useCancelSubscription
 │   └── parser/                 # useParsers, useRunParser
-├── widgets/
+├── widgets/                    # 12 композиционных блоков
 │   ├── Header/                 # Auth-aware: $isAuth → профиль/выход или вход/регистрация
 │   ├── Footer/                 # Server component
-│   └── homeWidget/             # Hero, Carousel, Advantages, Dashboard, Prices, Banner
+│   ├── homeWidget/             # Hero, Carousel, Advantages, Dashboard, Prices, Banner
+│   ├── AccountSidebar/         # Навигация аккаунта (profile/subscription/history/settings)
+│   ├── AccountProfile/         # Профиль: view/edit, тариф, история поиска, недавние
+│   ├── PlanComparison/         # Таблица сравнения тарифов
+│   ├── FaqAccordion/           # Аккордеон FAQ
+│   ├── ContactWidget/          # Контакты (ContactInfo + ContactForm)
+│   ├── ProductDetail/          # Детальная товара (заглушка)
+│   ├── AdminSidebar/           # Навигация админки
+│   ├── AdminDashboard/         # Дашборд админки (статистика, таблицы)
+│   ├── SubscriptionManager/    # Управление подпиской (текущий тариф, смена, оплата, отмена)
+│   └── SearchResults/          # Результаты поиска + пагинация + сортировка
 └── shared/
     ├── api/axios.ts            # Axios instance + Bearer + refresh interceptor
     ├── lib/utils.ts            # cn()
-    └── providers/              # QueryProvider + AuthGate
+    ├── providers/              # QueryProvider + AuthGate
+    └── ui/ProtectedRoute.tsx   # Guard для авторизованных страниц
 ```
 
 ---
@@ -145,14 +161,16 @@ src/
 - [x] **Account page** — useMe + useUpdateMe + react-hook-form редактирование
 - [ ] **Redirect на /login при 401** — пока не реализован (кроме axios interceptor)
 
-### 4.2 Поиск (/search) — следующая очередь
-- [ ] Связать поле поиска с `GET /api/products?q=...`
-- [ ] Фильтры (store, category, price range) — передавать как query params
-- [ ] Пагинация — связать с `page` и `per_page`
-- [ ] Сортировка — связать с `sort_by`
-- [ ] Отображение `is_cheapest` из ответа API
-- [ ] Loading state (skeleton)
-- [ ] Empty state («Ничего не найдено»)
+### 4.2 Поиск (/search) — ✅ готово
+- [x] Поле поиска связано с `GET /api/products?q=...` через URL search params
+- [x] Фильтры (store, category, price range) — передаются как query params, URL shareable
+- [x] Пагинация — связана с `page` и `per_page`, URL-driven
+- [x] Сортировка — `sort_by` в URL (price_asc, price_desc, date)
+- [x] `is_cheapest` — отображается из ответа API
+- [x] Loading state — «Загрузка результатов...»
+- [x] Empty state — «Ничего не найдено»
+- [x] Error state — «Ошибка загрузки» + кнопка повтора
+- [x] FSD: SearchBar + SearchFilters (features/search/), SearchResults (widgets/SearchResults/)
 
 ### 4.3 Детальная товара (/product)
 - [ ] Принимать `product_id` из query params
@@ -217,17 +235,17 @@ Backend endpoints:     30/30 = 100% (реализовано)
 Alembic:               ✅ 2 миграции применены
 Backend tests:         19/19 = 100% (pytest)
 Frontend build:        ✅ 0 ошибок (pnpm build)
-Frontend pages:        11/11 = 100% (вёрстка)
-API integration:       6/11 = 55% (login + register + tariffs + Dashboard + Prices + Account)
+Frontend pages:        11/11 = 100% (FSD-композиция, тонкие page.tsx)
+API integration:       7/11 = 64% (login + register + tariffs + Dashboard + Prices + Account + Search)
   ├── /                ✅ Dashboard (useProductSearch) + Prices (usePlans)
   ├── /login           ✅ 100%
   ├── /register        ✅ 100%
   ├── /tariffs         ✅ 100% (usePlans + useSubscription)
   ├── /account         ✅ 100% (useMe + useUpdateMe + react-hook-form)
-  ├── /search          ❌ 0%
-  ├── /product         ❌ 0%
-  ├── /subscription    ❌ 0%
-  ├── /admin           ❌ 0%
+  ├── /search          ✅ 100% (useProductSearch, URL-params, filters, pagination, sort)
+  ├── /product         ❌ 0% (заглушка)
+  ├── /subscription    ❌ 0% (заглушка)
+  ├── /admin           ❌ 0% (заглушка)
   ├── /contacts        ❌ 0% (форма не отправляет)
   └── /faq             ✅ не требует API
 Auth system:           ✅ 95% (логин/регистрация/logout/Header/профиль — готово)
@@ -243,7 +261,7 @@ Parsers:               0/5 = 0%
 
 ### Интеграция страниц фронта с API
 
-1. **Интегрировать поиск** `/search` → `GET /api/products` (фильтры, пагинация, сортировка)
+1. ✅ **Поиск** `/search` → `GET /api/products` — **готово**
 2. **Интегрировать детальную товара** `/product` → `GET /api/products/{id}` + `/price-history`
 3. **Интегрировать подписку** `/subscription` → живая подписка + POST /api/payment/*
 4. **Интегрировать админку** `/admin` → `GET /api/admin/*`

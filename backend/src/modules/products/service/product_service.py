@@ -58,11 +58,24 @@ class ProductService:
         order = sort_map.get(sort_by, Product.price.asc())
         base = base.order_by(order)
 
-        total_query = select(Product.id).where(Product.normalized_name.ilike(f"%{normalized}%"))
+        total_query = select(Product.id)
+        if normalized:
+            total_query = total_query.where(Product.normalized_name.ilike(f"%{normalized}%"))
         if store_slug:
             total_query = total_query.where(Product.store_id.in_(
                 select(Store.id).where(Store.slug == store_slug).scalar_subquery()
             ))
+        if category_slug:
+            from src.modules.categories.model.category import Category
+            total_query = total_query.where(Product.category_id.in_(
+                select(Category.id).where(Category.slug == category_slug).scalar_subquery()
+            ))
+        if min_price is not None:
+            total_query = total_query.where(Product.price >= min_price)
+        if max_price is not None:
+            total_query = total_query.where(Product.price <= max_price)
+        if in_stock is not None:
+            total_query = total_query.where(Product.in_stock.is_(in_stock))
         total_result = await db.execute(total_query)
         total = len(total_result.scalars().all())
 
