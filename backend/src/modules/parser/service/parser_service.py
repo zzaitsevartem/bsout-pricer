@@ -8,11 +8,13 @@ from src.database import async_session_factory
 from src.modules.cache import RedisCache
 from src.modules.parser.service.base import BaseParser, ParseResult, ParserManager, parser_manager
 from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.queue import enqueue_parser_run
 from src.modules.parser.service.utils import normalize_name
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
 from src.modules.stores.model.store import Store
 
 STATUS_TTL = 86400
+QUEUED_STATUS_TTL = 900
 LOCK_TTL = 3600
 FULL_SYNC_LOCK_TTL = 6 * 3600
 DEFAULT_RUN_LIMIT = 500
@@ -34,6 +36,20 @@ def resolve_catalog_limit(full_sync: bool, limit: int | None) -> int | None:
 
 def resolve_lock_ttl(catalog_limit: int | None) -> int:
     return LOCK_TTL if catalog_limit is not None else FULL_SYNC_LOCK_TTL
+
+
+def _running_status(slug: str, parser: BaseParser, previous: dict | None) -> dict:
+    known = previous if isinstance(previous, dict) else {}
+    last_run = known.get("last_run")
+    if last_run is None and parser.last_run is not None:
+        last_run = parser.last_run.isoformat()
+    return {
+        "store_slug": slug,
+        "is_running": True,
+        "last_run": last_run,
+        "products_found": known.get("products_found", 0),
+        "errors": [],
+    }
 
 
 class ParserService:
@@ -169,15 +185,10 @@ class ParserService:
 
         upserted = 0
         try:
+            previous = await RedisCache.get(_status_key(slug))
             await RedisCache.set(
                 _status_key(slug),
-                {
-                    "store_slug": slug,
-                    "is_running": True,
-                    "last_run": parser.last_run.isoformat() if parser.last_run else None,
-                    "products_found": 0,
-                    "errors": [],
-                },
+                _running_status(slug, parser, previous),
                 ttl=STATUS_TTL,
             )
             store_id = await self._resolve_store_id(db, slug)
@@ -227,7 +238,12 @@ class ParserService:
         finally:
             await RedisCache.release_lock(_lock_key(slug))
 
-    async def _run_isolated(self, slug: str, full_sync: bool, limit: int | None) -> dict:
+    async def run_isolated(
+        self,
+        slug: str,
+        full_sync: bool = False,
+        limit: int | None = None,
+    ) -> dict:
         async with async_session_factory() as session:
             try:
                 result = await self.run_one(session, slug, full_sync=full_sync, limit=limit)
@@ -240,8 +256,44 @@ class ParserService:
     async def run_all(self, full_sync: bool = False, limit: int | None = None) -> list[dict]:
         slugs = [parser.store_slug for parser in self._manager.get_all()]
         return list(
-            await asyncio.gather(*(self._run_isolated(slug, full_sync, limit) for slug in slugs))
+            await asyncio.gather(*(self.run_isolated(slug, full_sync, limit) for slug in slugs))
         )
+
+    async def enqueue_run(
+        self,
+        slug: str,
+        full_sync: bool = False,
+        limit: int | None = None,
+    ) -> dict:
+        parser = self._manager.get(slug)
+        if parser is None:
+            raise ParserError(f"parser '{slug}' not found")
+
+        catalog_limit = resolve_catalog_limit(full_sync, limit)
+        previous = await RedisCache.get(_status_key(slug))
+        queued = isinstance(previous, dict) and previous.get("is_running") is True
+
+        if queued or await RedisCache.exists(_lock_key(slug)):
+            return {
+                "store_slug": slug,
+                "status": "already_running",
+                "job_id": None,
+                "limit": catalog_limit,
+            }
+
+        job_id = await enqueue_parser_run(slug, full_sync, limit)
+
+        await RedisCache.set(
+            _status_key(slug),
+            _running_status(slug, parser, previous),
+            ttl=QUEUED_STATUS_TTL,
+        )
+        return {
+            "store_slug": slug,
+            "status": "queued",
+            "job_id": job_id,
+            "limit": catalog_limit,
+        }
 
 
 parser_service = ParserService()

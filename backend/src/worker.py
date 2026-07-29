@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from arq import cron
+from arq import cron, func
 from arq.connections import RedisSettings
 from sqlalchemy import delete, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,8 +11,9 @@ from src.database import async_session_factory
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import Subscription
 from src.modules.auth.service.password_service import deliver_mail
-from src.modules.parser.service.parser_service import parser_service
+from src.modules.parser.service.parser_service import FULL_SYNC_LOCK_TTL, parser_service
 from src.modules.parser.service.parsers import register_default_parsers
+from src.modules.parser.service.queue import PARSER_QUEUE_JOB
 from src.modules.tracking.service.alert_service import AlertService
 from src.modules.tracking.service.price_refresh import refresh_tracked_offers
 from src.modules.tracking.service.retention import run_retention
@@ -26,6 +27,17 @@ async def startup(ctx) -> None:
 
 async def sync_catalog(ctx) -> list[dict]:
     return await parser_service.run_all(full_sync=True)
+
+
+async def run_parser(
+    ctx,
+    store_slug: str,
+    full_sync: bool = False,
+    limit: int | None = None,
+) -> dict:
+    result = await parser_service.run_isolated(store_slug, full_sync=full_sync, limit=limit)
+    logger.info("run_parser: %s", result)
+    return result
 
 
 async def sync_prices(ctx) -> dict:
@@ -108,6 +120,7 @@ class WorkerSettings:
     )
     on_startup = startup
     functions = [
+        func(run_parser, name=PARSER_QUEUE_JOB, timeout=FULL_SYNC_LOCK_TTL),
         sync_catalog,
         sync_prices,
         expire_subscriptions,

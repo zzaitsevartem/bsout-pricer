@@ -5,4 +5,4 @@ export {
 } from './schema';
 export type { ParserRunRequest, ParserStatusResponse, ParserRunResponse } from './schema';
 export { parserApi } from './service';
-export { useParsers, useRunParser } from './hooks';
+export { PARSER_POLL_INTERVAL_MS, useParsers, useRunParser } from './hooks';

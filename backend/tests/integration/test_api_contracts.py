@@ -323,3 +323,56 @@ async def test_unknown_route_returns_404(client):
     resp = await client.get("/api/does-not-exist")
 
     assert resp.status_code == 404
+
+
+async def test_admin_parser_run_returns_202_without_waiting_for_the_crawl(
+    client, db_session, monkeypatch
+):
+    from importlib import import_module
+
+    from src.modules.cache import RedisCache
+    from src.modules.parser.service.parsers import register_default_parsers
+
+    parser_service_module = import_module("src.modules.parser.service.parser_service")
+    register_default_parsers()
+
+    sent: list[tuple] = []
+
+    async def fake_enqueue(slug, full_sync, limit):
+        sent.append((slug, full_sync, limit))
+        return "job-42"
+
+    monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
+    await RedisCache.delete("parser:lock:tgsm")
+    await RedisCache.delete("parser:status:tgsm")
+
+    admin = await _make_admin(db_session, email="parserrun@example.com")
+    token = create_access_token(admin.id)
+
+    resp = await client.post(
+        "/api/admin/parsers/run",
+        json={"store_slug": "tgsm", "full_sync": True},
+        headers=_auth(token),
+    )
+
+    assert resp.status_code == 202, resp.text
+    assert resp.json() == {
+        "store_slug": "tgsm",
+        "status": "queued",
+        "job_id": "job-42",
+        "limit": None,
+    }
+    assert sent == [("tgsm", True, None)]
+
+
+async def test_admin_parser_run_rejects_unknown_store(client, db_session):
+    admin = await _make_admin(db_session, email="parser404@example.com")
+    token = create_access_token(admin.id)
+
+    resp = await client.post(
+        "/api/admin/parsers/run",
+        json={"store_slug": "no-such-store"},
+        headers=_auth(token),
+    )
+
+    assert resp.status_code == 404, resp.text

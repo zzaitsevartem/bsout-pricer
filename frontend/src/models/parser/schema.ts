@@ -17,7 +17,7 @@ export const parserStatusResponseSchema = z.object({
 export const parserRunResponseSchema = z.object({
   store_slug: z.string(),
   status: z.string(),
-  upserted: z.number(),
+  job_id: z.string().nullable().optional(),
   limit: z.number().nullable().optional(),
 });
 

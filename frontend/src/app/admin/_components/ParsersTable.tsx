@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { useParsers, useRunParser, type ParserStatusResponse } from '@/models/parser';
+import {
+  PARSER_POLL_INTERVAL_MS,
+  useParsers,
+  useRunParser,
+  type ParserStatusResponse,
+} from '@/models/parser';
 import { cn } from '@/shared/lib/utils';
 import {
   BADGE_BASE,
@@ -111,10 +116,9 @@ function RunScopeControls({
           значение по умолчанию ({formatNumber(DEFAULT_RUN_LIMIT)}).
         </p>
       )}
-      <p className="text-[13px] text-clay mt-1">
-        Запрос синхронный: браузер ждёт конца обхода. Прогон дольше минуты вернёт ошибку сети, хотя
-        парсер продолжит работу на сервере — результат смотрите по колонке «Товаров» после
-        обновления страницы.
+      <p className="text-[13px] text-body-subtle mt-1">
+        Обход ставится в очередь и идёт в фоне — страницу можно закрыть. Пока парсер работает,
+        статус обновляется каждые {PARSER_POLL_INTERVAL_MS / 1000} с.
       </p>
     </div>
   );
@@ -141,7 +145,13 @@ function runErrorMessage(error: unknown): string {
   if (status === 502) {
     return apiErrorMessage(error, 'Парсер завершился с ошибкой');
   }
-  return apiErrorMessage(error, 'Не удалось запустить парсер');
+  if (status === 503) {
+    return apiErrorMessage(
+      error,
+      'Очередь задач недоступна — проверьте, что запущен воркер (arq src.worker.WorkerSettings)',
+    );
+  }
+  return apiErrorMessage(error, 'Не удалось поставить парсер в очередь');
 }
 
 function ParserRow({
@@ -209,6 +219,11 @@ export function ParsersTable() {
     }
   };
 
+  const queuedNotice = [runOne.data, runAll.data]
+    .filter((result) => result?.status === 'already_running')
+    .map((result) => result?.store_slug)
+    .join(', ');
+
   return (
     <section id="parsers">
       <div className="flex justify-between items-center mb-4">
@@ -236,6 +251,11 @@ export function ParsersTable() {
       )}
       {runAll.isError && (
         <p className="text-[14px] text-clay mb-3">{runErrorMessage(runAll.error)}</p>
+      )}
+      {queuedNotice !== '' && (
+        <p className="text-[14px] text-body-subtle mb-3">
+          Уже выполняется, повторный запуск пропущен: {queuedNotice}
+        </p>
       )}
 
       <div className={TABLE_WRAPPER}>

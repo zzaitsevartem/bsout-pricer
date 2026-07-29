@@ -1,14 +1,19 @@
 from decimal import Decimal
+from importlib import import_module
 
 import pytest
 from sqlalchemy import func, select
 
+from src.modules.cache import RedisCache
 from src.modules.parser.service.base import BaseParser, ParseResult, ParserManager
+from src.modules.parser.service.exceptions import ParserError
 from src.modules.parser.service.parser_service import DEFAULT_RUN_LIMIT, ParserService
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
 from src.modules.stores.model.store import Store
 
 pytestmark = pytest.mark.integration
+
+parser_service_module = import_module("src.modules.parser.service.parser_service")
 
 
 class _FakeParser(BaseParser):
@@ -156,3 +161,114 @@ async def test_run_one_explicit_limit_reaches_parser_and_bounds_upserts(db_sessi
     assert result["limit"] == 2
     assert result["upserted"] == 2
     assert await _count(db_session, StoreOffer) == 2
+
+
+async def test_enqueue_run_queues_job_and_marks_parser_running(monkeypatch):
+    svc = ParserService(ParserManager())
+    parser = _FakeParser("queue-store", _offers(1))
+    svc.register(parser)
+
+    sent: list[tuple] = []
+
+    async def fake_enqueue(slug, full_sync, limit):
+        sent.append((slug, full_sync, limit))
+        return "job-1"
+
+    monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
+    await RedisCache.delete(f"parser:lock:{parser.store_slug}")
+    await RedisCache.delete(f"parser:status:{parser.store_slug}")
+
+    result = await svc.enqueue_run("queue-store", full_sync=True)
+
+    assert result == {
+        "store_slug": "queue-store",
+        "status": "queued",
+        "job_id": "job-1",
+        "limit": None,
+    }
+    assert sent == [("queue-store", True, None)]
+
+    status = await RedisCache.get(f"parser:status:{parser.store_slug}")
+    assert status["is_running"] is True
+
+
+async def test_enqueue_run_refuses_while_the_lock_is_held(monkeypatch):
+    svc = ParserService(ParserManager())
+    parser = _FakeParser("busy-store", _offers(1))
+    svc.register(parser)
+
+    async def fail_enqueue(slug, full_sync, limit):
+        raise AssertionError("must not enqueue while a run holds the lock")
+
+    monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fail_enqueue)
+    await RedisCache.delete(f"parser:lock:{parser.store_slug}")
+    assert await RedisCache.acquire_lock(f"parser:lock:{parser.store_slug}", 60)
+
+    try:
+        result = await svc.enqueue_run("busy-store", limit=5)
+    finally:
+        await RedisCache.release_lock(f"parser:lock:{parser.store_slug}")
+
+    assert result["status"] == "already_running"
+    assert result["job_id"] is None
+    assert result["limit"] == 5
+
+
+async def test_enqueue_run_rejects_unknown_parser():
+    svc = ParserService(ParserManager())
+    with pytest.raises(ParserError):
+        await svc.enqueue_run("nope")
+
+
+async def test_queued_status_keeps_the_previous_products_count(monkeypatch):
+    svc = ParserService(ParserManager())
+    parser = _FakeParser("keep-store", _offers(1))
+    svc.register(parser)
+
+    async def fake_enqueue(slug, full_sync, limit):
+        return "job-2"
+
+    monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
+    await RedisCache.delete(f"parser:lock:{parser.store_slug}")
+    await RedisCache.set(
+        f"parser:status:{parser.store_slug}",
+        {
+            "store_slug": "keep-store",
+            "is_running": False,
+            "last_run": "2026-07-28T03:00:00+00:00",
+            "products_found": 4242,
+            "errors": [],
+        },
+        ttl=60,
+    )
+
+    await svc.enqueue_run("keep-store")
+
+    status = await RedisCache.get(f"parser:status:{parser.store_slug}")
+    assert status["products_found"] == 4242
+    assert status["last_run"] == "2026-07-28T03:00:00+00:00"
+    assert status["is_running"] is True
+
+
+async def test_enqueue_run_does_not_queue_a_second_job_before_the_worker_starts(monkeypatch):
+    svc = ParserService(ParserManager())
+    parser = _FakeParser("dedup-store", _offers(1))
+    svc.register(parser)
+
+    jobs: list[tuple] = []
+
+    async def fake_enqueue(slug, full_sync, limit):
+        jobs.append((slug, full_sync, limit))
+        return f"job-{len(jobs)}"
+
+    monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
+    await RedisCache.delete(f"parser:lock:{parser.store_slug}")
+    await RedisCache.delete(f"parser:status:{parser.store_slug}")
+
+    first = await svc.enqueue_run("dedup-store", full_sync=True)
+    second = await svc.enqueue_run("dedup-store", full_sync=True)
+
+    assert first["status"] == "queued"
+    assert second["status"] == "already_running"
+    assert second["job_id"] is None
+    assert jobs == [("dedup-store", True, None)]

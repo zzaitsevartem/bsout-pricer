@@ -46,5 +46,26 @@ services:
       - "${BACKEND_PORT:-8000}:8000"
     restart: unless-stopped
 
+  worker:
+    build: ./backend
+    container_name: bscout-worker
+    command: ["arq", "src.worker.WorkerSettings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: bscout
+      POSTGRES_USER: bscout
+      POSTGRES_PASSWORD: bscout
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-to-a-random-secret}
+      DEBUG: ${DEBUG:-false}
+    restart: unless-stopped
+
 volumes:
   pgdata:

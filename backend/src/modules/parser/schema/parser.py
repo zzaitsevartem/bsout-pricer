@@ -7,6 +7,13 @@ class ParserRunRequest(BaseModel):
     limit: int | None = Field(None, ge=1, le=100000)
 
 
+class ParserRunResponse(BaseModel):
+    store_slug: str
+    status: str
+    job_id: str | None = None
+    limit: int | None = None
+
+
 class ParserStatusResponse(BaseModel):
     store_slug: str
     is_running: bool

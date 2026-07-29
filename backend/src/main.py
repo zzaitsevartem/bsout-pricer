@@ -16,6 +16,7 @@ from src.modules.export.controller import export_router
 from src.modules.health.controller import health_router
 from src.modules.parser.controller import parser_router
 from src.modules.parser.service.parsers import register_default_parsers
+from src.modules.parser.service.queue import close_parser_queue
 from src.modules.payment.controller import payment_router
 from src.modules.products.controller import products_router
 from src.modules.search.controller import search_router
@@ -27,6 +28,7 @@ from src.modules.users.controller import users_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    await close_parser_queue()
     await close_redis()
 
 

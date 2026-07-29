@@ -2,10 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parserApi } from './service';
 import type { ParserRunRequest } from './schema';
 
+export const PARSER_POLL_INTERVAL_MS = 5000;
+
 export function useParsers() {
   return useQuery({
     queryKey: ['admin', 'parsers'],
     queryFn: () => parserApi.list().then((r) => r.data),
+    refetchInterval: (query) =>
+      query.state.data?.some((parser) => parser.is_running) ? PARSER_POLL_INTERVAL_MS : false,
   });
 }
 
