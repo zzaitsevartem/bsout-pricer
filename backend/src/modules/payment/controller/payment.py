@@ -67,8 +67,10 @@ async def list_plans():
             price_alerts=definition.price_alerts,
             export_reports=definition.export_reports,
             support_ru=definition.support_ru,
+            featured=definition.featured,
+            sort_order=definition.sort_order,
         )
-        for definition in PLANS.values()
+        for definition in sorted(PLANS.values(), key=lambda item: item.sort_order)
     ]
 
 

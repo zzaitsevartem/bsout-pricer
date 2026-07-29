@@ -197,7 +197,7 @@ function SubscriptionContent() {
                   {plans.data.map((planItem) => {
                     const isCurrent = currentPlan === planItem.plan;
                     const isFree = planItem.price === 0;
-                    const featured = planItem.plan === 'advanced';
+                    const featured = planItem.featured;
                     const isPending = subscribe.isPending && subscribe.variables?.plan === planItem.plan;
                     return (
                       <div key={planItem.plan} className={`rounded-[24px] p-[31px] flex flex-col ${featured ? 'bg-slate text-ivory' : 'bg-ivory-elevated'}`}>

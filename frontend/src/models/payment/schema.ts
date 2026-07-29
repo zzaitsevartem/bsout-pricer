@@ -39,6 +39,8 @@ export const planSchema = z.preprocess(
     priceAlerts: z.boolean(),
     exportReports: z.boolean(),
     supportRu: z.string(),
+    featured: z.boolean(),
+    sortOrder: z.number(),
   }),
 );
 

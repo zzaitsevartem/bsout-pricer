@@ -44,6 +44,8 @@ class PlanResponse(BaseModel):
     price_alerts: bool
     export_reports: bool
     support_ru: str
+    featured: bool
+    sort_order: int
 
 
 class SubscriptionUpgradeRequest(BaseModel):

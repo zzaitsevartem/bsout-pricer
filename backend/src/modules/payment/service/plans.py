@@ -16,6 +16,8 @@ class PlanDefinition:
     price_alerts: bool
     export_reports: bool
     support_ru: str
+    featured: bool
+    sort_order: int
 
 
 PLANS: dict[PlanEnum, PlanDefinition] = {
@@ -30,6 +32,8 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         price_alerts=False,
         export_reports=False,
         support_ru="—",
+        featured=False,
+        sort_order=2,
     ),
     PlanEnum.basic: PlanDefinition(
         plan=PlanEnum.basic,
@@ -42,6 +46,8 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         price_alerts=False,
         export_reports=False,
         support_ru="Рабочие часы",
+        featured=False,
+        sort_order=0,
     ),
     PlanEnum.advanced: PlanDefinition(
         plan=PlanEnum.advanced,
@@ -54,6 +60,8 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         price_alerts=True,
         export_reports=True,
         support_ru="24/7",
+        featured=True,
+        sort_order=1,
     ),
 }
 

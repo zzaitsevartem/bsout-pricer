@@ -6,8 +6,6 @@ import { CircleQuestionMark } from '@/shared/ui/IconSVG';
 import { usePlans } from '@/models/payment';
 import type { PlanResponse } from '@/models/payment';
 
-const ORDER: Record<string, number> = { basic: 0, advanced: 1, trial: 2 };
-
 function formatAmount(value: number): string {
   return new Intl.NumberFormat('ru-RU', {
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
@@ -73,9 +71,7 @@ const Prices: React.FC = () => {
   };
 
   const trial = plans.data?.find((plan) => plan.plan === 'trial');
-  const ordered = plans.data
-    ? [...plans.data].sort((a, b) => (ORDER[a.plan] ?? 99) - (ORDER[b.plan] ?? 99))
-    : [];
+  const ordered = plans.data ? [...plans.data].sort((a, b) => a.sortOrder - b.sortOrder) : [];
 
   return (
     <section className="bg-ivory py-[84px] max-md:py-[61px] max-[480px]:py-[48px]">
@@ -110,7 +106,7 @@ const Prices: React.FC = () => {
         {ordered.length > 0 && (
           <div className="grid grid-cols-3 gap-6 items-start max-lg:grid-cols-1 max-lg:max-w-[480px] max-lg:mx-auto">
             {ordered.map((plan) => {
-              const isAdvanced = plan.plan === 'advanced';
+              const isAdvanced = plan.featured;
               const isFree = plan.price === 0;
               const href = plan.plan === 'trial' ? '/register' : `/register?plan=${plan.plan}`;
 

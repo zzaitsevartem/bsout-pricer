@@ -105,10 +105,10 @@ export default function TariffsPage() {
               <thead>
                 <tr className="bg-ivory-elevated border-b border-slate">
                   <th className="font-montserrat text-[14px] font-medium uppercase tracking-[0.04em] text-body-muted text-left px-4 py-3 whitespace-nowrap w-[30%]">Возможности</th>
-                  {plans.data.map((plan, index) => (
+                  {plans.data.map((plan) => (
                     <th
                       key={plan.plan}
-                      className={`font-montserrat text-[14px] font-medium uppercase tracking-[0.04em] text-center px-4 py-3 whitespace-nowrap w-[23.33%] ${index === 1 ? 'text-ivory bg-slate' : 'text-body-muted'}`}
+                      className={`font-montserrat text-[14px] font-medium uppercase tracking-[0.04em] text-center px-4 py-3 whitespace-nowrap w-[23.33%] ${plan.featured ? 'text-ivory bg-slate' : 'text-body-muted'}`}
                     >
                       {plan.nameRu}
                     </th>
@@ -119,12 +119,12 @@ export default function TariffsPage() {
                 {ROWS.map((row) => (
                   <tr key={row.label}>
                     <td className="px-4 py-[14px] border-b border-border-light-subtle font-medium text-body">{row.label}</td>
-                    {plans.data.map((plan, index) => {
+                    {plans.data.map((plan) => {
                       const value = row.value(plan);
                       return (
                         <td
                           key={plan.plan}
-                          className={`px-4 py-[14px] border-b border-border-light-subtle text-center ${index === 1 ? 'bg-ivory-elevated' : ''} ${row.bold ? 'font-bold' : ''} ${value === '—' ? 'text-body-muted' : 'text-body'}`}
+                          className={`px-4 py-[14px] border-b border-border-light-subtle text-center ${plan.featured ? 'bg-ivory-elevated' : ''} ${row.bold ? 'font-bold' : ''} ${value === '—' ? 'text-body-muted' : 'text-body'}`}
                         >
                           {value}
                         </td>
@@ -134,13 +134,13 @@ export default function TariffsPage() {
                 ))}
                 <tr>
                   <td className="px-4 py-[14px] border-b border-border-light-subtle"></td>
-                  {plans.data.map((plan, index) => {
+                  {plans.data.map((plan) => {
                     const href = plan.plan === 'trial' ? '/register' : `/register?plan=${plan.plan}`;
                     return (
-                      <td key={plan.plan} className={`px-4 py-5 text-center ${index === 1 ? 'bg-ivory-elevated' : ''}`}>
+                      <td key={plan.plan} className={`px-4 py-5 text-center ${plan.featured ? 'bg-ivory-elevated' : ''}`}>
                         <Link
                           href={isAuth ? '/subscription' : href}
-                          className={`btn ${index === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm no-underline`}
+                          className={`btn ${plan.featured ? 'btn-primary' : 'btn-secondary'} btn-sm no-underline`}
                         >
                           {plan.plan === 'trial' ? 'Попробовать' : 'Выбрать'}
                         </Link>
