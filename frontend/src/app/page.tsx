@@ -1,6 +1,7 @@
 import { Header } from '../widgets/Header/ui/Header';
 import { Footer } from '../widgets/Footer/ui/Footer';
 import { HomeWidget } from '../widgets/homeWidget/ui';
+import { TrialPopup } from '../widgets/TrialPopup/ui/TrialPopup';
 
 export default function Home() {
   return (
@@ -8,6 +9,7 @@ export default function Home() {
       <Header />
       <HomeWidget />
       <Footer />
+      <TrialPopup />
     </div>
   );
 }

@@ -3,8 +3,15 @@ import { authApi } from './service';
 import type { RegisterRequest, LoginRequest } from './schema';
 
 export function useRegister() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
+    onSuccess: (response) => {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
   });
 }
 

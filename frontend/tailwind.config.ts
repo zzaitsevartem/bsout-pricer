@@ -43,10 +43,26 @@ const config: Config = {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' },
         },
+        trialFadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        trialPop: {
+          '0%': { opacity: '0', transform: 'translateY(28px) scale(0.92)' },
+          '60%': { opacity: '1', transform: 'translateY(-4px) scale(1.02)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        glowPulse: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(198, 153, 63, 0.5)' },
+          '50%': { boxShadow: '0 0 28px 8px rgba(198, 153, 63, 0.35)' },
+        },
       },
       animation: {
         scroll: 'scroll 20s linear infinite',
         shimmer: 'shimmer 4s linear infinite',
+        'trial-fade-in': 'trialFadeIn 0.3s ease-out forwards',
+        'trial-pop': 'trialPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'glow-pulse': 'glowPulse 2.4s ease-in-out infinite',
       },
     },
   },

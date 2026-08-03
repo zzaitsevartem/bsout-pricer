@@ -11,6 +11,7 @@ from src.modules.payment.controller import payment_router
 from src.modules.products.controller import products_router
 from src.modules.search.controller import search_router
 from src.modules.stores.controller import stores_router
+from src.modules.trial.controller import trial_router
 from src.modules.users.controller import users_router
 
 app = FastAPI(title="BScout API")
@@ -32,5 +33,6 @@ app.include_router(categories_router)
 app.include_router(products_router)
 app.include_router(search_router)
 app.include_router(payment_router)
+app.include_router(trial_router)
 app.include_router(admin_router)
 app.include_router(parser_router)

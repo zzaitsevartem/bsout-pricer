@@ -7,3 +7,4 @@ export * as searchModel from './search';
 export * as paymentModel from './payment';
 export * as adminModel from './admin';
 export * as parserModel from './parser';
+export * as trialModel from './trial';
