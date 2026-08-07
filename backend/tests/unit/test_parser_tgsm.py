@@ -1,5 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 import pytest
@@ -287,6 +288,67 @@ async def test_update_catalog_respects_limit(product_html):
         results = await parser.update_catalog(limit=1)
 
     assert len(results) == 1
+
+
+async def test_update_catalog_limit_is_not_starved_by_category_urls(product_html):
+    leaf = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        "<url><loc>https://taggsm.ru/index.php?route=product/category&amp;path=900000</loc></url>"
+        "<url><loc>https://taggsm.ru/index.php?route=product/category"
+        "&amp;path=900000_900017</loc></url>"
+        "<url><loc>https://taggsm.ru/index.php?route=information/information"
+        "&amp;information_id=4</loc></url>"
+        "<url><loc>https://taggsm.ru/index.php?route=product/manufacturer/info"
+        "&amp;manufacturer_id=5</loc></url>"
+        "<url><loc>https://taggsm.ru/about.html</loc></url>"
+        f"<url><loc>{PRODUCT_URL.replace('&', '&amp;')}</loc></url>"
+        "</urlset>"
+    )
+    seen: list[httpx.Request] = []
+    async with _client({SITEMAP_URL: leaf, PRODUCT_URL: product_html}, seen) as client:
+        parser = TgsmParser(client=client)
+        results = await parser.update_catalog(limit=1)
+
+    assert len(results) == 1
+    assert results[0].source_sku == "44990"
+    assert parser.errors == []
+    assert [str(request.url) for request in seen] == [SITEMAP_URL, PRODUCT_URL]
+
+
+def test_product_urls_share_one_path_depth(parser):
+    urls = [
+        PRODUCT_URL,
+        "https://taggsm.ru/index.php?route=product/product&product_id=1",
+        "https://taggsm.ru/index.php?route=product/category&path=900000",
+        "https://taggsm.ru/about.html",
+    ]
+    depths = {len([part for part in urlparse(url).path.split("/") if part]) for url in urls}
+
+    assert depths == {1}
+
+
+async def test_update_catalog_limit_does_not_backfill_unparseable_cards(product_html):
+    dead_url = "https://taggsm.ru/index.php?route=product/product&product_id=2"
+    leaf = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"<url><loc>{dead_url.replace('&', '&amp;')}</loc></url>"
+        f"<url><loc>{PRODUCT_URL.replace('&', '&amp;')}</loc></url>"
+        "</urlset>"
+    )
+    routes = {
+        SITEMAP_URL: leaf,
+        dead_url: "<html><body>Товар не найден</body></html>",
+        PRODUCT_URL: product_html,
+    }
+    seen: list[httpx.Request] = []
+    async with _client(routes, seen) as client:
+        parser = TgsmParser(client=client)
+        results = await parser.update_catalog(limit=1)
+
+    assert results == []
+    assert [str(request.url) for request in seen] == [SITEMAP_URL, dead_url]
 
 
 async def test_update_catalog_without_products_records_error():
