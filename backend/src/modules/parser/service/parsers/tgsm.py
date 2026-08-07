@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from src.modules.parser.service.base import BaseParser, ParseResult
 from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.parsers.bitrix_common import matches_section
 from src.modules.parser.service.utils import parse_price, safe_request
 
 STORE_SLUG = "tgsm"
@@ -120,11 +121,13 @@ class TgsmParser(BaseParser):
         ]
         return nested, pages
 
-    def filter_product_urls(self, urls: list[str]) -> list[str]:
+    def filter_product_urls(self, urls: list[str], section: str | None = None) -> list[str]:
         seen: set[str] = set()
         result: list[str] = []
         for url in urls:
             if PRODUCT_MARKER not in url:
+                continue
+            if not matches_section(url, section):
                 continue
             if url in seen:
                 continue
@@ -132,7 +135,11 @@ class TgsmParser(BaseParser):
             result.append(url)
         return result
 
-    async def collect_product_urls(self, client: httpx.AsyncClient) -> list[str]:
+    async def collect_product_urls(
+        self,
+        client: httpx.AsyncClient,
+        section: str | None = None,
+    ) -> list[str]:
         pending = [(self._absolute(SITEMAP_PATH), 0)]
         collected: list[str] = []
         visited: set[str] = set()
@@ -151,7 +158,7 @@ class TgsmParser(BaseParser):
                 continue
             collected.extend(pages)
             pending.extend((child, depth + 1) for child in nested)
-        return self.filter_product_urls(collected)
+        return self.filter_product_urls(collected, section)
 
     def parse_product_html(self, html: str, url: str = "") -> ParseResult | None:
         try:
@@ -376,9 +383,13 @@ class TgsmParser(BaseParser):
                 return []
             return await self._parse_many(client, urls)
 
-    async def update_catalog(self, limit: int | None = None) -> list[ParseResult]:
+    async def update_catalog(
+        self,
+        limit: int | None = None,
+        section: str | None = None,
+    ) -> list[ParseResult]:
         async with self._session() as client:
-            urls = await self.collect_product_urls(client)
+            urls = await self.collect_product_urls(client, section)
             if limit is not None:
                 urls = urls[:limit]
             if not urls:

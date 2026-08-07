@@ -44,24 +44,30 @@ function parseLimit(raw: string): number | null {
 function RunScopeControls({
   fullSync,
   limitInput,
+  sectionInput,
   disabled,
   onFullSyncChange,
   onLimitChange,
+  onSectionChange,
 }: {
   fullSync: boolean;
   limitInput: string;
+  sectionInput: string;
   disabled: boolean;
   onFullSyncChange: (value: boolean) => void;
   onLimitChange: (value: string) => void;
+  onSectionChange: (value: string) => void;
 }) {
   const limit = parseLimit(limitInput);
   const limitInvalid = limitInput.trim() !== '' && limit === null;
 
+  const section = sectionInput.trim();
+  const sectionTooShort = section.length === 1;
   const scopeHint = fullSync
     ? 'Весь каталог целиком — 3–4 часа на магазин. Запускать только ночью.'
     : `Будет обработано до ${formatNumber(limit ?? DEFAULT_RUN_LIMIT)} позиций${
         limit === null ? ' (значение по умолчанию)' : ''
-      }.`;
+      }${section.length >= 2 ? ` из адресов со словом «${section}»` : ' с начала каталога'}.`;
 
   return (
     <div className="border border-border-default bg-ivory-elevated px-4 py-3 mb-4">
@@ -107,9 +113,26 @@ function RunScopeControls({
             className="w-[110px] px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </label>
+
+        <label className="inline-flex items-center gap-2">
+          <span className="text-[14px] text-body">Раздел</span>
+          <input
+            type="text"
+            value={sectionInput}
+            disabled={disabled}
+            onChange={(event) => onSectionChange(event.target.value)}
+            placeholder="displey"
+            className="w-[190px] px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </label>
       </div>
 
       <p className="text-[13px] text-body-subtle mt-2">{scopeHint}</p>
+      {sectionTooShort && (
+        <p className="text-[13px] text-clay mt-1">
+          Раздел — не короче двух символов; пока фильтр не применяется.
+        </p>
+      )}
       {limitInvalid && (
         <p className="text-[13px] text-clay mt-1">
           Лимит должен быть целым числом от 1 до {formatNumber(MAX_RUN_LIMIT)} — пока применяется
@@ -200,16 +223,19 @@ export function ParsersTable() {
   const runAll = useRunParser();
   const [fullSync, setFullSync] = React.useState(false);
   const [limitInput, setLimitInput] = React.useState('');
+  const [sectionInput, setSectionInput] = React.useState('');
 
   const rows = parsers.data ?? [];
   const busy = runOne.isPending || runAll.isPending;
 
   const buildRequest = (storeSlug: string) => {
     const limit = fullSync ? null : parseLimit(limitInput);
+    const section = sectionInput.trim();
     return {
       store_slug: storeSlug,
       full_sync: fullSync,
       ...(limit === null ? {} : { limit }),
+      ...(section.length >= 2 ? { section } : {}),
     };
   };
 
@@ -241,9 +267,11 @@ export function ParsersTable() {
       <RunScopeControls
         fullSync={fullSync}
         limitInput={limitInput}
+        sectionInput={sectionInput}
         disabled={busy}
         onFullSyncChange={setFullSync}
         onLimitChange={setLimitInput}
+        onSectionChange={setSectionInput}
       />
 
       {runOne.isError && (

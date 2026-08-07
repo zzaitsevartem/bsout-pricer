@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from importlib import import_module
 
@@ -6,7 +7,7 @@ from sqlalchemy import func, select
 
 from src.modules.cache import RedisCache
 from src.modules.parser.service.base import BaseParser, ParseResult, ParserManager
-from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.exceptions import ParserError, ParserParseError
 from src.modules.parser.service.parser_service import DEFAULT_RUN_LIMIT, ParserService
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
 from src.modules.stores.model.store import Store
@@ -17,17 +18,29 @@ parser_service_module = import_module("src.modules.parser.service.parser_service
 
 
 class _FakeParser(BaseParser):
-    def __init__(self, slug: str, results: list[ParseResult]):
+    def __init__(
+        self,
+        slug: str,
+        results: list[ParseResult],
+        run_errors: list[str] | None = None,
+    ):
         super().__init__(slug, slug.upper(), "http://example.com")
         self._results = results
+        self._run_errors = run_errors or []
         self.received_limits: list[int | None] = []
+        self.received_sections: list[str | None] = []
 
     async def search(self, query):
         return []
 
-    async def update_catalog(self, limit: int | None = None):
+    async def update_catalog(self, limit: int | None = None, section: str | None = None):
         self.received_limits.append(limit)
-        return self._results if limit is None else self._results[:limit]
+        self.received_sections.append(section)
+        self.errors.extend(self._run_errors)
+        results = self._results if limit is None else self._results[:limit]
+        if section:
+            results = [r for r in results if section in r.url]
+        return results
 
 
 async def _make_store(db, slug: str) -> Store:
@@ -82,6 +95,26 @@ async def test_upsert_creates_then_updates_and_records_price_change(db_session):
     assert offer.normalized_title == "дисплей"
 
 
+@pytest.mark.parametrize("price", [Decimal("0"), Decimal("-1"), Decimal("NaN")])
+async def test_upsert_rejects_nonpositive_or_nonfinite_price(db_session, price):
+    store = await _make_store(db_session, f"invalid-price-{str(price).lower()}")
+    svc = ParserService(ParserManager())
+
+    with pytest.raises(ParserParseError):
+        await svc.upsert_offer(
+            db_session,
+            store.id,
+            ParseResult(
+                source_sku="BAD",
+                title="Дисплей",
+                price_retail=price,
+                url="http://example.com/bad",
+            ),
+        )
+
+    assert await _count(db_session, StoreOffer) == 0
+
+
 async def test_run_one_upserts_all_and_reports_done(db_session):
     await _make_store(db_session, "run-store")
     svc = ParserService(ParserManager())
@@ -110,6 +143,37 @@ async def test_run_one_upserts_all_and_reports_done(db_session):
     assert result["status"] == "done"
     assert result["upserted"] == 2
     assert await _count(db_session, StoreOffer) == 2
+
+
+async def test_run_one_skips_invalid_result_and_keeps_valid_offers(db_session):
+    await _make_store(db_session, "mixed-store")
+    svc = ParserService(ParserManager())
+    svc.register(
+        _FakeParser(
+            "mixed-store",
+            [
+                ParseResult(
+                    source_sku="OK",
+                    title="A",
+                    price_retail=Decimal("10"),
+                    url="http://example.com/ok",
+                ),
+                ParseResult(
+                    source_sku="BAD",
+                    title="B",
+                    price_retail=Decimal("0"),
+                    url="http://example.com/bad",
+                ),
+            ],
+        )
+    )
+
+    result = await svc.run_one(db_session, "mixed-store", full_sync=True)
+
+    assert result["upserted"] == 1
+    assert result["skipped"] == 1
+    assert result["deactivated"] == 0
+    assert await _count(db_session, StoreOffer) == 1
 
 
 def _offers(count: int) -> list[ParseResult]:
@@ -170,8 +234,8 @@ async def test_enqueue_run_queues_job_and_marks_parser_running(monkeypatch):
 
     sent: list[tuple] = []
 
-    async def fake_enqueue(slug, full_sync, limit):
-        sent.append((slug, full_sync, limit))
+    async def fake_enqueue(slug, full_sync, limit, section=None):
+        sent.append((slug, full_sync, limit, section))
         return "job-1"
 
     monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
@@ -185,8 +249,9 @@ async def test_enqueue_run_queues_job_and_marks_parser_running(monkeypatch):
         "status": "queued",
         "job_id": "job-1",
         "limit": None,
+        "section": None,
     }
-    assert sent == [("queue-store", True, None)]
+    assert sent == [("queue-store", True, None, None)]
 
     status = await RedisCache.get(f"parser:status:{parser.store_slug}")
     assert status["is_running"] is True
@@ -197,7 +262,7 @@ async def test_enqueue_run_refuses_while_the_lock_is_held(monkeypatch):
     parser = _FakeParser("busy-store", _offers(1))
     svc.register(parser)
 
-    async def fail_enqueue(slug, full_sync, limit):
+    async def fail_enqueue(slug, full_sync, limit, section=None):
         raise AssertionError("must not enqueue while a run holds the lock")
 
     monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fail_enqueue)
@@ -225,7 +290,7 @@ async def test_queued_status_keeps_the_previous_products_count(monkeypatch):
     parser = _FakeParser("keep-store", _offers(1))
     svc.register(parser)
 
-    async def fake_enqueue(slug, full_sync, limit):
+    async def fake_enqueue(slug, full_sync, limit, section=None):
         return "job-2"
 
     monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
@@ -257,7 +322,7 @@ async def test_enqueue_run_does_not_queue_a_second_job_before_the_worker_starts(
 
     jobs: list[tuple] = []
 
-    async def fake_enqueue(slug, full_sync, limit):
+    async def fake_enqueue(slug, full_sync, limit, section=None):
         jobs.append((slug, full_sync, limit))
         return f"job-{len(jobs)}"
 
@@ -272,3 +337,155 @@ async def test_enqueue_run_does_not_queue_a_second_job_before_the_worker_starts(
     assert second["status"] == "already_running"
     assert second["job_id"] is None
     assert jobs == [("dedup-store", True, None)]
+
+
+async def test_run_one_passes_section_to_parser_and_narrows_the_crawl(db_session):
+    await _make_store(db_session, "section-store")
+    svc = ParserService(ParserManager())
+    parser = _FakeParser(
+        "section-store",
+        [
+            ParseResult(
+                source_sku="D1",
+                title="Дисплей",
+                price_retail=Decimal("10"),
+                url="http://example.com/displey-a50/",
+            ),
+            ParseResult(
+                source_sku="B1",
+                title="АКБ",
+                price_retail=Decimal("20"),
+                url="http://example.com/akkumulyator-a50/",
+            ),
+        ],
+    )
+    svc.register(parser)
+
+    result = await svc.run_one(db_session, "section-store", full_sync=True, section="displey")
+
+    assert parser.received_sections == ["displey"]
+    assert result["upserted"] == 1
+    offer = (
+        await db_session.execute(select(StoreOffer).where(StoreOffer.source_sku == "D1"))
+    ).scalar_one()
+    assert offer.title == "Дисплей"
+
+
+async def test_complete_full_sync_deactivates_only_unseen_store_offers(db_session):
+    store = await _make_store(db_session, "deactivate-store")
+    svc = ParserService(ParserManager())
+    retained = [
+        ParseResult(
+            source_sku=f"KEEP-{index}",
+            title=f"A{index}",
+            price_retail=Decimal("10"),
+            url=f"http://example.com/keep-{index}",
+        )
+        for index in range(4)
+    ]
+    stale = ParseResult(
+        source_sku="STALE",
+        title="B",
+        price_retail=Decimal("20"),
+        url="http://example.com/stale",
+    )
+    retained_offers = [await svc.upsert_offer(db_session, store.id, result) for result in retained]
+    stale_offer = await svc.upsert_offer(db_session, store.id, stale)
+    old = datetime.now(timezone.utc) - timedelta(days=1)
+    for offer in retained_offers:
+        offer.last_seen_at = old
+    stale_offer.last_seen_at = old
+    await db_session.flush()
+    svc.register(_FakeParser("deactivate-store", retained))
+
+    result = await svc.run_one(db_session, "deactivate-store", full_sync=True)
+
+    for offer in retained_offers:
+        await db_session.refresh(offer)
+    await db_session.refresh(stale_offer)
+    assert result["deactivated"] == 1
+    assert result["catalog_coverage"] == 0.8
+    assert all(offer.is_active for offer in retained_offers)
+    assert stale_offer.is_active is False
+
+
+async def test_full_sync_below_safe_coverage_never_deactivates(db_session):
+    store = await _make_store(db_session, "coverage-store")
+    svc = ParserService(ParserManager())
+    existing = []
+    for index in range(5):
+        offer = await svc.upsert_offer(
+            db_session,
+            store.id,
+            ParseResult(
+                source_sku=f"OLD-{index}",
+                title=f"Old {index}",
+                price_retail=Decimal("10"),
+                url=f"http://example.com/old-{index}",
+            ),
+        )
+        offer.last_seen_at = datetime.now(timezone.utc) - timedelta(days=1)
+        existing.append(offer)
+    await db_session.flush()
+    svc.register(
+        _FakeParser(
+            store.slug,
+            [
+                ParseResult(
+                    source_sku="OLD-0",
+                    title="Old 0",
+                    price_retail=Decimal("10"),
+                    url="http://example.com/old-0",
+                )
+            ],
+        )
+    )
+
+    result = await svc.run_one(db_session, store.slug, full_sync=True)
+
+    for offer in existing:
+        await db_session.refresh(offer)
+    assert result["catalog_coverage"] == 0.2
+    assert result["deactivated"] == 0
+    assert all(offer.is_active for offer in existing)
+
+
+@pytest.mark.parametrize(
+    ("full_sync", "limit", "section", "run_errors"),
+    [
+        (False, None, None, []),
+        (True, 1, None, []),
+        (True, None, "display", []),
+        (True, None, None, ["catalog page failed"]),
+    ],
+)
+async def test_incomplete_or_uncertain_run_never_deactivates(
+    db_session, full_sync, limit, section, run_errors
+):
+    store = await _make_store(db_session, f"safe-store-{len(run_errors)}-{limit}-{section}")
+    svc = ParserService(ParserManager())
+    stale = await svc.upsert_offer(
+        db_session,
+        store.id,
+        ParseResult(
+            source_sku="STALE",
+            title="B",
+            price_retail=Decimal("20"),
+            url="http://example.com/stale",
+        ),
+    )
+    stale.last_seen_at = datetime.now(timezone.utc) - timedelta(days=1)
+    await db_session.flush()
+    svc.register(_FakeParser(store.slug, [], run_errors=run_errors))
+
+    result = await svc.run_one(
+        db_session,
+        store.slug,
+        full_sync=full_sync,
+        limit=limit,
+        section=section,
+    )
+
+    await db_session.refresh(stale)
+    assert result["deactivated"] == 0
+    assert stale.is_active is True

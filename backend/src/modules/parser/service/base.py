@@ -33,7 +33,11 @@ class BaseParser(ABC):
     async def search(self, query: str) -> list[ParseResult]: ...
 
     @abstractmethod
-    async def update_catalog(self, limit: int | None = None) -> list[ParseResult]: ...
+    async def update_catalog(
+        self,
+        limit: int | None = None,
+        section: str | None = None,
+    ) -> list[ParseResult]: ...
 
     async def parse_product(self, url: str) -> ParseResult | None:
         raise NotImplementedError

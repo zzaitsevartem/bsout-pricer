@@ -1,13 +1,13 @@
 import asyncio
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import async_session_factory
 from src.modules.cache import RedisCache
 from src.modules.parser.service.base import BaseParser, ParseResult, ParserManager, parser_manager
-from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.exceptions import ParserError, ParserParseError
 from src.modules.parser.service.queue import enqueue_parser_run
 from src.modules.parser.service.utils import normalize_name
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
@@ -18,6 +18,7 @@ QUEUED_STATUS_TTL = 900
 LOCK_TTL = 3600
 FULL_SYNC_LOCK_TTL = 6 * 3600
 DEFAULT_RUN_LIMIT = 500
+MIN_DEACTIVATION_COVERAGE = 0.8
 
 
 def _status_key(slug: str) -> str:
@@ -88,7 +89,38 @@ class ParserService:
         return store.id
 
     @staticmethod
+    async def _active_offer_count(db: AsyncSession, store_id: int) -> int:
+        return (
+            await db.execute(
+                select(func.count())
+                .select_from(StoreOffer)
+                .where(
+                    StoreOffer.store_id == store_id,
+                    StoreOffer.is_active.is_(True),
+                )
+            )
+        ).scalar_one()
+
+    @staticmethod
+    def _validate_result(result: ParseResult) -> None:
+        if not result.source_sku or not result.source_sku.strip():
+            raise ParserParseError("source_sku is empty")
+        if not result.title or not result.title.strip():
+            raise ParserParseError(f"offer '{result.source_sku}' has an empty title")
+        if not result.url or not result.url.strip():
+            raise ParserParseError(f"offer '{result.source_sku}' has an empty url")
+        try:
+            valid_price = result.price_retail.is_finite() and result.price_retail > 0
+        except (ArithmeticError, AttributeError, TypeError):
+            valid_price = False
+        if not valid_price:
+            raise ParserParseError(
+                f"offer '{result.source_sku}' has invalid retail price: {result.price_retail}"
+            )
+
+    @staticmethod
     async def upsert_offer(db: AsyncSession, store_id: int, result: ParseResult) -> StoreOffer:
+        ParserService._validate_result(result)
         existing = (
             await db.execute(
                 select(StoreOffer).where(
@@ -162,12 +194,29 @@ class ParserService:
         await db.flush()
         return existing
 
+    @staticmethod
+    async def _deactivate_stale_offers(
+        db: AsyncSession, store_id: int, run_started_at: datetime
+    ) -> int:
+        result = await db.execute(
+            update(StoreOffer)
+            .where(
+                StoreOffer.store_id == store_id,
+                StoreOffer.is_active.is_(True),
+                StoreOffer.last_seen_at < run_started_at,
+            )
+            .values(is_active=False)
+        )
+        await db.flush()
+        return result.rowcount or 0
+
     async def run_one(
         self,
         db: AsyncSession,
         slug: str,
         full_sync: bool = False,
         limit: int | None = None,
+        section: str | None = None,
     ) -> dict:
         parser = self._manager.get(slug)
         if parser is None:
@@ -184,6 +233,8 @@ class ParserService:
             }
 
         upserted = 0
+        skipped = 0
+        deactivated = 0
         try:
             previous = await RedisCache.get(_status_key(slug))
             await RedisCache.set(
@@ -192,17 +243,39 @@ class ParserService:
                 ttl=STATUS_TTL,
             )
             store_id = await self._resolve_store_id(db, slug)
+            active_before = await self._active_offer_count(db, store_id)
             parser.reset_errors()
+            run_started_at = datetime.now(timezone.utc)
 
-            results = await parser.update_catalog(limit=catalog_limit)
+            results = await parser.update_catalog(limit=catalog_limit, section=section)
             for result in results:
-                await self.upsert_offer(db, store_id, result)
+                try:
+                    await self.upsert_offer(db, store_id, result)
+                except ParserParseError as exc:
+                    skipped += 1
+                    parser.errors.append(str(exc))
+                    continue
                 upserted += 1
 
-            if upserted:
+            catalog_coverage = None if active_before == 0 else round(upserted / active_before, 4)
+            complete_run = (
+                full_sync
+                and catalog_limit is None
+                and not section
+                and upserted > 0
+                and not parser.errors
+                and (catalog_coverage is None or catalog_coverage >= MIN_DEACTIVATION_COVERAGE)
+            )
+            if complete_run:
+                deactivated = await self._deactivate_stale_offers(db, store_id, run_started_at)
+
+            if upserted or deactivated:
                 from src.modules.products.service.matching_service import MatchingService
 
-                await MatchingService.match_all(db, only_unmatched=True)
+                if upserted:
+                    await MatchingService.match_all(db, only_unmatched=True)
+                else:
+                    await MatchingService.recalc_cluster_aggregates(db)
 
             parser.last_run = datetime.now(timezone.utc)
             await RedisCache.set(
@@ -220,6 +293,9 @@ class ParserService:
                 "store_slug": slug,
                 "status": "done",
                 "upserted": upserted,
+                "skipped": skipped,
+                "deactivated": deactivated,
+                "catalog_coverage": catalog_coverage,
                 "limit": catalog_limit,
             }
         except Exception as exc:
@@ -243,10 +319,13 @@ class ParserService:
         slug: str,
         full_sync: bool = False,
         limit: int | None = None,
+        section: str | None = None,
     ) -> dict:
         async with async_session_factory() as session:
             try:
-                result = await self.run_one(session, slug, full_sync=full_sync, limit=limit)
+                result = await self.run_one(
+                    session, slug, full_sync=full_sync, limit=limit, section=section
+                )
                 await session.commit()
                 return result
             except Exception as exc:
@@ -264,6 +343,7 @@ class ParserService:
         slug: str,
         full_sync: bool = False,
         limit: int | None = None,
+        section: str | None = None,
     ) -> dict:
         parser = self._manager.get(slug)
         if parser is None:
@@ -281,7 +361,7 @@ class ParserService:
                 "limit": catalog_limit,
             }
 
-        job_id = await enqueue_parser_run(slug, full_sync, limit)
+        job_id = await enqueue_parser_run(slug, full_sync, limit, section)
 
         await RedisCache.set(
             _status_key(slug),
@@ -293,6 +373,7 @@ class ParserService:
             "status": "queued",
             "job_id": job_id,
             "limit": catalog_limit,
+            "section": section,
         }
 
 

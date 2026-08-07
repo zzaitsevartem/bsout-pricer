@@ -269,7 +269,10 @@ class MatchingService:
 
     @staticmethod
     def _offers_query(only_unmatched: bool, limit: int | None) -> Select:
-        query = select(StoreOffer).where(StoreOffer.match_status.notin_(PROTECTED_STATUSES))
+        query = select(StoreOffer).where(
+            StoreOffer.is_active.is_(True),
+            StoreOffer.match_status.notin_(PROTECTED_STATUSES),
+        )
         if only_unmatched:
             query = query.where(StoreOffer.product_id.is_(None))
         query = query.order_by(StoreOffer.id)

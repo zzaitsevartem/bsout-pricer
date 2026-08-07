@@ -3,13 +3,14 @@ import html as html_lib
 import re
 from contextlib import asynccontextmanager
 from decimal import Decimal
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 
 from src.modules.parser.service.base import BaseParser, ParseResult
 from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.parsers.bitrix_common import matches_section
 from src.modules.parser.service.utils import parse_price, safe_request
 
 STORE_SLUG = "profi"
@@ -145,7 +146,7 @@ class ProfiParser(BaseParser):
         ]
         return nested, pages
 
-    def filter_product_urls(self, urls: list[str]) -> list[str]:
+    def filter_product_urls(self, urls: list[str], section: str | None = None) -> list[str]:
         seen: set[str] = set()
         result: list[str] = []
         root = self.base_url.rstrip("/") + "/"
@@ -154,13 +155,19 @@ class ProfiParser(BaseParser):
                 continue
             if any(part in url for part in SKIP_URL_PARTS):
                 continue
+            if not matches_section(url, section):
+                continue
             if url in seen:
                 continue
             seen.add(url)
             result.append(url)
         return result
 
-    async def collect_product_urls(self, client: httpx.AsyncClient) -> list[str]:
+    async def collect_product_urls(
+        self,
+        client: httpx.AsyncClient,
+        section: str | None = None,
+    ) -> list[str]:
         pending = [(self._absolute(SITEMAP_PATH), 0)]
         collected: list[str] = []
         visited: set[str] = set()
@@ -179,7 +186,7 @@ class ProfiParser(BaseParser):
                 continue
             collected.extend(pages)
             pending.extend((child, depth + 1) for child in nested)
-        return self.filter_product_urls(collected)
+        return self.filter_product_urls(collected, section)
 
     def parse_product_html(self, html: str, url: str = "") -> ParseResult | None:
         try:
@@ -459,12 +466,33 @@ class ProfiParser(BaseParser):
             return []
         return self.parse_listing_html(html, limit=MAX_SEARCH_RESULTS)
 
-    async def update_catalog(self, limit: int | None = None) -> list[ParseResult]:
+    async def update_catalog(
+        self,
+        limit: int | None = None,
+        section: str | None = None,
+    ) -> list[ParseResult]:
         async with self._session() as client:
-            urls = await self.collect_product_urls(client)
-            if limit is not None:
-                urls = urls[:limit]
+            urls = await self.collect_product_urls(client, section)
             if not urls:
                 self.errors.append("catalog is empty: no product urls in sitemap")
                 return []
-            return await self._parse_many(client, urls)
+
+            if limit is None:
+                results = await self._parse_many(client, urls)
+            else:
+                urls.sort(
+                    key=lambda url: len([part for part in urlparse(url).path.split("/") if part]),
+                    reverse=True,
+                )
+                results = []
+                batch_size = max(CATALOG_CONCURRENCY, limit * 2)
+                for offset in range(0, len(urls), batch_size):
+                    batch = await self._parse_many(client, urls[offset : offset + batch_size])
+                    results.extend(batch)
+                    if len(results) >= limit:
+                        results = results[:limit]
+                        break
+
+            if not results and not self.errors:
+                self.errors.append("catalog is empty: no valid product pages")
+            return results

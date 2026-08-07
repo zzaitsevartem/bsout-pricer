@@ -27,14 +27,15 @@ SITEMAP_INDEX = """<?xml version="1.0" encoding="UTF-8"?>
 
 SITEMAP_IBLOCK_29 = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://divizion126.ru/catalog/item-a/?path=1&amp;id=2</loc></url>
+  <url><loc>https://divizion126.ru/catalog/category/item-a/?path=1&amp;id=2</loc></url>
+  <url><loc>https://divizion126.ru/catalog/category/</loc></url>
   <url><loc>https://divizion126.ru/about/</loc></url>
 </urlset>
 """
 
 SITEMAP_IBLOCK_34 = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://divizion126.ru/catalog/item-b/</loc></url>
+  <url><loc>https://divizion126.ru/catalog/category/item-b/</loc></url>
 </urlset>
 """
 
@@ -209,8 +210,9 @@ async def test_collect_sitemap_urls_unescapes_and_filters():
         parser = DivizionParser(client=client)
         urls = await parser.collect_sitemap_urls(client=client)
 
-    assert "https://divizion126.ru/catalog/item-a/?path=1&id=2" in urls
-    assert "https://divizion126.ru/catalog/item-b/" in urls
+    assert "https://divizion126.ru/catalog/category/item-a/?path=1&id=2" in urls
+    assert "https://divizion126.ru/catalog/category/item-b/" in urls
+    assert "https://divizion126.ru/catalog/category/" not in urls
     assert all("/about/" not in url for url in urls)
 
 

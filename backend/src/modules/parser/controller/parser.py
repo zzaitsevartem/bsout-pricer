@@ -34,7 +34,7 @@ async def run_parser(
 
     try:
         return await parser_service.enqueue_run(
-            body.store_slug, full_sync=body.full_sync, limit=body.limit
+            body.store_slug, full_sync=body.full_sync, limit=body.limit, section=body.section
         )
     except ParserError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc

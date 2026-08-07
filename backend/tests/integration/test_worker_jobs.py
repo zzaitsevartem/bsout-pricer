@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import PlanEnum, Subscription, User
 from src.modules.auth.service.auth import hash_password
-from src.worker import WorkerSettings, cleanup_refresh_tokens, expire_subscriptions
+from src.worker import WorkerSettings, cleanup_refresh_tokens, expire_subscriptions, sync_catalog
 
 pytestmark = pytest.mark.integration
 
@@ -109,3 +109,29 @@ def test_worker_schedule_does_not_crawl_stores_more_than_once_a_day():
 
     assert len(catalog_crons) == 1
     assert catalog_crons[0].hour == 3
+
+
+async def test_catalog_sync_is_disabled_by_default(monkeypatch):
+    monkeypatch.setattr("src.worker.settings.parser_full_sync_enabled", False)
+
+    async def fail_run_all(full_sync):
+        raise AssertionError("disabled catalog sync must not run parsers")
+
+    monkeypatch.setattr("src.worker.parser_service.run_all", fail_run_all)
+
+    assert await sync_catalog(None) == {"status": "disabled", "stores": []}
+
+
+async def test_catalog_sync_runs_only_after_explicit_opt_in(monkeypatch):
+    monkeypatch.setattr("src.worker.settings.parser_full_sync_enabled", True)
+
+    async def run_all(full_sync):
+        assert full_sync is True
+        return [{"store_slug": "tgsm", "status": "done"}]
+
+    monkeypatch.setattr("src.worker.parser_service.run_all", run_all)
+
+    assert await sync_catalog(None) == {
+        "status": "done",
+        "stores": [{"store_slug": "tgsm", "status": "done"}],
+    }

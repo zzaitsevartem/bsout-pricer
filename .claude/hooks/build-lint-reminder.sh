@@ -17,7 +17,7 @@ BE_CHANGED="$(git status --porcelain -- backend/src 2>/dev/null || true)"
 
 MSG="Напоминание (конвенция проекта): есть незакоммиченные изменения."
 [ -n "$FE_CHANGED" ] && MSG="$MSG Фронтенд — прогони: cd frontend && npm run build && npm run lint."
-[ -n "$BE_CHANGED" ] && MSG="$MSG Бэкенд — проверь запуск: cd backend && poetry run uvicorn src.main:app --reload."
+[ -n "$BE_CHANGED" ] && MSG="$MSG Бэкенд — прогони: cd backend && source ../venv/bin/activate && python -m pytest tests/unit && ruff check src tests."
 
 python3 -c 'import sys,json; print(json.dumps({"systemMessage": sys.argv[1]}))' "$MSG"
 exit 0

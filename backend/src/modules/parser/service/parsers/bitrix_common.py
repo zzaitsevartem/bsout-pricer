@@ -282,6 +282,12 @@ def parse_sitemap(markup: str | None) -> tuple[list[str], list[str]]:
     return [loc for loc in child_locs if loc], page_locs
 
 
+def matches_section(url: str, section: str | None) -> bool:
+    if not section:
+        return True
+    return section.strip().lower() in url.lower()
+
+
 def truncate(value: str, limit: int) -> str:
     return value[:limit] if value else value
 
@@ -388,6 +394,7 @@ class BitrixParser(BaseParser):
         self,
         limit: int | None = None,
         client: httpx.AsyncClient | None = None,
+        section: str | None = None,
     ) -> list[str]:
         queue = [self.absolute(self.sitemap_path)]
         visited: set[str] = set()
@@ -410,6 +417,8 @@ class BitrixParser(BaseParser):
                 absolute_loc = self.absolute(loc)
                 if not self.is_product_url(absolute_loc) or absolute_loc in seen:
                     continue
+                if not matches_section(absolute_loc, section):
+                    continue
                 seen.add(absolute_loc)
                 urls.append(absolute_loc)
                 if limit is not None and len(urls) >= limit:
@@ -419,12 +428,17 @@ class BitrixParser(BaseParser):
     async def update_catalog(
         self,
         limit: int | None = None,
+        section: str | None = None,
         delay: float | None = None,
     ) -> list[ParseResult]:
         pause = self.catalog_delay if delay is None else delay
         results: list[ParseResult] = []
         async with self._http() as client:
-            urls = await self.collect_sitemap_urls(limit=limit, client=client)
+            urls = await self.collect_sitemap_urls(limit=limit, client=client, section=section)
+            if not urls:
+                self.log_error("catalog is empty: no product urls in sitemap")
+                self.last_run = datetime.now(timezone.utc)
+                return []
             for index, url in enumerate(urls):
                 if index and pause:
                     await asyncio.sleep(pause)
@@ -436,5 +450,7 @@ class BitrixParser(BaseParser):
                     self.log_error(f"no product data at {url}")
                     continue
                 results.append(result)
+        if not results and not self.errors:
+            self.log_error("catalog is empty: no valid product pages")
         self.last_run = datetime.now(timezone.utc)
         return results

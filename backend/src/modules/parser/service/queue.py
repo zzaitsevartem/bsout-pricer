@@ -35,7 +35,12 @@ async def close_parser_queue() -> None:
         await pool.close()
 
 
-async def enqueue_parser_run(store_slug: str, full_sync: bool, limit: int | None) -> str | None:
+async def enqueue_parser_run(
+    store_slug: str,
+    full_sync: bool,
+    limit: int | None,
+    section: str | None = None,
+) -> str | None:
     pool = await get_parser_pool()
-    job = await pool.enqueue_job(PARSER_QUEUE_JOB, store_slug, full_sync, limit)
+    job = await pool.enqueue_job(PARSER_QUEUE_JOB, store_slug, full_sync, limit, section)
     return job.job_id if job is not None else None

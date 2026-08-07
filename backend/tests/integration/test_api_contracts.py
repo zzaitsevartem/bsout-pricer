@@ -338,8 +338,8 @@ async def test_admin_parser_run_returns_202_without_waiting_for_the_crawl(
 
     sent: list[tuple] = []
 
-    async def fake_enqueue(slug, full_sync, limit):
-        sent.append((slug, full_sync, limit))
+    async def fake_enqueue(slug, full_sync, limit, section=None):
+        sent.append((slug, full_sync, limit, section))
         return "job-42"
 
     monkeypatch.setattr(parser_service_module, "enqueue_parser_run", fake_enqueue)
@@ -361,8 +361,9 @@ async def test_admin_parser_run_returns_202_without_waiting_for_the_crawl(
         "status": "queued",
         "job_id": "job-42",
         "limit": None,
+        "section": None,
     }
-    assert sent == [("tgsm", True, None)]
+    assert sent == [("tgsm", True, None, None)]
 
 
 async def test_admin_parser_run_rejects_unknown_store(client, db_session):

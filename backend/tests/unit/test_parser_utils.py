@@ -11,6 +11,7 @@ from src.modules.parser.service.parser_service import (
     resolve_catalog_limit,
     resolve_lock_ttl,
 )
+from src.modules.parser.service.parsers.bitrix_common import matches_section
 from src.modules.parser.service.utils import (
     compare_products,
     normalize_name,
@@ -103,3 +104,18 @@ async def test_safe_request_gives_up_after_retries():
     async with httpx.AsyncClient(transport=transport) as client:
         with pytest.raises(ParserConnectionError):
             await safe_request(client, "http://example.com", retries=2, backoff=0.0)
+
+
+def test_section_filter_is_case_insensitive_substring():
+    assert matches_section("https://x.ru/catalog/displey-dlya-samsung/", "displey")
+    assert matches_section("https://x.ru/catalog/DISPLEY-A50/", "displey")
+    assert matches_section("https://x.ru/catalog/displey/", "  DispleY  ")
+
+
+def test_section_filter_rejects_other_sections():
+    assert not matches_section("https://x.ru/catalog/akkumulyator-a50/", "displey")
+
+
+def test_empty_section_lets_everything_through():
+    for empty in (None, "", "   "):
+        assert matches_section("https://x.ru/catalog/whatever/", empty)

@@ -312,7 +312,7 @@ async def test_update_catalog_skips_non_product_pages_without_errors(product_htm
     }
     async with _client(routes) as client:
         parser = ProfiParser(client=client)
-        results = await parser.update_catalog()
+        results = await parser.update_catalog(limit=1)
 
     assert len(results) == 1
     assert parser.errors == []

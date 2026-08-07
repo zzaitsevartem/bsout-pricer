@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.parser.service.base import parser_manager
+from src.modules.parser.service.exceptions import ParserParseError
 from src.modules.parser.service.parser_service import parser_service
 from src.modules.products.model.product import StoreOffer
 from src.modules.stores.model.store import Store
@@ -35,10 +36,12 @@ async def refresh_tracked_offers(db: AsyncSession, limit: int = MAX_OFFERS_PER_R
     rows = await tracked_offer_urls(db, limit=limit)
     refreshed = 0
     failed = 0
+    skipped_no_parser = 0
 
     for _offer_id, url, store_slug, store_id in rows:
         parser = parser_manager.get(store_slug)
         if parser is None:
+            skipped_no_parser += 1
             continue
         try:
             result = await parser.parse_product(url)
@@ -49,8 +52,18 @@ async def refresh_tracked_offers(db: AsyncSession, limit: int = MAX_OFFERS_PER_R
         if result is None:
             failed += 1
             continue
-        await parser_service.upsert_offer(db, store_id, result)
+        try:
+            await parser_service.upsert_offer(db, store_id, result)
+        except ParserParseError as exc:
+            failed += 1
+            logger.warning("price refresh rejected %s: %s", url, exc)
+            continue
         refreshed += 1
 
     await db.commit()
-    return {"candidates": len(rows), "refreshed": refreshed, "failed": failed}
+    return {
+        "candidates": len(rows),
+        "refreshed": refreshed,
+        "failed": failed,
+        "skipped_no_parser": skipped_no_parser,
+    }

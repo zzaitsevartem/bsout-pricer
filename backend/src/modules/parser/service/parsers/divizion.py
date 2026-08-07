@@ -1,4 +1,5 @@
 from decimal import Decimal
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -51,6 +52,12 @@ class DivizionParser(BitrixParser):
 
     def __init__(self, client: httpx.AsyncClient | None = None):
         super().__init__(STORE_SLUG, STORE_NAME, BASE_URL, client=client)
+
+    def is_product_url(self, url: str) -> bool:
+        if not super().is_product_url(url):
+            return False
+        parts = [part for part in urlparse(url).path.split("/") if part]
+        return len(parts) >= 3 and parts[0] == "catalog"
 
     def parse_listing(self, markup: str | None, page_url: str = "") -> list[ParseResult]:
         soup = make_soup(markup)

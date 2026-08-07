@@ -25,8 +25,16 @@ async def startup(ctx) -> None:
     register_default_parsers()
 
 
-async def sync_catalog(ctx) -> list[dict]:
-    return await parser_service.run_all(full_sync=True)
+async def sync_catalog(ctx) -> dict:
+    if not settings.parser_full_sync_enabled:
+        result = {"status": "disabled", "stores": []}
+        logger.info("sync_catalog: %s", result)
+        return result
+
+    stores = await parser_service.run_all(full_sync=True)
+    result = {"status": "done", "stores": stores}
+    logger.info("sync_catalog: %s", result)
+    return result
 
 
 async def run_parser(
@@ -34,8 +42,11 @@ async def run_parser(
     store_slug: str,
     full_sync: bool = False,
     limit: int | None = None,
+    section: str | None = None,
 ) -> dict:
-    result = await parser_service.run_isolated(store_slug, full_sync=full_sync, limit=limit)
+    result = await parser_service.run_isolated(
+        store_slug, full_sync=full_sync, limit=limit, section=section
+    )
     logger.info("run_parser: %s", result)
     return result
 

@@ -4,6 +4,7 @@ export const parserRunRequestSchema = z.object({
   store_slug: z.string().min(1),
   full_sync: z.boolean().optional(),
   limit: z.number().int().min(1).max(100000).optional(),
+  section: z.string().min(2).max(200).optional(),
 });
 
 export const parserStatusResponseSchema = z.object({
@@ -19,6 +20,7 @@ export const parserRunResponseSchema = z.object({
   status: z.string(),
   job_id: z.string().nullable().optional(),
   limit: z.number().nullable().optional(),
+  section: z.string().nullable().optional(),
 });
 
 export type ParserRunRequest = z.infer<typeof parserRunRequestSchema>;
