@@ -8,7 +8,6 @@ backend/.venv
 backend/venv
 .venv
 venv/
-frontend/mockups3
 
 # testing
 frontend/coverage
@@ -40,3 +39,7 @@ yarn-error.log*
 
 # git worktrees параллельных агентов
 .claude/worktrees/
+
+# локальные конфиги других агентов — канон живёт в .claude/, эти не коммитим
+.codex/
+.agents/
