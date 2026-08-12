@@ -9,7 +9,15 @@ import { $isAuth } from '@/shared/config/store';
 import { useMe } from '@/models/user';
 import { useLogout } from '@/models/auth';
 import { useUnreadNotificationCount } from '@/models/notification';
+import { CircleQuestionMark, SearchIcon } from '@/shared/ui/IconSVG';
 import { ThemeToggle } from './ThemeToggle';
+import { HeaderSearch } from './HeaderSearch';
+import { UserMenu } from './UserMenu';
+
+const navItems = [
+  { href: '/tariffs', label: 'Тарифы' },
+  { href: '/contacts', label: 'Контакты' },
+];
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,8 +44,8 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-ivory border-b border-border-light-subtle">
-      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between max-md:px-5">
-        <Link href="/" className="flex items-center no-underline">
+      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center gap-4 max-md:px-5 max-md:gap-2">
+        <Link href="/" className="flex items-center no-underline shrink-0">
           <Image
             src="/Logo.svg"
             alt="BScout"
@@ -49,13 +57,8 @@ const Header: React.FC = () => {
           />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {[
-            { href: '/search', label: 'Поиск' },
-            { href: '/tariffs', label: 'Тарифы' },
-            { href: '/faq', label: 'FAQ' },
-            { href: '/contacts', label: 'Контакты' },
-          ].map((item) => (
+        <nav className="hidden lg:flex items-center gap-1 shrink-0">
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -67,64 +70,50 @@ const Header: React.FC = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <HeaderSearch className="hidden lg:block flex-1 min-w-0 max-w-[420px]" />
+
+        <div className="hidden lg:flex items-center gap-2 ml-auto shrink-0">
           <ThemeToggle />
           {!isAuth && (
             <>
-              <Link href="/login" className="btn-secondary btn-sm">Войти</Link>
-              <Link href="/register" className="btn-primary btn-sm">Регистрация</Link>
+              <Link href="/login" className="btn-secondary btn-sm h-11">Войти</Link>
+              <Link href="/register" className="btn-primary btn-sm h-11 rounded-b-[8px]">Регистрация</Link>
             </>
           )}
-          {isAuth && (
-            <>
-              {me?.is_admin && (
-                <Link href="/admin" className="btn-ghost btn-sm">Админка</Link>
-              )}
-              <Link
-                href="/account/notifications"
-                className="btn-ghost btn-sm relative inline-flex items-center"
-                aria-label={unreadCount > 0 ? `Уведомления: ${unreadCount} непрочитанных` : 'Уведомления'}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[11px] font-medium bg-clay text-ivory">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
-              <Link href="/account" className="btn-secondary btn-sm inline-flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Кабинет
-              </Link>
-              <button onClick={handleLogout} disabled={logout.isPending} className="btn-primary btn-sm disabled:opacity-60">
-                Выйти
-              </button>
-            </>
-          )}
+          {isAuth && <UserMenu />}
+          <span aria-hidden="true" className="w-px h-6 bg-border-light-subtle mx-1" />
+          <Link href="/faq" className="btn-icon" aria-label="Частые вопросы" title="Частые вопросы">
+            <CircleQuestionMark />
+          </Link>
         </div>
 
-        <button
-          className={`flex md:hidden flex-col justify-center items-center w-9 h-9 bg-transparent border-none cursor-pointer gap-[5px] z-50 ${isMenuOpen ? 'fixed right-5 top-5' : 'relative'}`}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Открыть меню"
-        >
-          <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
-          <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
-        </button>
+        <div className="flex lg:hidden items-center gap-1 ml-auto shrink-0">
+          <Link href="/search" className="btn-icon" aria-label="Поиск запчастей" title="Поиск запчастей">
+            <SearchIcon width={20} height={20} />
+          </Link>
+          <Link href="/faq" className="btn-icon" aria-label="Частые вопросы" title="Частые вопросы">
+            <CircleQuestionMark />
+          </Link>
+          <button
+            className={`flex flex-col justify-center items-center w-9 h-9 bg-transparent border-none cursor-pointer gap-[5px] z-50 ${isMenuOpen ? 'fixed right-5 top-5' : 'relative'}`}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
+            aria-expanded={isMenuOpen}
+          >
+            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`} />
+            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+          </button>
+        </div>
 
-        <div className={`fixed inset-0 bg-ivory z-40 transition-transform duration-300 md:hidden
+        <div className={`fixed inset-0 bg-ivory z-40 transition-transform duration-300 lg:hidden
           ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
-          <div className="flex flex-col items-center justify-center h-full gap-8">
+          <div className="flex flex-col items-center justify-center h-full gap-8 px-8">
+            <HeaderSearch className="w-full max-w-[320px]" onSubmitted={closeMenu} />
             <nav>
               <ul className="flex flex-col items-center gap-8 list-none p-0">
-                {[
-                  { href: '/search', label: 'Поиск' },
-                  { href: '/tariffs', label: 'Тарифы' },
-                  { href: '/faq', label: 'FAQ' },
-                  { href: '/contacts', label: 'Контакты' },
-                ].map((item) => (
+                {[...navItems, { href: '/faq', label: 'FAQ' }].map((item) => (
                   <li key={item.href}>
                     <Link href={item.href} className="text-2xl text-body no-underline hover:text-slate transition-colors" onClick={closeMenu}>
                       {item.label}
@@ -138,7 +127,7 @@ const Header: React.FC = () => {
               {!isAuth && (
                 <>
                   <Link href="/login" className="btn-secondary" onClick={closeMenu}>Войти</Link>
-                  <Link href="/register" className="btn-primary" onClick={closeMenu}>Регистрация</Link>
+                  <Link href="/register" className="btn-primary rounded-b-[8px]" onClick={closeMenu}>Регистрация</Link>
                 </>
               )}
               {isAuth && (
@@ -158,7 +147,7 @@ const Header: React.FC = () => {
         </div>
 
         <div
-          className={`fixed inset-0 bg-black/50 z-30 transition-opacity duration-300 md:hidden
+          className={`fixed inset-0 bg-black/50 z-30 transition-opacity duration-300 lg:hidden
             ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           onClick={closeMenu}
         />

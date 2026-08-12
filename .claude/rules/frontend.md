@@ -24,7 +24,16 @@ paths: ["frontend/**/*.ts", "frontend/**/*.tsx", "frontend/**/*.css"]
 - Изображения — `import img from '@/shared/assets/images/x.webp'`, использовать `img.src`.
 
 ## Дизайн
-- Для любой UI/вёрстки — сначала прочитать дизайн-систему (скил `/design-system`, файлы в `skills/claude/`). Токены: brand-dark `#010D3E`, muted `#6F6C90`, accent `#b8007b`; шрифт Raleway.
+- Для любой UI/вёрстки — сначала прочитать дизайн-систему (скил `/design-system`, файлы в `skills/claude/`).
+- Токены (CSS-переменные в `src/app/globals.css`, имена Tailwind в `tailwind.config.ts`):
+  - поверхности — `ivory` `#FAF9F5`, `ivory-elevated` `#F0EEE6`, `ivory-warm` `#E3DACC`;
+  - тёмные/текст — `slate` `#141413`, `slate-soft`, `slate-medium`, `body` `#3D3D3A`, `body-subtle`, `body-muted`;
+  - границы — `border-default` `#B0AEA5`, `border-light`, `border-subtle`, `border-light-subtle`;
+  - акценты (фиксированный hex, не переменные) — `clay` `#D97757`, `clay-ember`, `olive`, `sky`, `fig`, `cactus`, `green-discount`.
+- Шрифты: `font-raleway` (основной), `font-dm-sans`, `font-lexend`, `font-montserrat`.
+- Тёмная тема — `darkMode: 'class'`: переменные переопределяются в `.dark`, а не через `prefers-color-scheme`. Цвета вручную не свапать.
+- Кнопки — готовые классы из `globals.css` (`.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.btn-sm/lg/icon/arrow`), не собирать заново.
+- Старые токены `brand-dark #010D3E` / `muted #6F6C90` / `accent #b8007b` **устарели** — их нет в `tailwind.config.ts`. Они ещё встречаются в легаси `.scss`-модулях виджетов и в `DESIGN.md`/`README.md`; в новом коде не использовать.
 
 ## После правок
 - `cd frontend && npm run build && npm run lint`.

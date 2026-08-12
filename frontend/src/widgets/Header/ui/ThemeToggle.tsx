@@ -10,12 +10,12 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center justify-center w-9 h-9 shrink-0 bg-transparent text-slate border border-border-subtle rounded-full cursor-pointer transition-colors hover:bg-ivory-elevated"
+      className="btn-icon"
       aria-label="Переключить тему"
       title="Переключить тему"
     >
-      <SunIcon className="block dark:hidden" />
-      <MoonIcon className="hidden dark:block" />
+      <SunIcon width={20} height={20} className="block dark:hidden" />
+      <MoonIcon width={20} height={20} className="hidden dark:block" />
     </button>
   );
 };

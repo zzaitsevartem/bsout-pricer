@@ -15,8 +15,8 @@
     --color-slate-medium: #282825;
     --color-body: #3D3D3A;
     --color-body-subtle: #5E5D59;
-    --color-body-muted: #87867F;
-    --color-border-default: #B0AEA5;
+    --color-body-muted: #706F67;
+    --color-border-default: #8A8880;
     --color-border-light: #E3DACC;
     --color-border-subtle: #D1CFC5;
     --color-border-light-subtle: #E8E6DC;
@@ -32,7 +32,7 @@
     --color-body: #D1CFC5;
     --color-body-subtle: #B0AEA5;
     --color-body-muted: #87867F;
-    --color-border-default: #5E5D59;
+    --color-border-default: #75746C;
     --color-border-light: #3D3D3A;
     --color-border-subtle: #3D3D3A;
     --color-border-light-subtle: #282825;
@@ -106,6 +106,18 @@
     @apply text-base px-[31px] py-[14px];
   }
 
+  .btn-icon {
+    @apply relative inline-flex items-center justify-center w-11 h-11 shrink-0 bg-transparent text-slate border border-border-default transition-colors cursor-pointer no-underline;
+  }
+
+  .btn-icon:hover {
+    @apply bg-ivory-elevated text-slate;
+  }
+
+  .btn-icon:focus-visible {
+    @apply outline-2 outline-offset-2 outline-slate;
+  }
+
   .btn-arrow {
     @apply inline-flex items-center gap-1 text-[15px] font-normal text-slate bg-none border-none p-0 no-underline;
   }
@@ -117,5 +129,16 @@
   .btn-arrow::after {
     content: '→';
     @apply ml-0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
