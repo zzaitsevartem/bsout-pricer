@@ -10,7 +10,7 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="btn-icon"
+      className="btn-icon rounded-full"
       aria-label="Переключить тему"
       title="Переключить тему"
     >

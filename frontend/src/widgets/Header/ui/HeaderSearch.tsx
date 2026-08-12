@@ -2,6 +2,7 @@
 
 import React, { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/shared/lib/utils';
 import { CloseIcon, SearchIcon } from '@/shared/ui/IconSVG';
 
 type HeaderSearchProps = {
@@ -22,36 +23,37 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
   };
 
   return (
-    <form role="search" onSubmit={handleSubmit} className={className}>
+    <form role="search" onSubmit={handleSubmit} className={cn(className)}>
       <label htmlFor={inputId} className="sr-only">
         Поиск запчастей
       </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-body-subtle pointer-events-none">
-          <SearchIcon />
-        </span>
+      <div className="relative flex h-11 items-center rounded-full border border-border-default bg-ivory-elevated transition-colors focus-within:border-slate focus-within:bg-ivory focus-within:shadow-sm">
         <input
           id={inputId}
           type="search"
           value={value}
           onChange={(event) => setValue(event.target.value)}
           placeholder="Поиск запчастей…"
-          className="block w-full h-11 pl-9 pr-9 text-[15px] tracking-[-0.002em] text-slate bg-ivory border border-border-default transition-colors placeholder:text-body-muted focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_var(--color-slate)] [&::-webkit-search-cancel-button]:appearance-none"
+          className="block h-full w-full min-w-0 bg-transparent py-0 pl-4 pr-20 text-[15px] tracking-[-0.002em] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
         />
         {value && (
           <button
             type="button"
             onClick={() => setValue('')}
             aria-label="Очистить поиск"
-            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none p-0 cursor-pointer text-body-subtle transition-colors hover:text-slate"
+            className="absolute right-10 top-1/2 flex -translate-y-1/2 items-center justify-center border-none bg-transparent p-0 text-body-subtle transition-colors hover:text-slate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate"
           >
             <CloseIcon />
           </button>
         )}
+        <button
+          type="submit"
+          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border-none bg-transparent p-0 text-body-subtle transition-colors hover:bg-ivory-warm hover:text-slate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate"
+          aria-label="Найти"
+        >
+          <SearchIcon />
+        </button>
       </div>
-      <button type="submit" className="sr-only">
-        Найти
-      </button>
     </form>
   );
 };

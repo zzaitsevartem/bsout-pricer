@@ -60,7 +60,7 @@ const UserMenu: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="btn-icon"
+        className="btn-icon rounded-full"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={unreadCount > 0 ? `Меню профиля, непрочитанных уведомлений: ${unreadCount}` : 'Меню профиля'}
@@ -73,7 +73,7 @@ const UserMenu: React.FC = () => {
         <div
           role="menu"
           aria-label="Меню профиля"
-          className="absolute right-0 top-full mt-2 min-w-[232px] bg-ivory border border-slate shadow-[0_4px_12px_rgb(20_20_19_/_0.08)] z-50"
+          className="absolute right-0 top-full z-50 mt-2 min-w-[232px] overflow-hidden rounded-2xl border border-border-subtle bg-ivory shadow-lg"
         >
           <div className="px-3 py-3 border-b border-border-light-subtle">
             <p className="text-[15px] font-semibold text-slate truncate">{me?.full_name || 'Аккаунт'}</p>
