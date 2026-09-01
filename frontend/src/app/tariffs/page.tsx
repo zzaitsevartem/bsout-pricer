@@ -91,7 +91,7 @@ export default function TariffsPage() {
         )}
 
         {plans.isError && (
-          <div className="border border-slate bg-ivory-elevated p-6 text-center mb-12">
+          <div className="rounded-[24px] border border-border-subtle bg-ivory-elevated p-6 text-center mb-12">
             <p className="text-[15px] text-body mb-4">Не удалось загрузить тарифы. Попробуйте обновить страницу.</p>
             <button onClick={() => plans.refetch()} className="btn btn-secondary btn-sm">
               Повторить
@@ -100,7 +100,7 @@ export default function TariffsPage() {
         )}
 
         {plans.data && plans.data.length > 0 && (
-          <div className="overflow-x-auto border border-slate bg-ivory mb-12">
+          <div className="overflow-x-auto rounded-[24px] border border-border-subtle bg-ivory mb-12">
             <table className="w-full border-collapse text-[15px]">
               <thead>
                 <tr className="bg-ivory-elevated border-b border-slate">

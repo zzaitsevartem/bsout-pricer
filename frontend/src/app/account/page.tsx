@@ -29,7 +29,7 @@ function AccountContent() {
                   <p className="text-body-subtle">Загрузка профиля…</p>
                 ) : (
                   <>
-                    <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-2xl font-bold text-slate">{initials(me.full_name)}</div>
+                    <div className="w-16 h-16 rounded-full bg-ivory-warm flex items-center justify-center text-2xl font-bold text-slate">{initials(me.full_name)}</div>
                     <div>
                       <h3 className="text-xl font-semibold text-slate mb-1">{me.full_name}</h3>
                       <p className="text-body-subtle mb-0">{me.email}{me.phone ? ` · ${me.phone}` : ''}</p>
@@ -43,17 +43,17 @@ function AccountContent() {
 
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">Текущий тариф</h2>
-              <div className="rounded-[24px] p-[31px] bg-ivory-elevated flex justify-between items-center flex-wrap gap-4">
+              <div className="rounded-[24px] pt-[20px] px-[31px] pb-[31px] bg-ivory-elevated flex justify-between items-center flex-wrap gap-4">
                 {subscription.isLoading ? (
                   <p className="text-body-subtle mb-0">Загрузка…</p>
                 ) : subscription.data ? (
                   <>
                     <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="inline-flex items-center px-4 py-[6px] text-[14px] font-semibold bg-ivory-elevated text-slate border border-slate">{planLabel(subscription.data.plan)}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center rounded-full px-4 py-[6px] text-[14px] font-semibold bg-green-discount text-white border border-transparent">{planLabel(subscription.data.plan)}</span>
                         <span className="text-[12px] text-body-muted">Активна до {formatDate(subscription.data.end_date)}</span>
                       </div>
-                      <p className="text-[15px] text-body-subtle mb-0">{subscription.data.auto_renew ? 'Автопродление включено' : 'Автопродление выключено'}</p>
+                      <p className="text-[15px] text-body-subtle mt-2 mb-0">{subscription.data.auto_renew ? 'Автопродление включено' : 'Автопродление выключено'}</p>
                     </div>
                     <Link href="/subscription" className="btn-secondary btn-sm">Управлять</Link>
                   </>

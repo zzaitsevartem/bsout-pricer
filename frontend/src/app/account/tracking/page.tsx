@@ -111,7 +111,7 @@ function TargetPriceEditor({ item }: { item: TrackedProductResponse }) {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="цена, ₽"
-        className="w-[110px] px-2 py-1 text-[14px] bg-ivory border border-border-default text-slate"
+        className="w-[110px] rounded-full px-2 py-1 text-[14px] bg-ivory border border-border-default text-slate"
       />
       <button
         type="button"
@@ -146,7 +146,7 @@ function TrackedRow({ item }: { item: TrackedProductResponse }) {
               {item.stores_count} {plural(item.stores_count, 'магазин', 'магазина', 'магазинов')}
             </span>
             {item.target_reached && (
-              <span className="inline-flex items-center text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-[#EDF1E5] border border-[#C7D2B0] text-[#4F5C36]">
+              <span className="inline-flex items-center rounded-full text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-[#EDF1E5] border border-[#C7D2B0] text-[#4F5C36]">
                 Цель достигнута
               </span>
             )}

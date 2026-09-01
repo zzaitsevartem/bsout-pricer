@@ -32,7 +32,7 @@ function NotificationRow({ item }: { item: NotificationResponse }) {
         <div className="flex items-center gap-2 flex-wrap mb-1">
           {!item.is_read && <span className="w-2 h-2 bg-slate flex-shrink-0" aria-hidden="true" />}
           <span className="text-[15px] font-medium text-slate">{item.title}</span>
-          <span className="inline-flex items-center text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-ivory-elevated border border-border-default text-body-subtle">
+          <span className="inline-flex items-center rounded-full text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-ivory-elevated border border-border-default text-body-subtle">
             {TYPE_LABELS[item.type] ?? item.type}
           </span>
         </div>

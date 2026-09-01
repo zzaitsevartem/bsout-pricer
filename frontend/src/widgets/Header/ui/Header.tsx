@@ -47,7 +47,7 @@ const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border-light-subtle bg-ivory">
       <div className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-5 px-6 max-md:h-16 max-md:gap-2 max-md:px-5">
-        <Link href="/" className="flex shrink-0 items-center rounded-md no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate">
+        <Link href="/" className="flex shrink-0 items-center rounded-full no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate">
           <Image
             src="/Logo.svg"
             alt="BScout"

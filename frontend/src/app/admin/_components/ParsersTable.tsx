@@ -80,7 +80,7 @@ function RunScopeControls({
             onChange={(event) => onFullSyncChange(event.target.checked)}
             className="hidden peer"
           />
-          <span className="w-[18px] h-[18px] border border-body-muted bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate peer-disabled:opacity-60 transition-colors">
+          <span className="w-[18px] h-[18px] rounded-full border border-body-muted bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate peer-disabled:opacity-60 transition-colors">
             <svg
               width="12"
               height="6"
@@ -110,7 +110,7 @@ function RunScopeControls({
             disabled={disabled || fullSync}
             onChange={(event) => onLimitChange(event.target.value)}
             placeholder={String(DEFAULT_RUN_LIMIT)}
-            className="w-[110px] px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-[110px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </label>
 
@@ -122,7 +122,7 @@ function RunScopeControls({
             disabled={disabled}
             onChange={(event) => onSectionChange(event.target.value)}
             placeholder="displey"
-            className="w-[190px] px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-[190px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </label>
       </div>

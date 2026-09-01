@@ -41,10 +41,8 @@ function SidebarLink({ item }: { item: SidebarItem }) {
     <a
       href={item.href}
       className={cn(
-        'flex items-center gap-3 px-[10px] py-2 text-[15px] no-underline transition-colors hover:bg-ivory-elevated',
-        item.active
-          ? 'bg-ivory-elevated text-slate font-medium border-l-2 border-slate'
-          : 'text-body',
+        'flex items-center gap-3 rounded-full px-3 py-2 text-[15px] no-underline transition-colors hover:bg-ivory-elevated',
+        item.active ? 'bg-ivory-elevated text-slate font-medium' : 'text-body',
       )}
     >
       {item.icon}

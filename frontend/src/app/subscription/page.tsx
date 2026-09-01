@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
 import { AccountSidebar } from '@/widgets/AccountSidebar/ui/AccountSidebar';
+import { TariffPlans } from '@/widgets/TariffPlans';
 import { RequireAuth } from '@/shared/lib/RequireAuth';
 import { useSubscription } from '@/models/user';
 import { usePaymentHistory, usePlans, useSubscribe, useCancelSubscription } from '@/models/payment';
-import type { PaymentResponse, PlanResponse } from '@/models/payment';
+import type { PaymentResponse } from '@/models/payment';
 import type { Plan } from '@/models/user';
 import { formatDate, planLabel } from '@/shared/lib/format';
 
@@ -43,24 +44,6 @@ function formatDays(days: number): string {
 
 function statusLabel(status: string): string {
   return STATUS_LABELS[status] ?? status;
-}
-
-function planFeatures(plan: PlanResponse): string[] {
-  const features = [
-    `До ${plan.trackedProducts} отслеживаемых товаров`,
-    `${plan.stores} магазинов в поиске`,
-    plan.fuzzySearch ? 'Умный поиск (fuzzy)' : 'Точный и частичный поиск',
-  ];
-  if (plan.priceAlerts) {
-    features.push('Уведомления о снижении цены');
-  }
-  if (plan.exportReports) {
-    features.push('Экспорт отчётов PDF/CSV');
-  }
-  if (plan.supportRu && plan.supportRu !== '—') {
-    features.push(`Поддержка: ${plan.supportRu}`);
-  }
-  return features;
 }
 
 function PendingPaymentNotice({ payment }: { payment: PaymentResponse }) {
@@ -128,7 +111,7 @@ function SubscriptionContent() {
             <div className="mb-12">
               <h2 className="text-[40px] font-semibold text-slate mb-6">Управление подпиской</h2>
 
-              <div className="rounded-[24px] p-[31px] bg-ivory-elevated mb-8">
+              <div className="rounded-[24px] pt-[20px] px-[31px] pb-[31px] bg-ivory-elevated mb-8">
                 {subscription.isLoading ? (
                   <p className="text-body-subtle mb-0">Загрузка…</p>
                 ) : subscription.data ? (
@@ -136,7 +119,7 @@ function SubscriptionContent() {
                     <div>
                       <p className="font-montserrat text-xs uppercase tracking-[0.04em] text-body-muted mb-2">Текущий тариф</p>
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="inline-flex items-center px-4 py-[6px] text-[14px] font-semibold bg-ivory-elevated text-slate border border-slate">
+                        <span className="inline-flex items-center rounded-full px-4 py-[6px] text-[14px] font-semibold bg-green-discount text-white border border-transparent">
                           {currentPlanDefinition?.nameRu ?? planLabel(subscription.data.plan)}
                         </span>
                         {currentPlanDefinition && (
@@ -193,54 +176,12 @@ function SubscriptionContent() {
               )}
 
               {plans.data && (
-                <div className="grid grid-cols-3 gap-6 items-start mb-8 max-lg:grid-cols-1 max-lg:max-w-[480px] max-lg:mx-auto">
-                  {plans.data.map((planItem) => {
-                    const isCurrent = currentPlan === planItem.plan;
-                    const isFree = planItem.price === 0;
-                    const featured = planItem.featured;
-                    const isPending = subscribe.isPending && subscribe.variables?.plan === planItem.plan;
-                    return (
-                      <div key={planItem.plan} className={`rounded-[24px] p-[31px] flex flex-col ${featured ? 'bg-slate text-ivory' : 'bg-ivory-elevated'}`}>
-                        <span className={`inline-block font-montserrat text-xs uppercase tracking-[0.04em] px-2 py-1 mb-4 ${featured ? 'bg-clay text-ivory' : 'bg-ivory-warm text-body-muted'}`}>
-                          {isCurrent ? 'Ваш план' : planItem.nameRu}
-                        </span>
-                        <div className={`text-[40px] font-bold leading-none mb-2 ${featured ? 'text-ivory' : 'text-slate'}`}>
-                          {formatAmount(planItem.price)} ₽{' '}
-                          <span className="text-base font-normal text-body-subtle">/ {formatDays(planItem.durationDays)}</span>
-                        </div>
-                        {!isFree && planItem.firstPaymentPrice < planItem.price && (
-                          <span className="inline-block text-[13px] font-semibold text-green-discount mt-1">
-                            Первый платёж — {formatAmount(planItem.firstPaymentPrice)} ₽ (−20%)
-                          </span>
-                        )}
-                        <ul className="my-6 flex-1">
-                          {planFeatures(planItem).map((feature) => (
-                            <li key={feature} className={`flex items-start gap-3 py-[6px] text-[15px] ${featured ? 'text-[#D1CFC5]' : 'text-body'}`}>
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5">
-                                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#788C5D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                        {isCurrent ? (
-                          <button disabled className={`w-full py-3 text-[15px] font-medium opacity-50 cursor-not-allowed ${featured ? 'bg-ivory text-slate border border-ivory' : 'bg-transparent text-body-muted border border-border-default'}`}>Текущий тариф</button>
-                        ) : isFree ? (
-                          <p className="text-[14px] text-body-subtle text-center mb-0">
-                            Подключается автоматически при регистрации
-                          </p>
-                        ) : (
-                          <button
-                            onClick={() => handleSubscribe(planItem.plan)}
-                            disabled={subscribe.isPending}
-                            className={`w-full py-3 text-[15px] font-medium transition-colors disabled:opacity-60 ${featured ? 'bg-ivory text-slate border border-ivory hover:opacity-90' : 'bg-transparent text-slate border border-slate hover:bg-ivory-elevated'}`}
-                          >
-                            {isPending ? 'Создаём платёж…' : `Оплатить ${planItem.nameRu}`}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="mb-8">
+                  <TariffPlans
+                    onSelect={handleSubscribe}
+                    selectedPlan={subscribe.isPending ? subscribe.variables?.plan : undefined}
+                    subscribing={subscribe.isPending}
+                  />
                 </div>
               )}
 

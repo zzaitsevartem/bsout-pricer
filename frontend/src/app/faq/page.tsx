@@ -55,7 +55,7 @@ export default function FaqPage() {
           <p className="text-lg text-body">Ответы на самые популярные вопросы о платформе BScout</p>
         </div>
 
-        <div className="max-w-[720px] mx-auto border border-slate">
+        <div className="max-w-[720px] mx-auto border border-border-subtle rounded-[24px] overflow-hidden">
           {faqItems.map((item, i) => (
             <AccordionItem
               key={i}

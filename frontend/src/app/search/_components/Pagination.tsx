@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/shared/lib/utils';
 import { buildPageItems } from '@/app/search/_components/lib';
 
-const CELL = 'flex items-center justify-center w-9 h-9 text-[14px] font-medium';
+const CELL = 'flex items-center justify-center rounded-full w-9 h-9 text-[14px] font-medium';
 
 type PaginationProps = {
   page: number;

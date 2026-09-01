@@ -9,7 +9,7 @@ import { useMe } from '@/models/user';
 import { BellIcon, LogoutIcon, PersonIcon, ShieldIcon } from '@/shared/ui/IconSVG';
 
 const itemClass =
-  'group flex w-full items-center gap-2 px-[10px] py-2 text-[15px] text-left text-body no-underline bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-ivory-elevated hover:text-slate';
+  'group flex w-full items-center gap-2 rounded-full px-[10px] py-2 text-[15px] text-left text-body no-underline bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-ivory-elevated hover:text-slate';
 const itemIconClass = 'shrink-0 text-body-subtle transition-colors duration-150 group-hover:text-slate';
 
 const UserMenu: React.FC = () => {
@@ -90,7 +90,7 @@ const UserMenu: React.FC = () => {
               <BellIcon className={itemIconClass} />
               Уведомления
               {unreadCount > 0 && (
-                <span className="ml-auto min-w-[20px] h-5 px-1 flex items-center justify-center text-[12px] font-medium bg-clay text-ivory">
+                <span className="ml-auto flex min-w-[20px] h-5 items-center justify-center rounded-full px-1 text-[12px] font-medium bg-clay text-ivory">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}

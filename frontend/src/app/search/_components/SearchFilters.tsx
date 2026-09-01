@@ -41,7 +41,7 @@ function FilterGroup({ title, options, selectedId, onSelect }: FilterGroupProps)
             >
               <span
                 className={cn(
-                  'w-[18px] h-[18px] border flex items-center justify-center flex-shrink-0 transition-colors',
+                  'w-[18px] h-[18px] rounded-full border flex items-center justify-center flex-shrink-0 transition-colors',
                   selected ? 'bg-slate border-slate text-ivory' : 'bg-ivory border-body-muted',
                 )}
               >

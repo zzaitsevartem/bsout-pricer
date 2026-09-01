@@ -38,19 +38,19 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="mb-4">
                 <label htmlFor="email" className="block text-[15px] font-medium text-slate mb-2">Email</label>
-                <input type="email" id="email" {...register('email')} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="example@email.com" />
+                <input type="email" id="email" {...register('email')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="example@email.com" />
                 {errors.email && <p className="text-[13px] text-clay mt-[6px]">Введите корректный email</p>}
               </div>
               <div className="mb-4">
                 <label htmlFor="password" className="block text-[15px] font-medium text-slate mb-2">Пароль</label>
-                <input type="password" id="password" {...register('password')} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Введите пароль" />
+                <input type="password" id="password" {...register('password')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Введите пароль" />
                 {errors.password && <p className="text-[13px] text-clay mt-[6px]">Введите пароль</p>}
               </div>
 
               <div className="flex justify-between items-center mb-6">
                 <label className="inline-flex items-center gap-2 cursor-pointer text-[15px] text-slate">
                   <input type="checkbox" className="hidden peer" />
-                  <span className="w-[18px] h-[18px] border border-[#87867F] bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate transition-colors">
+                  <span className="w-[18px] h-[18px] rounded-full border border-[#87867F] bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate transition-colors">
                     <svg width="12" height="6" viewBox="0 0 12 6" fill="none" className="hidden peer-checked:block">
                       <path d="M1 3L4 6L11 1" stroke="#FAF9F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

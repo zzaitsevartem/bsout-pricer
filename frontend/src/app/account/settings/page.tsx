@@ -50,17 +50,17 @@ function SettingsContent() {
               <form onSubmit={handleSubmit(onSubmit)} noValidate className="rounded-[24px] p-[31px] bg-ivory-elevated">
                 <div className="mb-4">
                   <label htmlFor="full_name" className="block text-[15px] font-medium text-slate mb-2">Имя и фамилия</label>
-                  <input type="text" id="full_name" {...register('full_name')} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Иван Петров" />
+                  <input type="text" id="full_name" {...register('full_name')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Иван Петров" />
                   {errors.full_name && <p className="text-[13px] text-clay mt-[6px]">Укажите имя и фамилию</p>}
                 </div>
                 <div className="mb-4">
                   <label htmlFor="phone" className="block text-[15px] font-medium text-slate mb-2">Телефон</label>
-                  <input type="tel" id="phone" {...register('phone')} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="+7 (999) 123-45-67" />
+                  <input type="tel" id="phone" {...register('phone')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="+7 (999) 123-45-67" />
                   {errors.phone && <p className="text-[13px] text-clay mt-[6px]">Слишком длинный номер</p>}
                 </div>
                 <div className="mb-6">
                   <label htmlFor="company" className="block text-[15px] font-medium text-slate mb-2">Название сервисного центра</label>
-                  <input type="text" id="company" {...register('company')} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="ИП Иванов" />
+                  <input type="text" id="company" {...register('company')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="ИП Иванов" />
                 </div>
 
                 {updateMe.isSuccess && !isDirty && (

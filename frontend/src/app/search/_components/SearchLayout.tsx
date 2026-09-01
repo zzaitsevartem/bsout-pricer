@@ -94,7 +94,7 @@ export function SearchLayout({
                 value={controls.text}
                 onChange={(event) => controls.onTextChange(event.target.value)}
                 aria-label="Поиск запчастей"
-                className="w-full pl-9 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
+                className="w-full rounded-full pl-9 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
                 placeholder="Поиск запчастей..."
               />
             </div>
@@ -110,7 +110,7 @@ export function SearchLayout({
                   key={chip.key}
                   type="button"
                   onClick={() => controls.onFilterChange(chip.key, null)}
-                  className="inline-flex items-center gap-2 text-[14px] text-slate bg-ivory-elevated border border-border-subtle px-3 py-1 transition-colors hover:bg-ivory-warm"
+                  className="inline-flex items-center gap-2 rounded-full text-[14px] text-slate bg-ivory-elevated border border-border-subtle px-3 py-1 transition-colors hover:bg-ivory-warm"
                 >
                   {chip.label}
                   <span aria-hidden="true">×</span>
@@ -142,7 +142,7 @@ export function SearchLayout({
                     onChange={(event) =>
                       controls.onSortChange(event.target.value as CatalogSortOption)
                     }
-                    className="appearance-none pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
+                    className="appearance-none rounded-full pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
                   >
                     {SORT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
