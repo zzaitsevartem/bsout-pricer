@@ -17,6 +17,7 @@
     --color-body-subtle: #5E5D59;
     --color-body-muted: #706F67;
     --color-border-default: #8A8880;
+    --color-border-input: #CFCCC1;
     --color-border-light: #E3DACC;
     --color-border-subtle: #D1CFC5;
     --color-border-light-subtle: #E8E6DC;
@@ -33,6 +34,7 @@
     --color-body-subtle: #B0AEA5;
     --color-body-muted: #87867F;
     --color-border-default: #75746C;
+    --color-border-input: #4A4A47;
     --color-border-light: #3D3D3A;
     --color-border-subtle: #3D3D3A;
     --color-border-light-subtle: #282825;

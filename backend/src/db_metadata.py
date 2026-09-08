@@ -4,6 +4,7 @@ from src.modules.auth.model import (
     user,  # noqa: F401
     verification,  # noqa: F401
 )
+from src.modules.broadcast.model import broadcast  # noqa: F401
 from src.modules.catalog.model import catalog  # noqa: F401
 from src.modules.categories.model import category  # noqa: F401
 from src.modules.payment.model import payment  # noqa: F401

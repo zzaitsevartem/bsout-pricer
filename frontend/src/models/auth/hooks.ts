@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { setAuth } from '@/shared/config/store';
 import { authApi } from './service';
 import type { RegisterRequest, LoginRequest } from './schema';
@@ -42,5 +42,13 @@ export function useLogout() {
       setAuth(false);
       queryClient.clear();
     },
+  });
+}
+
+export function useUsernameAvailable(username: string) {
+  return useQuery({
+    queryKey: ['username-available', username],
+    queryFn: () => authApi.usernameAvailable(username),
+    enabled: /^[a-zA-Z0-9_.-]{3,32}$/.test(username),
   });
 }

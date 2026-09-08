@@ -154,7 +154,7 @@ async def test_deactivated_user_cannot_login(client, db_session):
     await db_session.flush()
 
     resp = await client.post(
-        "/api/auth/login", json={"email": "deactivated@example.com", "password": PASSWORD}
+        "/api/auth/login", json={"identifier": "deactivated@example.com", "password": PASSWORD}
     )
 
     assert resp.status_code == 401
@@ -164,7 +164,7 @@ async def test_active_user_can_still_login(client, db_session):
     await _make_user(db_session, "still-active@example.com")
 
     resp = await client.post(
-        "/api/auth/login", json={"email": "still-active@example.com", "password": PASSWORD}
+        "/api/auth/login", json={"identifier": "still-active@example.com", "password": PASSWORD}
     )
 
     assert resp.status_code == 200

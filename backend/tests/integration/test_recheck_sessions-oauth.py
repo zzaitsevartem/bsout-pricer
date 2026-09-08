@@ -129,7 +129,7 @@ async def _register(client, email: str, password: str = PASSWORD) -> dict:
 
 
 async def _login(client, email: str, password: str = PASSWORD) -> dict:
-    resp = await client.post(LOGIN_URL, json={"email": email, "password": password})
+    resp = await client.post(LOGIN_URL, json={"identifier": email, "password": password})
     assert resp.status_code == 200, resp.text
     return resp.json()
 
@@ -644,6 +644,6 @@ async def test_recheck_vk_only_user_is_not_locked_out_of_password_recovery(
     ).status_code == 200
 
     logged_in = await client.post(
-        LOGIN_URL, json={"email": "vkonly@example.com", "password": NEW_PASSWORD}
+        LOGIN_URL, json={"identifier": "vkonly@example.com", "password": NEW_PASSWORD}
     )
     assert logged_in.status_code == 200, logged_in.text

@@ -480,7 +480,7 @@ async def test_vk_created_user_cannot_login_with_any_password(
 
     for attempt in ["", "x", user.password_hash, "." * 31]:
         resp = await client.post(
-            "/api/auth/login", json={"email": "vkonly@example.com", "password": attempt}
+            "/api/auth/login", json={"identifier": "vkonly@example.com", "password": attempt}
         )
         assert resp.status_code == 401, f"password={attempt!r} -> {resp.status_code} {resp.text}"
 
@@ -631,6 +631,14 @@ async def test_raw_token_is_not_logged_when_smtp_backend_is_configured(
 
     monkeypatch.setattr(settings, "mail_backend", "smtp")
     caplog.set_level(logging.INFO)
+
+    from src.modules.mail.service.mailer import SmtpMailer
+
+    async def _fake_send(self, to, subject, text, html=None) -> None:  # noqa: ANN001
+        return None
+
+    monkeypatch.setattr(SmtpMailer, "send", _fake_send)
+
     _, token = await _make_user(db_session, "prodlog@example.com", verified=False)
 
     resp = await client.post(RESEND_URL, headers=_auth(token))

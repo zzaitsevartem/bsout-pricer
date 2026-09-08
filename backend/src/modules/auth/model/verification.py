@@ -13,15 +13,28 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
-TOKEN_PURPOSES = ("password_reset", "email_verify")
+TOKEN_PURPOSES = (
+    "password_reset",
+    "email_verify",
+    "email_change",
+    "email_change_old",
+    "email_change_new",
+    "email_change_freeze",
+)
 IDENTITY_PROVIDERS = ("vk", "telegram")
+
+_PURPOSE_CAPABLE = (
+    "'password_reset', 'email_verify', 'email_change', "
+    "'email_change_old', 'email_change_new', 'email_change_freeze'"
+)
 
 
 class VerificationToken(Base):
     __tablename__ = "verification_tokens"
     __table_args__ = (
         CheckConstraint(
-            "purpose IN ('password_reset', 'email_verify')", name="verification_purpose_allowed"
+            f"purpose IN ({_PURPOSE_CAPABLE})",
+            name="verification_purpose_allowed",
         ),
     )
 

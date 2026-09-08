@@ -8,6 +8,7 @@ backend/.venv
 backend/venv
 .venv
 venv/
+vazjno.md
 
 # testing
 frontend/coverage

@@ -13,11 +13,13 @@ from src.modules.auth.schema.auth import (
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
+    UsernameAvailableResponse,
 )
 from src.modules.auth.service.auth import (
     authenticate_user,
     create_user,
     get_user_by_email,
+    get_user_by_username,
     grant_trial_subscription,
 )
 from src.modules.auth.service.email_verification_service import issue_email_verification
@@ -34,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 REGISTRATION_REJECTED_DETAIL = "Registration could not be completed"
-INVALID_CREDENTIALS_DETAIL = "Invalid email or password"
+INVALID_CREDENTIALS_DETAIL = "Invalid login or password"
 
 
 def _client_info(request: Request) -> tuple[str | None, str | None]:
@@ -62,6 +64,7 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
             user = await create_user(
                 db=db,
                 email=body.email,
+                username=body.username,
                 password=body.password,
                 full_name=body.full_name,
                 phone=body.phone,
@@ -91,9 +94,21 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
+@router.get("/username-available", response_model=UsernameAvailableResponse)
+async def username_available(
+    username: str, db: AsyncSession = Depends(get_db)
+):
+    normalized = username.strip().lower()
+    if not normalized:
+        return UsernameAvailableResponse(available=False)
+    user = await get_user_by_username(db, normalized)
+    return UsernameAvailableResponse(available=user is None)
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    user = await authenticate_user(db, body.email, body.password)
+    identifier = body.identifier.strip().lower()
+    user = await authenticate_user(db, identifier, body.password)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS_DETAIL

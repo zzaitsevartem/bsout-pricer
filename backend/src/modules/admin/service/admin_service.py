@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.auth.model.user import Subscription, User
@@ -40,3 +40,13 @@ class AdminService:
         user.is_active = not user.is_active
         await db.flush()
         return user
+
+    @staticmethod
+    async def toggle_user_admin(db: AsyncSession, user: User) -> User:
+        user.is_admin = not user.is_admin
+        await db.flush()
+        return user
+
+    @staticmethod
+    async def delete_user(db: AsyncSession, user: User) -> None:
+        await db.execute(delete(User).where(User.id == user.id))

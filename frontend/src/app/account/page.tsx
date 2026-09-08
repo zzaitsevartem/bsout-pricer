@@ -33,6 +33,7 @@ function AccountContent() {
                     <div>
                       <h3 className="text-xl font-semibold text-slate mb-1">{me.full_name}</h3>
                       <p className="text-body-subtle mb-0">{me.email}{me.phone ? ` · ${me.phone}` : ''}</p>
+                      {me.username && <p className="text-[14px] text-body-subtle mt-1">Логин: {me.username}</p>}
                       {me.company && <p className="text-[14px] text-body-subtle mt-1">{me.company}</p>}
                     </div>
                     <Link href="/account/settings" className="btn-secondary btn-sm ml-auto">Редактировать</Link>

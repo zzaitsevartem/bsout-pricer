@@ -1,5 +1,7 @@
 import pytest
 
+import sqlalchemy as sa
+
 from src.modules.auth.model.user import User
 from src.modules.auth.service.auth import create_access_token, hash_password
 
@@ -76,7 +78,7 @@ async def test_register_then_login_then_me_roundtrip(client):
 
     login = await client.post(
         "/api/auth/login",
-        json={"email": "round@example.com", "password": VALID_PASSWORD},
+        json={"identifier": "round@example.com", "password": VALID_PASSWORD},
     )
     assert login.status_code == 200, login.text
     token = login.json()["access_token"]
@@ -127,20 +129,136 @@ async def test_login_with_wrong_password_returns_401(client):
 
     resp = await client.post(
         "/api/auth/login",
-        json={"email": "wrongpass@example.com", "password": "totally-wrong"},
+        json={"identifier": "wrongpass@example.com", "password": "totally-wrong"},
     )
 
     assert resp.status_code == 401, resp.text
-    assert resp.json()["detail"] == "Invalid email or password"
+    assert resp.json()["detail"] == "Invalid login or password"
 
 
 async def test_login_with_unknown_email_returns_401(client):
     resp = await client.post(
         "/api/auth/login",
-        json={"email": "ghost@example.com", "password": VALID_PASSWORD},
+        json={"identifier": "ghost@example.com", "password": VALID_PASSWORD},
     )
 
     assert resp.status_code == 401, resp.text
+
+
+async def test_register_with_username_then_login_by_username(client):
+    await _register(
+        client,
+        email="user@example.com",
+        full_name="Login Owner",
+        username="ivan.petrov",
+    )
+
+    by_username = await client.post(
+        "/api/auth/login",
+        json={"identifier": "Ivan.Petrov", "password": VALID_PASSWORD},
+    )
+    assert by_username.status_code == 200, by_username.text
+    token = by_username.json()["access_token"]
+
+    me = await client.get("/api/users/me", headers=_auth(token))
+    assert me.status_code == 200, me.text
+    assert me.json()["email"] == "user@example.com"
+
+    by_email = await client.post(
+        "/api/auth/login",
+        json={"identifier": "user@example.com", "password": VALID_PASSWORD},
+    )
+    assert by_email.status_code == 200, by_email.text
+
+
+async def test_register_same_username_twice_returns_409(client):
+    await _register(client, email="fst@example.com", username="dup-login")
+
+    second = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "snd@example.com",
+            "password": VALID_PASSWORD,
+            "full_name": "Other",
+            "username": "DUP-LOGIN",
+        },
+    )
+
+    assert second.status_code == 409, second.text
+
+
+@pytest.mark.parametrize(
+    "username",
+    ["ab", "login with space", "log@in", "кириллица", "a" * 33],
+)
+async def test_register_invalid_username_returns_422(client, username):
+    resp = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "baduser@example.com",
+            "password": VALID_PASSWORD,
+            "full_name": "Bad Login",
+            "username": username,
+        },
+    )
+
+    assert resp.status_code == 422, resp.text
+
+
+async def test_username_available_endpoint(client):
+    await _register(client, email="avail@example.com", username="taken.login")
+
+    free = await client.get("/api/auth/username-available", params={"username": "free.login"})
+    assert free.status_code == 200, free.text
+    assert free.json() == {"available": True}
+
+    taken = await client.get("/api/auth/username-available", params={"username": "TAKEN.LOGIN"})
+    assert taken.status_code == 200, taken.text
+    assert taken.json() == {"available": False}
+
+
+async def test_cannot_change_username_within_cooldown(client, db_session):
+    await _register(client, email="cooldown@example.com", username="first.login")
+    login = await client.post(
+        "/api/auth/login",
+        json={"identifier": "cooldown@example.com", "password": VALID_PASSWORD},
+    )
+    token = login.json()["access_token"]
+    headers = _auth(token)
+
+    resp = await client.patch("/api/users/me", json={"username": "second.login"}, headers=headers)
+
+    assert resp.status_code == 429, resp.text
+    assert "5 минут" in resp.json()["detail"]
+
+
+async def test_patch_me_duplicate_username_returns_409(client, db_session):
+    await _register(client, email="first@example.com", username="shared.login")
+    other = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "second@example.com",
+            "password": VALID_PASSWORD,
+            "full_name": "Other",
+            "username": "other.login",
+        },
+    )
+    token = other.json()["access_token"]
+
+    from datetime import datetime, timedelta, timezone
+    from src.modules.auth.model.user import User
+
+    user = await db_session.execute(
+        sa.select(User).where(User.email == "second@example.com")
+    )
+    user.scalar_one().username_changed_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+    await db_session.flush()
+
+    resp = await client.patch(
+        "/api/users/me", json={"username": "SHARED.LOGIN"}, headers=_auth(token)
+    )
+
+    assert resp.status_code == 409, resp.text
 
 
 async def test_products_on_empty_catalog_returns_empty_page(client):

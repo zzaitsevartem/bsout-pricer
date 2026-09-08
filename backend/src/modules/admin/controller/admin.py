@@ -64,7 +64,43 @@ async def toggle_user_active(
     user = await AdminService.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя изменить статус собственной учётной записи",
+        )
     return await AdminService.toggle_user_active(db, user)
+
+
+@router.post("/users/{user_id}/toggle-admin", response_model=UserBriefResponse)
+async def toggle_user_admin(
+    user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)
+):
+    user = await AdminService.get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя изменить права администратора у собственной учётной записи",
+        )
+    return await AdminService.toggle_user_admin(db, user)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: int, db: AsyncSession = Depends(get_db), admin=Depends(get_current_admin)
+):
+    user = await AdminService.get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя удалить собственную учётную запись",
+        )
+    await AdminService.delete_user(db, user)
+    await db.commit()
 
 
 @router.post(

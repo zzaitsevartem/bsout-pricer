@@ -85,6 +85,18 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
+    result = await db.execute(select(User).where(User.username == username))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_identifier(db: AsyncSession, identifier: str) -> User | None:
+    user = await get_user_by_username(db, identifier)
+    if user is not None:
+        return user
+    return await get_user_by_email(db, identifier)
+
+
 async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalar_one_or_none()
@@ -97,9 +109,12 @@ async def create_user(
     full_name: str,
     phone: str | None,
     company: str | None,
+    username: str | None = None,
 ) -> User:
     user = User(
         email=email,
+        username=username,
+        username_changed_at=datetime.now(timezone.utc) if username is not None else None,
         password_hash=hash_password(password),
         full_name=full_name,
         phone=phone,
@@ -150,8 +165,8 @@ async def grant_trial_subscription(db: AsyncSession, user: User) -> Subscription
 DUMMY_PASSWORD_HASH = hash_password("bscout-timing-equaliser")
 
 
-async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
-    user = await get_user_by_email(db, email)
+async def authenticate_user(db: AsyncSession, identifier: str, password: str) -> User | None:
+    user = await get_user_by_identifier(db, identifier)
     if user is None:
         verify_password(password, DUMMY_PASSWORD_HASH)
         return None

@@ -10,6 +10,12 @@ PASSWORD_TOO_LONG_MESSAGE = (
 
 class RegisterRequest(BaseModel):
     email: EmailStr
+    username: str | None = Field(
+        None,
+        min_length=3,
+        max_length=32,
+        pattern=r"^[a-zA-Z0-9_.-]+$",
+    )
     password: str = Field(..., min_length=6, max_length=128)
     full_name: str = Field(..., min_length=1, max_length=255)
     phone: str | None = Field(None, max_length=20)
@@ -22,9 +28,21 @@ class RegisterRequest(BaseModel):
             raise ValueError(PASSWORD_TOO_LONG_MESSAGE)
         return value
 
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        return normalized or None
+
+
+class UsernameAvailableResponse(BaseModel):
+    available: bool
+
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    identifier: str = Field(..., min_length=1, max_length=255)
     password: str = Field(..., max_length=1024)
 
 

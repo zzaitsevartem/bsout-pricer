@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAdminUsers, useToggleUserActive, type UserBriefResponse } from '@/models/admin';
+import {
+  useAdminUsers,
+  useToggleUserActive,
+  useToggleUserAdmin,
+  useDeleteUser,
+  type UserBriefResponse,
+} from '@/models/admin';
+import { useMe } from '@/models/user';
 import { formatDate } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
 import {
@@ -24,17 +31,30 @@ const FULL_LIMIT = 200;
 
 function UserRow({
   user,
-  isPending,
-  onToggle,
+  isSelf,
+  isActivePending,
+  isAdminPending,
+  isDeletePending,
+  onToggleActive,
+  onToggleAdmin,
+  onDelete,
 }: {
   user: UserBriefResponse;
-  isPending: boolean;
-  onToggle: (id: number) => void;
+  isSelf: boolean;
+  isActivePending: boolean;
+  isAdminPending: boolean;
+  isDeletePending: boolean;
+  onToggleActive: (id: number) => void;
+  onToggleAdmin: (id: number) => void;
+  onDelete: (id: number) => void;
 }) {
   return (
     <tr>
       <td className={cn(TABLE_TD, 'font-montserrat text-[14px] text-body')}>#{user.id}</td>
-      <td className={cn(TABLE_TD, 'font-semibold text-body')}>{user.full_name}</td>
+      <td className={cn(TABLE_TD, 'font-semibold text-body')}>
+        {user.full_name}
+        {isSelf && <span className="ml-2 text-[12px] font-normal text-body-muted">(это вы)</span>}
+      </td>
       <td className={cn(TABLE_TD, 'text-body')}>{user.email}</td>
       <td className={TABLE_TD}>
         <span className={cn(BADGE_BASE, user.is_admin ? BADGE_DARK : BADGE_DEFAULT)}>
@@ -50,14 +70,32 @@ function UserRow({
         {formatDate(user.created_at)}
       </td>
       <td className={TABLE_TD}>
-        <button
-          type="button"
-          onClick={() => onToggle(user.id)}
-          disabled={isPending}
-          className="btn-ghost btn-sm disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isPending ? 'Сохранение…' : user.is_active ? 'Заблокировать' : 'Разблокировать'}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => onToggleAdmin(user.id)}
+            disabled={isSelf || isAdminPending}
+            className="btn-ghost btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isAdminPending ? 'Сохранение…' : user.is_admin ? 'Снять права' : 'Выдать права'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleActive(user.id)}
+            disabled={isSelf || isActivePending}
+            className="btn-ghost btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isActivePending ? 'Сохранение…' : user.is_active ? 'Заблокировать' : 'Разблокировать'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(user.id)}
+            disabled={isSelf || isDeletePending}
+            className="btn-ghost btn-sm text-clay disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isDeletePending ? 'Удаление…' : 'Удалить'}
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -66,9 +104,22 @@ function UserRow({
 export function UsersTable() {
   const [limit, setLimit] = useState(PREVIEW_LIMIT);
   const users = useAdminUsers(0, limit);
+  const me = useMe();
+  const currentUserId = me.data?.id;
   const toggleActive = useToggleUserActive();
+  const toggleAdmin = useToggleUserAdmin();
+  const deleteUser = useDeleteUser();
 
   const rows = users.data ?? [];
+  const mutationError = toggleActive.error ?? toggleAdmin.error ?? deleteUser.error;
+
+  const handleDelete = (id: number) => {
+    const target = rows.find((user) => user.id === id);
+    const name = target?.full_name ?? target?.email ?? `#${id}`;
+    if (window.confirm(`Удалить пользователя «${name}»? Это действие необратимо.`)) {
+      deleteUser.mutate(id);
+    }
+  };
 
   return (
     <section id="users">
@@ -83,9 +134,9 @@ export function UsersTable() {
         )}
       </div>
 
-      {toggleActive.isError && (
+      {mutationError && (
         <p className="text-[14px] text-clay mb-3">
-          {apiErrorMessage(toggleActive.error, 'Не удалось изменить статус пользователя')}
+          {apiErrorMessage(mutationError, 'Не удалось изменить данные пользователя')}
         </p>
       )}
 
@@ -129,8 +180,13 @@ export function UsersTable() {
                 <UserRow
                   key={user.id}
                   user={user}
-                  isPending={toggleActive.isPending && toggleActive.variables === user.id}
-                  onToggle={(id) => toggleActive.mutate(id)}
+                  isSelf={user.id === currentUserId}
+                  isActivePending={toggleActive.isPending && toggleActive.variables === user.id}
+                  isAdminPending={toggleAdmin.isPending && toggleAdmin.variables === user.id}
+                  isDeletePending={deleteUser.isPending && deleteUser.variables === user.id}
+                  onToggleActive={(id) => toggleActive.mutate(id)}
+                  onToggleAdmin={(id) => toggleAdmin.mutate(id)}
+                  onDelete={handleDelete}
                 />
               ))
             )}

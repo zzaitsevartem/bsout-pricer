@@ -10,6 +10,7 @@ from src.middleware.request_id import RequestIdMiddleware
 from src.modules.admin.controller import admin_router
 from src.modules.auth.controller import auth_router
 from src.modules.auth.service.security import validate_security_settings
+from src.modules.broadcast.controller import broadcast_router
 from src.modules.cache.service.redis_cache import close_redis
 from src.modules.categories.controller import categories_router
 from src.modules.export.controller import export_router
@@ -71,6 +72,7 @@ app.include_router(products_router)
 app.include_router(search_router)
 app.include_router(payment_router)
 app.include_router(admin_router)
+app.include_router(broadcast_router)
 app.include_router(parser_router)
 app.include_router(tracking_router)
 app.include_router(notifications_router)

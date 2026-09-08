@@ -11,6 +11,10 @@ from src.database import async_session_factory
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import Subscription
 from src.modules.auth.service.password_service import deliver_mail
+from src.modules.broadcast.service.broadcast_service import (
+    BROADCAST_QUEUE_JOB,
+    BroadcastService,
+)
 from src.modules.parser.service.parser_service import FULL_SYNC_LOCK_TTL, parser_service
 from src.modules.parser.service.parsers import register_default_parsers
 from src.modules.parser.service.queue import PARSER_QUEUE_JOB
@@ -70,6 +74,10 @@ async def send_password_mail(
 ) -> dict:
     await deliver_mail(to, subject, text, html)
     return {"delivered": True}
+
+
+async def send_broadcast(ctx, broadcast_id: int) -> dict:
+    return await BroadcastService.run_broadcast_job(broadcast_id)
 
 
 async def _expire_subscriptions(db: AsyncSession) -> dict:
@@ -137,6 +145,7 @@ class WorkerSettings:
         expire_subscriptions,
         cleanup_refresh_tokens,
         send_password_mail,
+        func(send_broadcast, name=BROADCAST_QUEUE_JOB),
         prune_history,
     ]
     cron_jobs = [

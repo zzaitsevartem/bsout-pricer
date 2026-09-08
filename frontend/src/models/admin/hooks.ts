@@ -1,6 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from './service';
-import type { MatchCandidateListParams, OfferImportItem, OfferLinkRequest } from './schema';
+import type {
+  BroadcastCreateRequest,
+  BroadcastListResponse,
+  BroadcastRecipientListResponse,
+  MatchCandidateListParams,
+  OfferImportItem,
+  OfferLinkRequest,
+} from './schema';
+
+function hasActiveBroadcast(list?: BroadcastListResponse): boolean {
+  return (
+    list?.items.some(
+      (broadcast) => broadcast.status === 'running' || broadcast.status === 'queued',
+    ) ?? false
+  );
+}
 
 export function useAdminStats() {
   return useQuery({
@@ -32,6 +47,30 @@ export function useToggleUserActive() {
     onSuccess: (user) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'user', user.id] });
+    },
+  });
+}
+
+export function useToggleUserAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => adminApi.toggleUserAdmin(id).then((r) => r.data),
+    onSuccess: (user) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', user.id] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => adminApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
     },
   });
 }
@@ -99,5 +138,80 @@ export function useUnlinkOffer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'match-candidates'] });
     },
+  });
+}
+
+export function useBroadcasts(page = 1, perPage = 10) {
+  return useQuery({
+    queryKey: ['admin', 'broadcasts', page, perPage],
+    queryFn: () => adminApi.getBroadcasts(page, perPage).then((r) => r.data),
+    refetchInterval: (query) => (hasActiveBroadcast(query.state.data) ? 3000 : false),
+  });
+}
+
+export function useBroadcastRecipients(id: number, status?: string, page = 1, perPage = 20) {
+  return useQuery({
+    queryKey: ['admin', 'broadcasts', id, 'recipients', status, page, perPage],
+    queryFn: () => adminApi.getBroadcastRecipients(id, status, page, perPage).then((r) => r.data),
+    enabled: !!id,
+    refetchInterval: 3000,
+  });
+}
+
+function useBroadcastListCache() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ['admin', 'broadcasts'] });
+  };
+}
+
+export function useCreateBroadcast() {
+  const invalidate = useBroadcastListCache();
+
+  return useMutation({
+    mutationFn: (data: BroadcastCreateRequest) =>
+      adminApi.createBroadcast(data).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useLaunchBroadcast() {
+  const invalidate = useBroadcastListCache();
+
+  return useMutation({
+    mutationFn: (id: number) => adminApi.launchBroadcast(id).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCancelBroadcast() {
+  const invalidate = useBroadcastListCache();
+
+  return useMutation({
+    mutationFn: (id: number) => adminApi.cancelBroadcast(id).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteBroadcast() {
+  const invalidate = useBroadcastListCache();
+
+  return useMutation({
+    mutationFn: (id: number) => adminApi.deleteBroadcast(id),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSendBroadcastTest() {
+  return useMutation({
+    mutationFn: ({ id, email }: { id: number; email?: string }) =>
+      adminApi.sendBroadcastTest(id, email).then((r) => r.data),
+  });
+}
+
+export function usePreviewBroadcast() {
+  return useMutation({
+    mutationFn: (data: BroadcastCreateRequest) =>
+      adminApi.previewBroadcast(data).then((r) => r.data),
   });
 }

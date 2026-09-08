@@ -290,7 +290,7 @@ async def test_recheck_normal_login_still_works_after_reset_paths_joined_strict_
     confirm = await client.post(CONFIRM_URL, json={"token": token, "new_password": NEW_PASSWORD})
     assert confirm.status_code == 200, confirm.text
 
-    login = await client.post(LOGIN_URL, json={"email": VICTIM, "password": NEW_PASSWORD})
+    login = await client.post(LOGIN_URL, json={"identifier": VICTIM, "password": NEW_PASSWORD})
     assert login.status_code == 200, login.text
 
     me = await client.get(ME_URL, headers=_auth(login.json()["access_token"]))
@@ -314,7 +314,7 @@ async def test_recheck_password_change_throttling_also_locks_out_login_from_the_
 
     assert 429 in codes, codes
 
-    login = await client.post(LOGIN_URL, json={"email": VICTIM, "password": PASSWORD})
+    login = await client.post(LOGIN_URL, json={"identifier": VICTIM, "password": PASSWORD})
     assert login.status_code == 429, (
         "строгий бакет общий для /password/change и /login: перебор текущего пароля "
         f"выбивает вход с того же IP ({login.status_code})"

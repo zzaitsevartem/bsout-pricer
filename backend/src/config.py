@@ -49,7 +49,9 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: str | None = None
     smtp_use_ssl: bool = True
-    smtp_from: str = "BScout <no-reply@bscout.ru>"
+    smtp_from: str = (
+        "BScout.Pricer - платформа для поиска и сравнения цен <bscout.pricer@yandex.ru>"
+    )
     mail_backend: str = "console"
 
     vk_client_id: str | None = None
@@ -60,6 +62,10 @@ class Settings(BaseSettings):
     telegram_bot_username: str | None = None
 
     parser_full_sync_enabled: bool = False
+
+    broadcast_send_delay_seconds: float = 0.3
+    broadcast_batch_size: int = 10
+    broadcast_max_custom_recipients: int = 500
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

@@ -24,6 +24,7 @@ const config: Config = {
         'body-subtle': 'var(--color-body-subtle)',
         'body-muted': 'var(--color-body-muted)',
         'border-default': 'var(--color-border-default)',
+        'border-input': 'var(--color-border-input)',
         'border-light': 'var(--color-border-light)',
         'border-subtle': 'var(--color-border-subtle)',
         'border-light-subtle': 'var(--color-border-light-subtle)',

@@ -1,4 +1,7 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
@@ -10,11 +13,31 @@ from src.modules.auth.schema.user import (
     UserResponse,
     UserUpdateRequest,
 )
+from src.modules.auth.service.auth import get_user_by_username
 from src.modules.auth.service.email_verification_service import require_verified_email
 from src.modules.payment.service.plans import get_plan
 from src.modules.shared import get_current_user
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+USERNAME_CHANGE_COOLDOWN_SECONDS = 300
+
+
+def enforce_username_change_cooldown(user: User) -> None:
+    if user.username_changed_at is None:
+        return
+    elapsed = datetime.now(timezone.utc) - user.username_changed_at
+    if elapsed >= timedelta(seconds=USERNAME_CHANGE_COOLDOWN_SECONDS):
+        return
+    remaining_seconds = USERNAME_CHANGE_COOLDOWN_SECONDS - elapsed.total_seconds()
+    remaining_minutes = max(1, int(remaining_seconds // 60) + 1)
+    raise HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail=(
+            "Сменить логин можно не чаще раза в 5 минут. "
+            f"Подождите ещё {remaining_minutes} мин."
+        ),
+    )
 
 
 @router.get("/me", response_model=UserResponse)
@@ -34,8 +57,25 @@ async def update_me(
         current_user.phone = body.phone
     if body.company is not None:
         current_user.company = body.company
+    if body.username is not None:
+        if current_user.username != body.username:
+            enforce_username_change_cooldown(current_user)
+            owner = await get_user_by_username(db, body.username)
+            if owner is not None and owner.id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Login is already taken",
+                )
+            current_user.username = body.username
+            current_user.username_changed_at = datetime.now(timezone.utc)
 
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Login is already taken",
+        )
     await db.refresh(current_user)
     return current_user
 

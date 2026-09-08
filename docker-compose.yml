@@ -27,6 +27,8 @@ services:
   backend:
     build: ./backend
     container_name: bscout-backend
+    env_file:
+      - ./backend/.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,6 +53,8 @@ services:
     build: ./backend
     container_name: bscout-worker
     command: ["arq", "src.worker.WorkerSettings"]
+    env_file:
+      - ./backend/.env
     depends_on:
       postgres:
         condition: service_healthy

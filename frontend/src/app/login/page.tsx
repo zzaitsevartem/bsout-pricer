@@ -37,34 +37,75 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="mb-4">
-                <label htmlFor="email" className="block text-[15px] font-medium text-slate mb-2">Email</label>
-                <input type="email" id="email" {...register('email')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="example@email.com" />
-                {errors.email && <p className="text-[13px] text-clay mt-[6px]">Введите корректный email</p>}
+                <label
+                  htmlFor="identifier"
+                  className="block text-[15px] font-medium text-slate mb-2"
+                >
+                  Логин или email
+                </label>
+                <input
+                  type="text"
+                  id="identifier"
+                  {...register('identifier')}
+                  className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
+                  placeholder="Логин или email"
+                />
+                {errors.identifier && (
+                  <p className="text-[13px] text-clay mt-[6px]">Введите логин или email</p>
+                )}
               </div>
               <div className="mb-4">
-                <label htmlFor="password" className="block text-[15px] font-medium text-slate mb-2">Пароль</label>
-                <input type="password" id="password" {...register('password')} className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Введите пароль" />
-                {errors.password && <p className="text-[13px] text-clay mt-[6px]">Введите пароль</p>}
+                <label htmlFor="password" className="block text-[15px] font-medium text-slate mb-2">
+                  Пароль
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  {...register('password')}
+                  className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
+                  placeholder="Введите пароль"
+                />
+                {errors.password && (
+                  <p className="text-[13px] text-clay mt-[6px]">Введите пароль</p>
+                )}
               </div>
 
               <div className="flex justify-between items-center mb-6">
                 <label className="inline-flex items-center gap-2 cursor-pointer text-[15px] text-slate">
                   <input type="checkbox" className="hidden peer" />
                   <span className="w-[18px] h-[18px] rounded-full border border-[#87867F] bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate transition-colors">
-                    <svg width="12" height="6" viewBox="0 0 12 6" fill="none" className="hidden peer-checked:block">
-                      <path d="M1 3L4 6L11 1" stroke="#FAF9F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      width="12"
+                      height="6"
+                      viewBox="0 0 12 6"
+                      fill="none"
+                      className="hidden peer-checked:block"
+                    >
+                      <path
+                        d="M1 3L4 6L11 1"
+                        stroke="#FAF9F5"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </span>
                   Запомнить меня
                 </label>
-                <a href="#" className="text-[14px] text-body-subtle no-underline hover:text-slate">Забыли пароль?</a>
+                <a href="#" className="text-[14px] text-body-subtle no-underline hover:text-slate">
+                  Забыли пароль?
+                </a>
               </div>
 
               {login.isError && (
-                <p className="text-[14px] text-clay mb-4">Неверный email или пароль</p>
+                <p className="text-[14px] text-clay mb-4">Неверный логин или пароль</p>
               )}
 
-              <button type="submit" disabled={login.isPending} className="btn-primary w-full justify-center disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={login.isPending}
+                className="btn-primary w-full justify-center disabled:opacity-60"
+              >
                 {login.isPending ? 'Вход…' : 'Войти'}
               </button>
             </form>
@@ -75,17 +116,36 @@ export default function LoginPage() {
 
             <div className="flex gap-3">
               <button type="button" className="btn-secondary w-full justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 9v6"/><path d="M9 12h6"/></svg>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M12 9v6" />
+                  <path d="M9 12h6" />
+                </svg>
                 ВКонтакте
               </button>
               <button type="button" className="btn-secondary w-full justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                </svg>
                 Телеграм
               </button>
             </div>
 
             <p className="text-center text-[14px] text-body-muted mt-6">
-              Нет аккаунта? <Link href="/register" className="text-slate font-medium no-underline hover:underline">Зарегистрироваться</Link>
+              Нет аккаунта?{' '}
+              <Link
+                href="/register"
+                className="text-slate font-medium no-underline hover:underline"
+              >
+                Зарегистрироваться
+              </Link>
             </p>
           </div>
         </div>

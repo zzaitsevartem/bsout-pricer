@@ -70,7 +70,7 @@ async def _register(client, email: str = VICTIM, password: str = PASSWORD) -> di
 
 
 async def _login(client, email: str = VICTIM, password: str = PASSWORD) -> dict:
-    resp = await client.post("/api/auth/login", json={"email": email, "password": password})
+    resp = await client.post("/api/auth/login", json={"identifier": email, "password": password})
     assert resp.status_code == 200, resp.text
     return resp.json()
 
@@ -397,7 +397,7 @@ async def test_login_timing_does_not_reveal_existing_accounts(client):
     async def measure(email: str) -> float:
         started = _time.perf_counter()
         await client.post(
-            "/api/auth/login", json={"email": email, "password": "definitely-wrong-pass"}
+            "/api/auth/login", json={"identifier": email, "password": "definitely-wrong-pass"}
         )
         return _time.perf_counter() - started
 
@@ -417,7 +417,7 @@ async def test_login_timing_does_not_reveal_existing_accounts(client):
 async def test_reuse_detection_also_kills_access_tokens(client):
     await _register(client)
     stolen = (
-        await client.post("/api/auth/login", json={"email": VICTIM, "password": PASSWORD})
+        await client.post("/api/auth/login", json={"identifier": VICTIM, "password": PASSWORD})
     ).json()
 
     rotated = await client.post(

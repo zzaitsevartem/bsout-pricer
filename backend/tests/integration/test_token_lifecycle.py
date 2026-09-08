@@ -70,7 +70,7 @@ async def test_login_starts_a_new_token_family(client, db_session):
     registered = await _register(client, "family-start@example.com")
     login = await client.post(
         "/api/auth/login",
-        json={"email": "family-start@example.com", "password": PASSWORD},
+        json={"identifier": "family-start@example.com", "password": PASSWORD},
     )
     assert login.status_code == 200, login.text
 
@@ -171,7 +171,7 @@ async def test_logout_is_idempotent_and_kills_the_access_token(client, db_sessio
 
     login = await client.post(
         "/api/auth/login",
-        json={"email": "logout-twice@example.com", "password": PASSWORD},
+        json={"identifier": "logout-twice@example.com", "password": PASSWORD},
     )
     assert login.status_code == 200, login.text
     fresh = login.json()
@@ -188,13 +188,13 @@ async def test_logout_with_refresh_body_revokes_only_that_family(client, db_sess
     login_a = (
         await client.post(
             "/api/auth/login",
-            json={"email": "two-sessions@example.com", "password": PASSWORD},
+            json={"identifier": "two-sessions@example.com", "password": PASSWORD},
         )
     ).json()
     login_b = (
         await client.post(
             "/api/auth/login",
-            json={"email": "two-sessions@example.com", "password": PASSWORD},
+            json={"identifier": "two-sessions@example.com", "password": PASSWORD},
         )
     ).json()
 
@@ -214,13 +214,13 @@ async def test_logout_without_body_revokes_every_session(client):
     login_a = (
         await client.post(
             "/api/auth/login",
-            json={"email": "all-sessions@example.com", "password": PASSWORD},
+            json={"identifier": "all-sessions@example.com", "password": PASSWORD},
         )
     ).json()
     login_b = (
         await client.post(
             "/api/auth/login",
-            json={"email": "all-sessions@example.com", "password": PASSWORD},
+            json={"identifier": "all-sessions@example.com", "password": PASSWORD},
         )
     ).json()
 
@@ -393,11 +393,11 @@ async def test_login_detail_does_not_distinguish_missing_user_from_bad_password(
 
     wrong_password = await client.post(
         "/api/auth/login",
-        json={"email": "known-user@example.com", "password": "not-my-password"},
+        json={"identifier": "known-user@example.com", "password": "not-my-password"},
     )
     unknown_user = await client.post(
         "/api/auth/login",
-        json={"email": "nobody@example.com", "password": PASSWORD},
+        json={"identifier": "nobody@example.com", "password": PASSWORD},
     )
 
     assert wrong_password.status_code == unknown_user.status_code == 401
@@ -426,7 +426,7 @@ async def test_cyrillic_password_at_72_byte_boundary_is_accepted(client):
 
     login = await client.post(
         "/api/auth/login",
-        json={"email": "cyrillic-ok@example.com", "password": password},
+        json={"identifier": "cyrillic-ok@example.com", "password": password},
     )
     assert login.status_code == 200, login.text
 

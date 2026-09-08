@@ -70,7 +70,7 @@ async def _register(client, email: str = EMAIL, password: str = PASSWORD) -> dic
 
 
 async def _login(client, email: str = EMAIL, password: str = PASSWORD) -> dict:
-    resp = await client.post("/api/auth/login", json={"email": email, "password": password})
+    resp = await client.post("/api/auth/login", json={"identifier": email, "password": password})
     assert resp.status_code == 200, resp.text
     return resp.json()
 
@@ -242,7 +242,7 @@ async def test_reset_confirm_changes_password_and_allows_login(client, db_sessio
     resp = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": NEW_PASSWORD})
     assert resp.status_code == 200, resp.text
 
-    old_login = await client.post("/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
+    old_login = await client.post("/api/auth/login", json={"identifier": EMAIL, "password": PASSWORD})
     assert old_login.status_code == 401
 
     await _login(client, EMAIL, NEW_PASSWORD)
@@ -620,7 +620,7 @@ async def test_password_change_allows_login_with_the_new_password_only(client):
     )
     assert resp.status_code == 200, resp.text
 
-    old = await client.post("/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
+    old = await client.post("/api/auth/login", json={"identifier": EMAIL, "password": PASSWORD})
     assert old.status_code == 401
 
     await _login(client, EMAIL, NEW_PASSWORD)

@@ -16,7 +16,7 @@ async def test_register_then_login_returns_tokens(client):
 
     login = await client.post(
         "/api/auth/login",
-        json={"email": "flow@example.com", "password": "s3cret-pass"},
+        json={"identifier": "flow@example.com", "password": "s3cret-pass"},
     )
     assert login.status_code == 200, login.text
     body = login.json()

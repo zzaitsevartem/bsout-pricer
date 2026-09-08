@@ -687,7 +687,7 @@ async def test_vk_only_account_can_set_a_password_and_then_unlink(
     assert confirmed.status_code == 200, confirmed.text
 
     logged_in = await client.post(
-        "/api/auth/login", json={"email": "vk-locked@example.com", "password": "vk-n3w-pass"}
+        "/api/auth/login", json={"identifier": "vk-locked@example.com", "password": "vk-n3w-pass"}
     )
     assert logged_in.status_code == 200, logged_in.text
 

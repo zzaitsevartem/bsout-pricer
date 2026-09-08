@@ -136,6 +136,85 @@ export const offerLinkRequestSchema = z.object({
   product_id: z.number().min(1),
 });
 
+export const broadcastAudienceSchema = z.enum([
+  'all_active',
+  'verified',
+  'subscribers',
+  'custom',
+]);
+
+export const broadcastStatusSchema = z.enum([
+  'draft',
+  'queued',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+
+export const recipientStatusSchema = z.enum(['pending', 'sending', 'sent', 'failed']);
+
+export const broadcastCreateRequestSchema = z.object({
+  name: z.string().min(1).max(120),
+  audience: broadcastAudienceSchema,
+  subject: z.string().min(1).max(200),
+  text: z.string().min(1).max(200000),
+  html: z.string().max(500000).nullable().optional(),
+  recipient_emails: z.array(z.string().email()).max(500).optional(),
+});
+
+export const broadcastResponseSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  audience: broadcastAudienceSchema,
+  subject: z.string(),
+  text: z.string(),
+  html: z.string().nullable(),
+  status: broadcastStatusSchema,
+  total_recipients: z.number(),
+  sent_count: z.number(),
+  failed_count: z.number(),
+  error_summary: z.string().nullable(),
+  created_at: z.string(),
+  started_at: z.string().nullable(),
+  finished_at: z.string().nullable(),
+});
+
+export const broadcastListResponseSchema = z.object({
+  items: z.array(broadcastResponseSchema),
+  total: z.number(),
+  page: z.number(),
+  per_page: z.number(),
+});
+
+export const broadcastPreviewRequestSchema = broadcastCreateRequestSchema;
+
+export const broadcastPreviewResponseSchema = z.object({
+  recipient_count: z.number(),
+  sample_emails: z.array(z.string()),
+});
+
+export const broadcastSendTestResponseSchema = z.object({
+  sent_to: z.string(),
+});
+
+export const broadcastRecipientItemResponseSchema = z.object({
+  id: z.number(),
+  user_id: z.number().nullable(),
+  email: z.string(),
+  status: recipientStatusSchema,
+  error: z.string().nullable(),
+  sent_at: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export const broadcastRecipientListResponseSchema = z.object({
+  items: z.array(broadcastRecipientItemResponseSchema),
+  total: z.number(),
+  page: z.number(),
+  per_page: z.number(),
+});
+
 export const offerLinkResponseSchema = z.object({
   offer: offerStateResponseSchema,
   rejected_candidate_ids: z.array(z.number()),
@@ -157,3 +236,17 @@ export type OfferStateResponse = z.infer<typeof offerStateResponseSchema>;
 export type CandidateDecisionResponse = z.infer<typeof candidateDecisionResponseSchema>;
 export type OfferLinkRequest = z.infer<typeof offerLinkRequestSchema>;
 export type OfferLinkResponse = z.infer<typeof offerLinkResponseSchema>;
+export type BroadcastAudience = z.infer<typeof broadcastAudienceSchema>;
+export type BroadcastStatus = z.infer<typeof broadcastStatusSchema>;
+export type RecipientStatus = z.infer<typeof recipientStatusSchema>;
+export type BroadcastCreateRequest = z.infer<typeof broadcastCreateRequestSchema>;
+export type BroadcastResponse = z.infer<typeof broadcastResponseSchema>;
+export type BroadcastListResponse = z.infer<typeof broadcastListResponseSchema>;
+export type BroadcastPreviewResponse = z.infer<typeof broadcastPreviewResponseSchema>;
+export type BroadcastSendTestResponse = z.infer<typeof broadcastSendTestResponseSchema>;
+export type BroadcastRecipientItemResponse = z.infer<
+  typeof broadcastRecipientItemResponseSchema
+>;
+export type BroadcastRecipientListResponse = z.infer<
+  typeof broadcastRecipientListResponseSchema
+>;
