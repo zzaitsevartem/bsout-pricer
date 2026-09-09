@@ -116,9 +116,7 @@ async def test_full_two_step_change_updates_email(client, db_session, mailer):
     await db_session.refresh(user)
     assert user.pending_email == "new@example.com"
 
-    old_token = await _get_pending_change_token(
-        db_session, user.id, EMAIL_CHANGE_OLD_PURPOSE
-    )
+    old_token = await _get_pending_change_token(db_session, user.id, EMAIL_CHANGE_OLD_PURPOSE)
     resp_old = await client.post(CHANGE_OLD_URL, json={"token": old_token})
 
     assert resp_old.status_code == 200, resp_old.text
@@ -130,9 +128,7 @@ async def test_full_two_step_change_updates_email(client, db_session, mailer):
     assert new_mail["to"] == "new@example.com"
     assert "purpose=email_change_new" in new_mail["link"]
 
-    new_token = await _get_pending_change_token(
-        db_session, user.id, EMAIL_CHANGE_NEW_PURPOSE
-    )
+    new_token = await _get_pending_change_token(db_session, user.id, EMAIL_CHANGE_NEW_PURPOSE)
     resp_new = await client.post(CHANGE_NEW_URL, json={"token": new_token})
 
     assert resp_new.status_code == 200, resp_new.text
@@ -149,9 +145,7 @@ async def test_confirm_new_without_old_is_rejected(client, db_session):
     await client.post(CHANGE_URL, json={"new_email": "new@example.com"}, headers=_auth(token))
     await db_session.refresh(user)
 
-    new_token = await _get_pending_change_token(
-        db_session, user.id, EMAIL_CHANGE_NEW_PURPOSE
-    )
+    new_token = await _get_pending_change_token(db_session, user.id, EMAIL_CHANGE_NEW_PURPOSE)
     resp = await client.post(CHANGE_NEW_URL, json={"token": new_token})
 
     assert resp.status_code == 400, resp.text
@@ -164,9 +158,7 @@ async def test_freeze_after_request_deactivates_account(client, db_session):
     await db_session.refresh(user)
     assert user.pending_email == "new@example.com"
 
-    freeze_token = await _get_pending_change_token(
-        db_session, user.id, EMAIL_CHANGE_FREEZE_PURPOSE
-    )
+    freeze_token = await _get_pending_change_token(db_session, user.id, EMAIL_CHANGE_FREEZE_PURPOSE)
     resp = await client.post(CHANGE_FREEZE_URL, json={"token": freeze_token})
 
     assert resp.status_code == 200, resp.text

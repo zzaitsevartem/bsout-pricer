@@ -1,5 +1,4 @@
 import pytest
-
 import sqlalchemy as sa
 
 from src.modules.auth.model.user import User
@@ -246,11 +245,10 @@ async def test_patch_me_duplicate_username_returns_409(client, db_session):
     token = other.json()["access_token"]
 
     from datetime import datetime, timedelta, timezone
+
     from src.modules.auth.model.user import User
 
-    user = await db_session.execute(
-        sa.select(User).where(User.email == "second@example.com")
-    )
+    user = await db_session.execute(sa.select(User).where(User.email == "second@example.com"))
     user.scalar_one().username_changed_at = datetime.now(timezone.utc) - timedelta(minutes=10)
     await db_session.flush()
 

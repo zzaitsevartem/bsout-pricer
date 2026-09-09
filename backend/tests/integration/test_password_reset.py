@@ -242,7 +242,9 @@ async def test_reset_confirm_changes_password_and_allows_login(client, db_sessio
     resp = await client.post(CONFIRM_URL, json={"token": raw_token, "new_password": NEW_PASSWORD})
     assert resp.status_code == 200, resp.text
 
-    old_login = await client.post("/api/auth/login", json={"identifier": EMAIL, "password": PASSWORD})
+    old_login = await client.post(
+        "/api/auth/login", json={"identifier": EMAIL, "password": PASSWORD}
+    )
     assert old_login.status_code == 401
 
     await _login(client, EMAIL, NEW_PASSWORD)
