@@ -136,9 +136,7 @@ class MailVerificationSender:
             await mailer.send(to=to, subject=VERIFICATION_SUBJECT, text=text, html=html)
         except MailNotConfiguredError as exc:
             logger.error("verification email could not be sent: %s", exc)
-            await self._fallback.send_verification_email(
-                to=to, link=link, expires_at=expires_at
-            )
+            await self._fallback.send_verification_email(to=to, link=link, expires_at=expires_at)
 
 
 def get_verification_mailer() -> VerificationMailer:
@@ -328,14 +326,14 @@ def build_email_change_message(
         "<p>Здравствуйте!</p>"
         "<p>Кто-то запросил смену адреса электронной почты в BScout на "
         f"<strong>{new_email}</strong>.</p>"
-        '<p><strong>Если это были вы</strong>, подтвердите смену:</p>'
+        "<p><strong>Если это были вы</strong>, подтвердите смену:</p>"
         f'<p><a href="{link}" style="display:inline-block;padding:10px 16px;'
-        'background:#2a2a2a;color:#ffffff;border-radius:8px;'
+        "background:#2a2a2a;color:#ffffff;border-radius:8px;"
         'text-decoration:none;">Подтвердить смену</a></p>'
         f"<p>Ссылка действует до {deadline} и может быть использована один раз.</p>"
-        '<p><strong>Если это были не вы</strong> — заморозьте аккаунт:</p>'
+        "<p><strong>Если это были не вы</strong> — заморозьте аккаунт:</p>"
         '<p><a href="'
-        f'{freeze_link}'
+        f"{freeze_link}"
         '" style="color:#b91c1c;">Я этого не делал — заморозить аккаунт</a></p>'
         "<p>Это защита от попытки взлома: если вы не инициировали смену, "
         "аккаунт будет заблокирован до выяснения.</p>"
@@ -357,7 +355,7 @@ def build_email_change_new_message(link: str, expires_at: datetime) -> tuple[str
         "<p>Вы подтвердили смену адреса на старой почте. Остался последний шаг.</p>"
         "<p>Чтобы завершить смену, перейдите по ссылке:</p>"
         f'<p><a href="{link}" style="display:inline-block;padding:10px 16px;'
-        'background:#2a2a2a;color:#ffffff;border-radius:8px;'
+        "background:#2a2a2a;color:#ffffff;border-radius:8px;"
         'text-decoration:none;">Подтвердить смену</a></p>'
         f"<p>Ссылка действует до {deadline} и может быть использована один раз.</p>"
     )
@@ -471,9 +469,7 @@ async def confirm_email_change_old(
         logger.exception("failed to issue email change second step for user %s", user.id)
     else:
         link = build_verification_link(raw_new, purpose=EMAIL_CHANGE_NEW_PURPOSE)
-        text, html = build_email_change_new_message(
-            link, _aware(new_token.expires_at)
-        )
+        text, html = build_email_change_new_message(link, _aware(new_token.expires_at))
         try:
             await sender.send_verification_email(
                 to=user.pending_email,
@@ -483,9 +479,7 @@ async def confirm_email_change_old(
                 html=html,
             )
         except Exception:
-            logger.exception(
-                "failed to send email change new mail to %s", user.pending_email
-            )
+            logger.exception("failed to send email change new mail to %s", user.pending_email)
     await db.flush()
     return user
 

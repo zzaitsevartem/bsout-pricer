@@ -34,8 +34,7 @@ def enforce_username_change_cooldown(user: User) -> None:
     raise HTTPException(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         detail=(
-            "Сменить логин можно не чаще раза в 5 минут. "
-            f"Подождите ещё {remaining_minutes} мин."
+            "Сменить логин можно не чаще раза в 5 минут. " f"Подождите ещё {remaining_minutes} мин."
         ),
     )
 

@@ -95,9 +95,7 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
 
 
 @router.get("/username-available", response_model=UsernameAvailableResponse)
-async def username_available(
-    username: str, db: AsyncSession = Depends(get_db)
-):
+async def username_available(username: str, db: AsyncSession = Depends(get_db)):
     normalized = username.strip().lower()
     if not normalized:
         return UsernameAvailableResponse(available=False)

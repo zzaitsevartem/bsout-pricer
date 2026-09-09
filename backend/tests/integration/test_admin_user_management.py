@@ -35,9 +35,7 @@ async def _admin_headers(db, email: str = "admin@example.com") -> dict[str, str]
 
 
 async def _user_by_id(db, user_id: int) -> User | None:
-    return (
-        await db.execute(select(User).where(User.id == user_id))
-    ).scalar_one_or_none()
+    return (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
 
 
 async def test_toggle_admin_promotes_and_demotes(db_session, client):
