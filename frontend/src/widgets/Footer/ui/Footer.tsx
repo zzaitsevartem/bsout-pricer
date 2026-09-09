@@ -50,10 +50,10 @@ const Footer: React.FC = () => {
         <div className="mt-12 pt-6 border-t border-border-light-subtle flex justify-between items-center text-[15px] text-body-muted max-md:flex-col max-md:gap-4 max-md:text-center">
           <span>&copy; 2026 BScout. Все права защищены.</span>
           <div className="flex gap-3">
-            <a href="#" aria-label="Telegram" className="w-9 h-9 flex items-center justify-center border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
+            <a href="#" aria-label="Telegram" className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
               TG
             </a>
-            <a href="#" aria-label="VK" className="w-9 h-9 flex items-center justify-center border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
+            <a href="#" aria-label="VK" className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
               VK
             </a>
           </div>

@@ -1,10 +1,8 @@
 import { api } from '@/shared/api/axios';
-import type { ParserRunRequest, ParserStatusResponse } from './schema';
+import type { ParserRunRequest, ParserRunResponse, ParserStatusResponse } from './schema';
 
 export const parserApi = {
-  list: () =>
-    api.get<ParserStatusResponse[]>('/admin/parsers'),
+  list: () => api.get<ParserStatusResponse[]>('/admin/parsers'),
 
-  run: (data: ParserRunRequest) =>
-    api.post('/admin/parsers/run', data),
+  run: (data: ParserRunRequest) => api.post<ParserRunResponse>('/admin/parsers/run', data),
 };

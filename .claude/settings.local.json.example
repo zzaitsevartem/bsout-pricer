@@ -1,0 +1,11 @@
+{
+  "//": "Скопируйте этот файл в .claude/settings.local.json (он в .gitignore) и держите ЛИЧНЫЕ оверрайды здесь. Этот файл имеет приоритет над settings.json, но не коммитится.",
+  "//permissions": "Пример: разрешить себе то, что по умолчанию спрашивается.",
+  "permissions": {
+    "allow": []
+  },
+  "//env": "Секреты/ключи для MCP берутся из shell-окружения. Если context7 / security-scanner требуют API-ключ — экспортируйте его в шелле, а .mcp.json подхватит через ${VAR}. Строку подключения к БД можно переопределить так:",
+  "env": {
+    "BSCOUT_DB_URL": "postgresql://bscout:bscout@localhost:5434/bscout"
+  }
+}

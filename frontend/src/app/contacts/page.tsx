@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Header } from '../../widgets/Header/ui/Header';
-import { Footer } from '../../widgets/Footer/ui/Footer';
+import { Header } from '@/widgets/Header/ui/Header';
+import { Footer } from '@/widgets/Footer/ui/Footer';
 
 export default function ContactsPage() {
   return (
     <>
-      <Header showProfileIcon navCta="register" />
+      <Header />
       <div className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">Главная</a>
@@ -30,7 +30,7 @@ export default function ContactsPage() {
               { icon: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m0 8v-2"/></svg>), title: 'Поддержка', lines: ['Чат поддержки доступен в личном кабинете для тарифов Базовый и Продвинутый'] },
             ].map((item) => (
               <div key={item.title} className="flex gap-4 mb-6">
-                <div className="w-10 h-10 bg-ivory-elevated flex items-center justify-center flex-shrink-0 text-slate">
+                <div className="w-10 h-10 rounded-full bg-ivory-elevated flex items-center justify-center flex-shrink-0 text-slate">
                   {item.icon}
                 </div>
                 <div>
@@ -50,19 +50,19 @@ export default function ContactsPage() {
               <form>
                 <div className="mb-4">
                   <label htmlFor="name" className="block text-[15px] font-medium text-slate mb-2">Имя</label>
-                  <input type="text" id="name" className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Ваше имя" />
+                  <input type="text" id="name" className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Ваше имя" />
                 </div>
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-[15px] font-medium text-slate mb-2">Email</label>
-                  <input type="email" id="email" className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="your@email.com" />
+                  <input type="email" id="email" className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="your@email.com" />
                 </div>
                 <div className="mb-4">
                   <label htmlFor="subject" className="block text-[15px] font-medium text-slate mb-2">Тема</label>
-                  <input type="text" id="subject" className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Чем мы можем помочь?" />
+                  <input type="text" id="subject" className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413]" placeholder="Чем мы можем помочь?" />
                 </div>
                 <div className="mb-4">
                   <label htmlFor="message" className="block text-[15px] font-medium text-slate mb-2">Сообщение</label>
-                  <textarea id="message" rows={5} className="block w-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413] resize-y min-h-[96px]" placeholder="Ваше сообщение..." />
+                  <textarea id="message" rows={5} className="block w-full rounded-3xl px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_#141413] resize-y min-h-[96px]" placeholder="Ваше сообщение..." />
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center">Отправить</button>
               </form>

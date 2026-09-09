@@ -1,10 +1,14 @@
 # dependencies
 frontend/node_modules
-backend/__pycache__
-backend/*.pyc
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
 backend/.venv
 backend/venv
-frontend/mockups3
+.venv
+venv/
+vazjno.md
 
 # testing
 frontend/coverage
@@ -12,6 +16,7 @@ frontend/coverage
 # production
 frontend/build
 frontend/.next/
+frontend/tsconfig.tsbuildinfo
 
 # misc
 .DS_Store
@@ -25,7 +30,17 @@ frontend/.next/
 *.swp
 *.swo
 
+# Claude Code — личные оверрайды (шаблон: .claude/settings.local.json.example)
+.claude/settings.local.json
+
 # logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# git worktrees параллельных агентов
+.claude/worktrees/
+
+# локальные конфиги других агентов — канон живёт в .claude/, эти не коммитим
+.codex/
+.agents/

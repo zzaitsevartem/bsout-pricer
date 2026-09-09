@@ -1,20 +1,19 @@
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.auth.model.user import Subscription, User
-from src.modules.products.model.product import Product
+from src.modules.products.model.product import StoreOffer
 from src.modules.stores.model.store import Store
 
 
 class AdminService:
-
     @staticmethod
     async def get_stats(db: AsyncSession) -> dict:
         users_count = await db.execute(select(func.count(User.id)))
         subs_count = await db.execute(
             select(func.count(Subscription.id)).where(Subscription.is_active.is_(True))
         )
-        products_count = await db.execute(select(func.count(Product.id)))
+        products_count = await db.execute(select(func.count(StoreOffer.id)))
         stores_count = await db.execute(select(func.count(Store.id)))
 
         return {
@@ -41,3 +40,13 @@ class AdminService:
         user.is_active = not user.is_active
         await db.flush()
         return user
+
+    @staticmethod
+    async def toggle_user_admin(db: AsyncSession, user: User) -> User:
+        user.is_admin = not user.is_admin
+        await db.flush()
+        return user
+
+    @staticmethod
+    async def delete_user(db: AsyncSession, user: User) -> None:
+        await db.execute(delete(User).where(User.id == user.id))

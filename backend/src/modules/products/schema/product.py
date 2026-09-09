@@ -16,16 +16,19 @@ class ProductResponse(BaseModel):
     id: int
     store_id: int
     category_id: int | None
-    external_id: str
-    name: str
+    product_id: int | None
+    source_sku: str
+    title: str
     description: str | None
     image_url: str | None
-    price: Decimal
-    old_price: Decimal | None
+    price_retail: Decimal
+    price_opt: Decimal | None
+    price_old: Decimal | None
     currency: str
-    in_stock: bool
-    product_url: str
-    last_updated: datetime
+    stock_status: str
+    stock_qty: int | None
+    url: str
+    last_seen_at: datetime
     is_cheapest: bool = False
     store: StoreRef | None = None
 
@@ -35,15 +38,18 @@ class ProductResponse(BaseModel):
 class ProductCreateRequest(BaseModel):
     store_id: int
     category_id: int | None = None
-    external_id: str = Field(..., max_length=255)
-    name: str = Field(..., min_length=1, max_length=500)
-    description: str | None = Field(None, max_length=2000)
-    image_url: str | None = Field(None, max_length=500)
-    price: Decimal = Field(..., gt=0)
-    old_price: Decimal | None = None
+    source_sku: str = Field(..., max_length=255)
+    title: str = Field(..., min_length=1, max_length=500)
+    normalized_title: str | None = Field(None, max_length=500)
+    description: str | None = None
+    image_url: str | None = Field(None, max_length=1000)
+    price_retail: Decimal = Field(..., gt=0)
+    price_opt: Decimal | None = None
+    price_old: Decimal | None = None
     currency: str = "RUB"
-    in_stock: bool = True
-    product_url: str = Field(..., max_length=1000)
+    stock_status: str = "unknown"
+    stock_qty: int | None = None
+    url: str = Field(..., max_length=1000)
 
 
 class ProductSearchParams(BaseModel):
@@ -67,8 +73,10 @@ class ProductListResponse(BaseModel):
 
 class PriceHistoryResponse(BaseModel):
     id: int
-    product_id: int
-    price: Decimal
+    offer_id: int
+    price_retail: Decimal
+    price_opt: Decimal | None
+    stock_status: str
     recorded_at: datetime
 
     model_config = {"from_attributes": True}

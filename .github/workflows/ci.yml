@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main, release]
+  pull_request:
+
+jobs:
+  backend:
+    name: Бэкенд — тесты, миграции, качество матчинга
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bscout
+          POSTGRES_USER: bscout
+          POSTGRES_PASSWORD: bscout
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bscout -d bscout"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: bscout
+      POSTGRES_USER: bscout
+      POSTGRES_PASSWORD: bscout
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      # Секрет должен быть не короче 32 символов, иначе приложение
+      # намеренно откажется стартовать при DEBUG=false.
+      JWT_SECRET_KEY: ci-secret-key-at-least-32-characters-long
+      # Прод-дефолт: Swagger закрыт, слабый секрет не допускается.
+      DEBUG: 'false'
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Установка зависимостей
+        run: pip install -r requirements-dev.txt
+
+      - name: Тестовая база
+        run: PGPASSWORD=bscout psql -h localhost -U bscout -d bscout -c 'CREATE DATABASE bscout_test'
+
+      # Автогенерация Alembic в этом проекте дважды пыталась снести GIN-индексы,
+      # которых нет в моделях. Round-trip ловит это до мержа.
+      - name: Миграции — накат, откат, повторный накат
+        run: |
+          python -m alembic upgrade head
+          python -m alembic downgrade -1
+          python -m alembic upgrade head
+
+      - name: Индексы пережили round-trip
+        run: |
+          COUNT=$(PGPASSWORD=bscout psql -h localhost -U bscout -d bscout -tAc \
+            "SELECT count(*) FROM pg_indexes WHERE indexname LIKE '%trgm'")
+          echo "GIN-trgm индексов: $COUNT"
+          test "$COUNT" -ge 5
+
+      - name: Юнит-тесты
+        run: python -m pytest tests/unit -q
+
+      - name: Полный набор с покрытием
+        run: python -m pytest --cov=src --cov-report=term-missing -q
+
+      # Точность матчинга — это качество продукта, а не стиль кода.
+      # Деградация должна ронять сборку, а не ждать ручного замера.
+      - name: Наполнение данными и матчинг
+        run: |
+          python -m src.cli seed
+          python -m src.cli import
+          python -m src.cli match --all
+
+      - name: Точность матчинга не хуже порога
+        run: python -m src.cli precision --max-share 1.0 --limit 20
+
+      - name: Нераспознанные устройства (справочно, сборку не роняет)
+        run: python -m src.cli gaps --limit 15 || true
+
+  frontend:
+    name: Фронтенд — сборка, линт, типы
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Проверка типов
+        run: npx tsc --noEmit
+
+      - name: Линт
+        run: npm run lint
+
+      - name: Сборка
+        run: npm run build
+
+  lint:
+    name: Бэкенд — стиль
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Установка ruff
+        run: pip install ruff==0.6.9
+
+      - name: Ruff check
+        run: ruff check src tests
+
+      - name: Ruff format check
+        run: ruff format --check src tests
+
+  images:
+    name: Сборка образов
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Образы только собираются, никуда не публикуются.
+      - name: Образ бэкенда
+        run: docker build -t bscout-backend:ci ./backend
+
+      - name: Образ фронтенда
+        run: docker build -t bscout-frontend:ci ./frontend
+
+      - name: Прод-конфигурация валидна
+        env:
+          POSTGRES_PASSWORD: ci-password
+          REDIS_PASSWORD: ci-redis-password
+          JWT_SECRET_KEY: ci-secret-key-at-least-32-characters-long
+          POSTGRES_DB: bscout
+          POSTGRES_USER: bscout
+          FRONTEND_BASE_URL: https://example.invalid
+          SERVER_NAME: example.invalid
+          TLS_CERT_DIR: /tmp/certs
+          TLS_CERT_PATH: /etc/nginx/certs/fullchain.pem
+          TLS_KEY_PATH: /etc/nginx/certs/privkey.pem
+          SMTP_FROM: BScout <no-reply@example.invalid>
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config >/dev/null

@@ -1,0 +1,337 @@
+# Прод-оверлей поверх docker-compose.yml.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# Что он меняет по сравнению с dev-файлом:
+#   * порты Postgres и Redis больше НЕ публикуются на хост (только внутренняя сеть);
+#   * ни одного секрета со значением по умолчанию — всё через ${VAR:?...};
+#   * Redis закрыт паролем (см. оговорку у сервиса redis);
+#   * появился arq-воркер: без него не работают расписания парсинга, уведомления
+#     о снижении цены, истечение подписок и очистка refresh-токенов;
+#   * миграции вынесены в одноразовый сервис migrate (в образе их больше нет);
+#   * frontend и nginx (TLS-терминация, http->https, лимит тела запроса).
+#
+# Полный список переменных с пояснениями — в .env.prod.example.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+# Общее окружение для backend / worker / migrate — один источник правды.
+x-backend-env: &backend-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+  POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required, random, >= 32 chars}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+  REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
+  DEBUG: ${DEBUG:-false}
+  APP_NAME: ${APP_NAME:-BScout API}
+  RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-120}
+  RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60}
+  RATE_LIMIT_TRUST_FORWARDED_FOR: ${RATE_LIMIT_TRUST_FORWARDED_FOR:-true}
+  AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-10}
+  AUTH_RATE_LIMIT_WINDOW: ${AUTH_RATE_LIMIT_WINDOW:-300}
+  FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}
+  YOOKASSA_WEBHOOK_SECRET: ${YOOKASSA_WEBHOOK_SECRET:-}
+  MAIL_BACKEND: ${MAIL_BACKEND:-console}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-465}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_USE_SSL: ${SMTP_USE_SSL:-true}
+  SMTP_FROM: ${SMTP_FROM:-BScout <no-reply@bscout.ru>}
+  VK_CLIENT_ID: ${VK_CLIENT_ID:-}
+  VK_CLIENT_SECRET: ${VK_CLIENT_SECRET:-}
+  VK_REDIRECT_URI: ${VK_REDIRECT_URI:-}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  PARSER_FULL_SYNC_ENABLED: ${PARSER_FULL_SYNC_ENABLED:-false}
+  TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    # ports сбрасываются целиком: в dev-файле база торчала на хост, в проде
+    # до неё дотягиваются только контейнеры сети data (internal, без выхода наружу).
+    ports: !reset []
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command:
+      - postgres
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - data
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+        reservations:
+          memory: 512m
+
+  redis:
+    image: redis:7-alpine
+    ports: !reset []
+    # ⚠️ REDIS_PASSWORD пока ДОЛЖЕН оставаться пустым: src/config.py собирает
+    # redis_url только из host/port, а src/worker.py — RedisSettings(host, port),
+    # пароль передать некуда, и приложение получит NOAUTH.
+    # Пустое значение => `--requirepass ""` => пароль выключен, и это работает.
+    # Как только в конфиге появится redis_password (см. needs_shared_change),
+    # достаточно вписать пароль в .env.prod — здесь менять нечего.
+    # До тех пор Redis защищён тем, что порт не опубликован, а сеть data — internal.
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:-}
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-256mb}
+      # volatile-lru, а не allkeys-lru: вытесняем только ключи с TTL (кэш,
+      # счётчики rate limit) и никогда — задачи arq, у которых TTL нет.
+      - --maxmemory-policy
+      - volatile-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          if [ -n "$${REDIS_PASSWORD}" ]; then
+            redis-cli --no-auth-warning -a "$${REDIS_PASSWORD}" ping | grep -q PONG;
+          else
+            redis-cli ping | grep -q PONG;
+          fi
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - data
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+
+  # Одноразовый сервис: накатывает миграции и завершается.
+  # backend и worker стартуют только после его успешного выхода — так схема БД
+  # заведомо актуальна, а гонки нескольких реплик за alembic_version нет.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bscout-backend:${IMAGE_TAG:-latest}
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+    restart: "no"
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bscout-backend:${IMAGE_TAG:-latest}
+    # container_name мешает масштабированию (docker compose up --scale backend=N).
+    container_name: !reset null
+    # Наружу backend не публикуется вовсе — только через nginx.
+    ports: !reset []
+    environment:
+      <<: *backend-env
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
+      # Кому доверять X-Forwarded-*. По умолчанию "*" — безопасно только потому,
+      # что порт не опубликован и в сеть edge входит лишь nginx.
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - data
+      - edge
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+        reservations:
+          memory: 256m
+
+  # arq-воркер. В dev-файле его нет вовсе, поэтому на таком развёртывании
+  # молча не выполняются: sync_catalog (03:00), sync_prices (07:30/13:30/19:30),
+  # expire_subscriptions (ежечасно), cleanup_refresh_tokens (04:30)
+  # и отправка писем восстановления пароля.
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bscout-backend:${IMAGE_TAG:-latest}
+    command: ["arq", "src.worker.WorkerSettings"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # arq пишет ключ здоровья в Redis, `--check` читает его и возвращает 0/1.
+    # Окно грубое: WorkerSettings.health_check_interval = 3600 (см. needs_shared_change).
+    healthcheck:
+      test: ["CMD", "arq", "src.worker.WorkerSettings", "--check"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - data
+      - edge
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+        reservations:
+          memory: 256m
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: bscout-frontend:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Резервный путь: next.config.mjs проксирует /api/* сюда, если запрос
+      # всё-таки дошёл до Next.js минуя nginx-локацию /api/.
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - edge
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768m
+        reservations:
+          memory: 192m
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    environment:
+      # Штатный entrypoint nginx прогоняет /etc/nginx/templates/*.template через
+      # envsubst. FILTER ограничивает подстановку нашими переменными, иначе
+      # envsubst съел бы и nginx-переменные вида $host / $remote_addr.
+      SERVER_NAME: ${SERVER_NAME:?SERVER_NAME is required, e.g. bscout.ru}
+      TLS_CERT_PATH: ${TLS_CERT_PATH:?TLS_CERT_PATH is required (path inside container)}
+      TLS_KEY_PATH: ${TLS_KEY_PATH:?TLS_KEY_PATH is required (path inside container)}
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-2m}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/conf.d
+      NGINX_ENVSUBST_FILTER: "^(SERVER_NAME|TLS_CERT_PATH|TLS_KEY_PATH|CLIENT_MAX_BODY_SIZE)$$"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/bscout.conf:/etc/nginx/templates/bscout.conf.template:ro
+      # Каталог с сертификатами подключается томом: пути задаются переменными,
+      # ключи в образ не запекаются. Для certbot/letsencrypt — /etc/letsencrypt.
+      - ${TLS_CERT_DIR:?TLS_CERT_DIR is required (host dir with certificates)}:/etc/nginx/certs:ro
+      - acme_challenge:/var/www/certbot
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - edge
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256m
+
+networks:
+  # Внешний периметр: сюда смотрит nginx, здесь же frontend/backend/worker,
+  # через него же у воркера есть выход в интернет (парсеры ходят в магазины).
+  edge:
+    driver: bridge
+  # internal: true — у сети нет шлюза наружу. Postgres и Redis подключены
+  # только к ней, поэтому недоступны ни с хоста, ни из интернета.
+  data:
+    driver: bridge
+    internal: true
+
+volumes:
+  pgdata:
+  redisdata:
+  acme_challenge:

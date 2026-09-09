@@ -1,0 +1,38 @@
+export {
+  CATALOG_SORT_OPTIONS,
+  MATCH_STATUSES,
+  brandRefSchema,
+  deviceRefSchema,
+  partTypeRefSchema,
+  qualityTierRefSchema,
+  clusterRefSchema,
+  catalogItemResponseSchema,
+  catalogListResponseSchema,
+  catalogSearchParamsSchema,
+  comparisonOfferResponseSchema,
+  comparisonStatsResponseSchema,
+  alternativeTierResponseSchema,
+  comparisonDetailResponseSchema,
+  pricePointResponseSchema,
+  productPriceHistoryResponseSchema,
+} from './schema';
+export type {
+  CatalogSortOption,
+  MatchStatus,
+  BrandRef,
+  DeviceRef,
+  PartTypeRef,
+  QualityTierRef,
+  ClusterRef,
+  CatalogItemResponse,
+  CatalogListResponse,
+  CatalogSearchParams,
+  ComparisonOfferResponse,
+  ComparisonStatsResponse,
+  AlternativeTierResponse,
+  ComparisonDetailResponse,
+  PricePointResponse,
+  ProductPriceHistoryResponse,
+} from './schema';
+export { catalogApi } from './service';
+export { useCatalogSearch, useCatalogProduct, useCatalogPriceHistory } from './hooks';

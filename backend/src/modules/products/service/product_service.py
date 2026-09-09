@@ -1,16 +1,14 @@
 from decimal import Decimal
 
-from sqlalchemy import case, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.modules.cache import RedisCache
-from src.modules.products.model.product import PriceHistory, Product
+from src.modules.products.model.product import OfferPriceHistory, StoreOffer
 from src.modules.stores.model.store import Store
 
 
 class ProductService:
-
     @staticmethod
     async def _normalize_query(text: str) -> str:
         return text.lower().strip()
@@ -27,84 +25,103 @@ class ProductService:
         sort_by: str = "price_asc",
         page: int = 1,
         per_page: int = 20,
-    ) -> tuple[list[Product], int]:
-        base = select(Product).options(joinedload(Product.price_history))
+        fuzzy: bool = False,
+    ) -> tuple[list[StoreOffer], int]:
+        filtered = select(StoreOffer).where(StoreOffer.is_active.is_(True))
 
         normalized = await ProductService._normalize_query(query)
-        if normalized:
-            base = base.where(Product.normalized_name.ilike(f"%{normalized}%"))
+        if normalized and fuzzy:
+            filtered = filtered.where(StoreOffer.normalized_title.op("%")(normalized))
+        elif normalized:
+            filtered = filtered.where(StoreOffer.normalized_title.ilike(f"%{normalized}%"))
 
         if store_slug:
             store_subq = select(Store.id).where(Store.slug == store_slug).scalar_subquery()
-            base = base.where(Product.store_id.in_(store_subq))
+            filtered = filtered.where(StoreOffer.store_id.in_(store_subq))
 
         if category_slug:
             from src.modules.categories.model.category import Category
+
             cat_subq = select(Category.id).where(Category.slug == category_slug).scalar_subquery()
-            base = base.where(Product.category_id.in_(cat_subq))
+            filtered = filtered.where(StoreOffer.category_id.in_(cat_subq))
 
         if min_price is not None:
-            base = base.where(Product.price >= min_price)
+            filtered = filtered.where(StoreOffer.price_retail >= min_price)
         if max_price is not None:
-            base = base.where(Product.price <= max_price)
-        if in_stock is not None:
-            base = base.where(Product.in_stock.is_(in_stock))
+            filtered = filtered.where(StoreOffer.price_retail <= max_price)
+        if in_stock is True:
+            filtered = filtered.where(StoreOffer.stock_status.in_(("in_stock", "low")))
+        elif in_stock is False:
+            filtered = filtered.where(StoreOffer.stock_status == "out")
+
+        total_result = await db.execute(select(func.count()).select_from(filtered.subquery()))
+        total = total_result.scalar() or 0
 
         sort_map = {
-            "price_asc": Product.price.asc(),
-            "price_desc": Product.price.desc(),
-            "date": Product.last_updated.desc(),
+            "price_asc": StoreOffer.price_retail.asc(),
+            "price_desc": StoreOffer.price_retail.desc(),
+            "date": StoreOffer.last_seen_at.desc(),
         }
-        order = sort_map.get(sort_by, Product.price.asc())
-        base = base.order_by(order)
-
-        total_query = select(Product.id).where(Product.normalized_name.ilike(f"%{normalized}%"))
-        if store_slug:
-            total_query = total_query.where(Product.store_id.in_(
-                select(Store.id).where(Store.slug == store_slug).scalar_subquery()
-            ))
-        total_result = await db.execute(total_query)
-        total = len(total_result.scalars().all())
+        if normalized and fuzzy:
+            order = func.similarity(StoreOffer.normalized_title, normalized).desc()
+        else:
+            order = sort_map.get(sort_by, StoreOffer.price_retail.asc())
 
         offset = (page - 1) * per_page
-        result = await db.execute(base.offset(offset).limit(per_page))
-        products = list(result.unique().scalars().all())
+        result = await db.execute(filtered.order_by(order).offset(offset).limit(per_page))
+        offers = list(result.scalars().all())
 
-        return products, total
+        return offers, total
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, product_id: int) -> Product | None:
+    async def get_by_id(db: AsyncSession, offer_id: int) -> StoreOffer | None:
         result = await db.execute(
-            select(Product).options(joinedload(Product.price_history)).where(Product.id == product_id)
+            select(StoreOffer)
+            .options(joinedload(StoreOffer.price_history))
+            .where(StoreOffer.id == offer_id)
         )
         return result.unique().scalar_one_or_none()
 
     @staticmethod
-    async def get_price_history(db: AsyncSession, product_id: int) -> list[PriceHistory]:
+    async def get_price_history(db: AsyncSession, offer_id: int) -> list[OfferPriceHistory]:
         result = await db.execute(
-            select(PriceHistory).where(PriceHistory.product_id == product_id).order_by(PriceHistory.recorded_at)
+            select(OfferPriceHistory)
+            .where(OfferPriceHistory.offer_id == offer_id)
+            .order_by(OfferPriceHistory.recorded_at)
         )
         return list(result.scalars().all())
 
     @staticmethod
-    async def create(db: AsyncSession, data: dict) -> Product:
-        product = Product(**data)
-        db.add(product)
+    async def create(db: AsyncSession, data: dict) -> StoreOffer:
+        payload = dict(data)
+        if not payload.get("normalized_title"):
+            payload["normalized_title"] = await ProductService._normalize_query(
+                payload.get("title", "")
+            )
+
+        offer = StoreOffer(**payload)
+        db.add(offer)
         await db.flush()
 
-        history = PriceHistory(product_id=product.id, price=product.price)
+        history = OfferPriceHistory(
+            offer_id=offer.id,
+            price_retail=offer.price_retail,
+            price_opt=offer.price_opt,
+            stock_status=offer.stock_status,
+        )
         db.add(history)
         await db.flush()
 
-        return product
+        return offer
 
     @staticmethod
-    async def find_cheapest(db: AsyncSession, query: str) -> Product | None:
+    async def find_cheapest(db: AsyncSession, query: str) -> StoreOffer | None:
         normalized = await ProductService._normalize_query(query)
         result = await db.execute(
-            select(Product)
-            .where(Product.normalized_name.ilike(f"%{normalized}%"))
-            .order_by(Product.price.asc())
+            select(StoreOffer)
+            .where(StoreOffer.is_active.is_(True))
+            .where(StoreOffer.normalized_title.ilike(f"%{normalized}%"))
+            .order_by(StoreOffer.price_retail.asc())
             .limit(1)
         )
         return result.scalar_one_or_none()

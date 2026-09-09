@@ -10,17 +10,47 @@ packages = [{ include = "src" }]
 python = "^3.11"
 fastapi = "^0.115.0"
 uvicorn = { version = "^0.30.0", extras = ["standard"] }
-sqlalchemy = "^2.0.35"
+sqlalchemy = { version = "^2.0.35", extras = ["asyncio"] }
 asyncpg = "^0.30.0"
 redis = "^5.1.0"
 alembic = "^1.13.0"
 python-dotenv = "^1.0.1"
-pydantic = "^2.9.0"
+pydantic = { version = "^2.9.0", extras = ["email"] }
 pydantic-settings = "^2.5.0"
 passlib = { version = "^1.7.4", extras = ["bcrypt"] }
+bcrypt = "4.0.1"
 python-jose = { version = "^3.3.0", extras = ["cryptography"] }
 httpx = "^0.27.0"
+greenlet = "^3.1.1"
+email-validator = "^2.2.0"
+beautifulsoup4 = "^4.15.0"
+lxml = "^6.1.1"
+tenacity = "^9.1.4"
+arq = "^0.28.0"
+reportlab = "^5.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+extend-exclude = ["alembic"]
+
+[tool.ruff.lint]
+# Консервативный набор для авто-fix через PostToolUse-хук:
+# E/W (pycodestyle), F (pyflakes), I (isort). Расширяйте при необходимости.
+select = ["E", "W", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py содержат намеренные ре-экспорты (напр. <name>_router) — не считать их unused,
+# иначе авто-fix хука их удалит и сломает импорты в main.py.
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]

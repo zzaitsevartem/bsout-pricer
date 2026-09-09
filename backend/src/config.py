@@ -17,20 +17,63 @@ class Settings(BaseSettings):
 
     redis_host: str = "localhost"
     redis_port: int = 6379
+    redis_password: str | None = None
 
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/0"
+        auth = f":{self.redis_password}@" if self.redis_password else ""
+        return f"redis://{auth}{self.redis_host}:{self.redis_port}/0"
 
     jwt_secret_key: str = "change-me-to-a-random-secret"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
 
-    debug: bool = True
+    debug: bool = False
     app_name: str = "BScout API"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    rate_limit_max_requests: int = 120
+    rate_limit_window: int = 60
+    rate_limit_trust_forwarded_for: bool = False
+    auth_rate_limit_max_requests: int = 10
+    auth_rate_limit_window: int = 300
+
+    yookassa_webhook_secret: str | None = None
+
+    frontend_base_url: str = "http://localhost:3000"
+    cors_origins_raw: str = "http://localhost:3000"
+    log_level: str = "INFO"
+
+    smtp_host: str | None = None
+    smtp_port: int = 465
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_use_ssl: bool = True
+    smtp_from: str = (
+        "BScout.Pricer - платформа для поиска и сравнения цен <bscout.pricer@yandex.ru>"
+    )
+    mail_backend: str = "console"
+
+    vk_client_id: str | None = None
+    vk_client_secret: str | None = None
+    vk_redirect_uri: str | None = None
+
+    telegram_bot_token: str | None = None
+    telegram_bot_username: str | None = None
+
+    parser_full_sync_enabled: bool = False
+
+    broadcast_send_delay_seconds: float = 0.3
+    broadcast_batch_size: int = 10
+    broadcast_max_custom_recipients: int = 500
+
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()
+
+
+def cors_origins() -> list[str]:
+    raw = settings.cors_origins_raw or ""
+    origins = [item.strip() for item in raw.split(",") if item.strip()]
+    return origins or ["http://localhost:3000"]
