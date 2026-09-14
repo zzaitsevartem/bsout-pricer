@@ -14,7 +14,7 @@
 | 05 | Fuzzy-поиск (pg_trgm) для тарифа advanced | [x] | 2026-08-07 | archive/BLOCK-05-fuzzy-pg-trgm-advanced.md |
 | 06 | Каркас парсеров: утилиты, исключения, ParserService | [x] | 2026-08-07 | archive/BLOCK-06-parserservice.md |
 | 07 | Пять парсеров магазинов (4 из 5; ГринСпарк — бот-защита) | [~] | — | MASTERPLAN |
-| 08 | Планировщик и очередь (arq worker) | [~] | — | MASTERPLAN |
+| 08 | Планировщик и очередь (celery worker) | [~] | — | MASTERPLAN |
 | 03 | Покрытие тестами (pytest: unit + integration, TDD) | [~] | — | MASTERPLAN |
 | 09 | Данные без парсеров: сид и импорт | [x] | 2026-08-07 | archive/BLOCK-09.md |
 | 10 | Матчинг и сравнение цен (ядро ценности) | [x] | 2026-08-07 | archive/BLOCK-10.md |

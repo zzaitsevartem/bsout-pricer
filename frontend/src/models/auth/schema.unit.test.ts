@@ -54,14 +54,21 @@ describe('registerRequestSchema', () => {
 });
 
 describe('loginRequestSchema', () => {
-  it('accepts email + password', () => {
+  it('accepts identifier (email or username) + password', () => {
     expect(
-      loginRequestSchema.safeParse({ email: 'a@b.com', password: 'x' }).success,
+      loginRequestSchema.safeParse({ identifier: 'a@b.com', password: 'x' }).success,
+    ).toBe(true);
+    expect(
+      loginRequestSchema.safeParse({ identifier: 'sugarfree', password: 'x' }).success,
     ).toBe(true);
   });
 
   it('rejects a missing password', () => {
-    expect(loginRequestSchema.safeParse({ email: 'a@b.com' }).success).toBe(false);
+    expect(loginRequestSchema.safeParse({ identifier: 'a@b.com' }).success).toBe(false);
+  });
+
+  it('rejects a missing identifier', () => {
+    expect(loginRequestSchema.safeParse({ password: 'x' }).success).toBe(false);
   });
 });
 

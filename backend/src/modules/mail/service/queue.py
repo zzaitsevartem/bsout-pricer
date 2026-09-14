@@ -3,6 +3,7 @@ import logging
 import os
 from collections.abc import Awaitable, Callable
 
+from src.celery_app import celery_app
 from src.config import settings
 
 logger = logging.getLogger("bscout.mail")
@@ -14,8 +15,6 @@ TRUTHY_VALUES = ("1", "true", "yes", "on")
 MailDeliver = Callable[[str, str, str, str | None], Awaitable[None]]
 
 _pending: set[asyncio.Task] = set()
-_pool = None
-_pool_lock = asyncio.Lock()
 
 
 def queue_enabled() -> bool:
@@ -25,35 +24,13 @@ def queue_enabled() -> bool:
     return str(flag).strip().lower() in TRUTHY_VALUES
 
 
-async def _get_pool():
-    global _pool
-    if _pool is not None:
-        return _pool
-    async with _pool_lock:
-        if _pool is None:
-            from arq import create_pool
-            from arq.connections import RedisSettings
-
-            _pool = await create_pool(
-                RedisSettings(host=settings.redis_host, port=settings.redis_port)
-            )
-    return _pool
-
-
-async def close_mail_queue() -> None:
-    global _pool
-    pool = _pool
-    _pool = None
-    if pool is not None:
-        await pool.close()
-
-
 async def _enqueue(to: str, subject: str, text: str, html: str | None) -> bool:
     if not queue_enabled():
         return False
     try:
-        pool = await _get_pool()
-        await pool.enqueue_job(MAIL_QUEUE_JOB, to, subject, text, html)
+        await asyncio.to_thread(
+            celery_app.send_task, MAIL_QUEUE_JOB, args=[to, subject, text, html]
+        )
     except Exception:
         logger.exception("mail queue unavailable, delivering in background instead")
         return False

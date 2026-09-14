@@ -27,7 +27,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
       <label htmlFor={inputId} className="sr-only">
         Поиск запчастей
       </label>
-      <div className="relative flex h-11 items-center rounded-full border border-border-default bg-ivory-elevated transition-colors focus-within:border-slate focus-within:bg-ivory focus-within:shadow-sm">
+      <div className="relative flex h-11 items-center rounded-full border border-border-input bg-ivory-elevated transition-colors focus-within:border-border-default focus-within:bg-ivory focus-within:shadow-sm">
         <input
           id={inputId}
           type="search"

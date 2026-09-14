@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.celery_app import celery_app
 from src.config import settings
 from src.modules.auth.model.user import Subscription, User
 from src.modules.broadcast.model.broadcast import (
@@ -144,20 +145,7 @@ class BroadcastService:
 
     @staticmethod
     async def _enqueue_broadcast(broadcast_id: int) -> bool:
-        from arq import create_pool
-        from arq.connections import RedisSettings
-
-        pool = await create_pool(
-            RedisSettings(
-                host=settings.redis_host,
-                port=settings.redis_port,
-                password=settings.redis_password,
-            )
-        )
-        try:
-            await pool.enqueue_job(BROADCAST_QUEUE_JOB, broadcast_id)
-        finally:
-            await pool.close()
+        await asyncio.to_thread(celery_app.send_task, BROADCAST_QUEUE_JOB, args=[broadcast_id])
         return True
 
     @staticmethod
@@ -205,7 +193,7 @@ class BroadcastService:
             await db.commit()
             raise BroadcastError(
                 "Очередь задач недоступна — рассылка не запущена. "
-                "Убедитесь, что Redis и воркер (arq src.worker.WorkerSettings) работают.",
+                "Убедитесь, что Redis и воркер (celery -A src.worker worker) работают.",
                 503,
             )
 

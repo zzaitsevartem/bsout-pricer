@@ -111,7 +111,7 @@ function TargetPriceEditor({ item }: { item: TrackedProductResponse }) {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="цена, ₽"
-        className="w-[110px] rounded-full px-2 py-1 text-[14px] bg-ivory border border-border-default text-slate"
+        className="w-[110px] rounded-full px-2 py-1 text-[14px] bg-ivory border border-border-input text-slate focus:outline-none focus:border-border-default"
       />
       <button
         type="button"

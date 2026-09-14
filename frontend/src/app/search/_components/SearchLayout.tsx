@@ -94,7 +94,7 @@ export function SearchLayout({
                 value={controls.text}
                 onChange={(event) => controls.onTextChange(event.target.value)}
                 aria-label="Поиск запчастей"
-                className="w-full rounded-full pl-9 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
+                className="w-full rounded-full pl-9 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                 placeholder="Поиск запчастей..."
               />
             </div>
@@ -142,7 +142,7 @@ export function SearchLayout({
                     onChange={(event) =>
                       controls.onSortChange(event.target.value as CatalogSortOption)
                     }
-                    className="appearance-none rounded-full pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate"
+                    className="appearance-none rounded-full pr-9 pl-3 py-2 text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   >
                     {SORT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>

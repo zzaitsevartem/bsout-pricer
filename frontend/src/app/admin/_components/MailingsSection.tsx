@@ -96,7 +96,7 @@ const RECIPIENT_STATUS_LABELS: Record<RecipientStatus, string> = {
 };
 
 const INPUT_CLASS =
-  'w-full border border-border-default bg-ivory px-3 py-2.5 text-[15px] text-slate placeholder:text-body-muted hover:border-slate-soft focus:border-slate focus:outline-none transition-colors duration-150';
+  'w-full border border-border-input bg-ivory px-3 py-2.5 text-[15px] text-slate placeholder:text-body-muted hover:border-slate-soft focus:border-border-default focus:outline-none transition-colors duration-150';
 
 function Modal({
   onClose,
@@ -151,7 +151,15 @@ function Modal({
   );
 }
 
-function ModalHeader({ title, subtitle, onClose }: { title: string; subtitle?: string; onClose: () => void }) {
+function ModalHeader({
+  title,
+  subtitle,
+  onClose,
+}: {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border-light-subtle">
       <div>
@@ -164,7 +172,14 @@ function ModalHeader({ title, subtitle, onClose }: { title: string; subtitle?: s
         aria-label="Закрыть"
         className="flex h-10 w-10 items-center justify-center rounded-full bg-ivory-elevated border border-border-light-subtle text-body-subtle transition-colors hover:bg-ivory-warm hover:text-slate"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M18 6 6 18M6 6l12 12" />
         </svg>
       </button>
@@ -172,11 +187,7 @@ function ModalHeader({ title, subtitle, onClose }: { title: string; subtitle?: s
   );
 }
 
-function BroadcastFormModal({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
+function BroadcastFormModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [audience, setAudience] = useState<BroadcastAudience>('custom');
   const [subject, setSubject] = useState('');
@@ -315,7 +326,10 @@ function BroadcastFormModal({
 
         {audience === 'custom' && (
           <div>
-            <label htmlFor="broadcast-emails" className="mb-2 block text-[15px] font-medium text-slate">
+            <label
+              htmlFor="broadcast-emails"
+              className="mb-2 block text-[15px] font-medium text-slate"
+            >
               Адреса получателей
             </label>
             <textarea
@@ -334,7 +348,8 @@ function BroadcastFormModal({
         {audience !== 'custom' && recipients.length > 0 && (
           <div className="border border-clay bg-ivory-elevated px-4 py-3">
             <p className="text-[14px] text-clay">
-              Вы ввели адреса ранее, но выбрали «{AUDIENCE_LABELS[audience]}»: письмо уйдёт всем получателям этой аудитории, введённые адреса будут проигнорированы.
+              Вы ввели адреса ранее, но выбрали «{AUDIENCE_LABELS[audience]}»: письмо уйдёт всем
+              получателям этой аудитории, введённые адреса будут проигнорированы.
             </p>
             <button
               type="button"
@@ -347,7 +362,10 @@ function BroadcastFormModal({
         )}
 
         <div>
-          <label htmlFor="broadcast-subject" className="mb-2 block text-[15px] font-medium text-slate">
+          <label
+            htmlFor="broadcast-subject"
+            className="mb-2 block text-[15px] font-medium text-slate"
+          >
             Тема письма
           </label>
           <input
@@ -378,7 +396,8 @@ function BroadcastFormModal({
         {preview.data && (
           <div className="border border-border-default bg-ivory-elevated px-4 py-3">
             <p className="text-[15px] text-slate">
-              Получателей: <span className="font-semibold">{formatNumber(preview.data.recipient_count)}</span>
+              Получателей:{' '}
+              <span className="font-semibold">{formatNumber(preview.data.recipient_count)}</span>
             </p>
             {preview.data.sample_emails.length > 0 && (
               <p className="mt-1 text-[14px] text-body-subtle break-all">
@@ -395,11 +414,21 @@ function BroadcastFormModal({
         )}
       </div>
       <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border-light-subtle">
-        <button type="button" onClick={handlePreview} className="btn-ghost btn-sm" disabled={preview.isPending}>
+        <button
+          type="button"
+          onClick={handlePreview}
+          className="btn-ghost btn-sm"
+          disabled={preview.isPending}
+        >
           {preview.isPending ? 'Подсчёт…' : 'Предпросмотр'}
         </button>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={onClose} className="btn-ghost btn-sm" disabled={createPending}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost btn-sm"
+            disabled={createPending}
+          >
             Отмена
           </button>
           <button
@@ -469,13 +498,18 @@ function BroadcastDetailModal({
         <div className="flex flex-wrap items-center gap-3">
           <span className={statusBadge(broadcast.status)}>{STATUS_LABELS[broadcast.status]}</span>
           <span className="text-[14px] text-body-subtle">
-            Получатели: <span className="font-semibold text-slate">{formatNumber(broadcast.total_recipients)}</span>
+            Получатели:{' '}
+            <span className="font-semibold text-slate">
+              {formatNumber(broadcast.total_recipients)}
+            </span>
           </span>
           <span className="text-[14px] text-body-subtle">
-            Отправлено: <span className="font-semibold text-slate">{formatNumber(broadcast.sent_count)}</span>
+            Отправлено:{' '}
+            <span className="font-semibold text-slate">{formatNumber(broadcast.sent_count)}</span>
           </span>
           <span className="text-[14px] text-body-subtle">
-            Ошибки: <span className="font-semibold text-slate">{formatNumber(broadcast.failed_count)}</span>
+            Ошибки:{' '}
+            <span className="font-semibold text-slate">{formatNumber(broadcast.failed_count)}</span>
           </span>
           {isLive && (
             <span className="animate-pulse text-[14px] text-body-subtle">
@@ -551,7 +585,18 @@ function BroadcastDetailModal({
                     <tr key={recipient.id}>
                       <td className={cn(TABLE_TD, 'text-body break-all')}>{recipient.email}</td>
                       <td className={TABLE_TD}>
-                        <span className={cn(BADGE_BASE, recipient.status === 'sent' ? BADGE_SUCCESS : recipient.status === 'failed' ? BADGE_DANGER : recipient.status === 'sending' ? BADGE_WARNING : BADGE_DEFAULT)}>
+                        <span
+                          className={cn(
+                            BADGE_BASE,
+                            recipient.status === 'sent'
+                              ? BADGE_SUCCESS
+                              : recipient.status === 'failed'
+                                ? BADGE_DANGER
+                                : recipient.status === 'sending'
+                                  ? BADGE_WARNING
+                                  : BADGE_DEFAULT,
+                          )}
+                        >
                           {RECIPIENT_STATUS_LABELS[recipient.status]}
                         </span>
                       </td>
@@ -627,14 +672,20 @@ export function MailingsSection() {
   };
 
   const handleLaunch = (broadcast: BroadcastResponse) => {
-    if (!window.confirm(`Запустить рассылку «${broadcast.name}»? Отправка начнётся автоматически.`)) {
+    if (
+      !window.confirm(`Запустить рассылку «${broadcast.name}»? Отправка начнётся автоматически.`)
+    ) {
       return;
     }
     launch.mutate(broadcast.id);
   };
 
   const handleCancel = (broadcast: BroadcastResponse) => {
-    if (!window.confirm(`Отменить рассылку «${broadcast.name}»? Оставшиеся получатели не будут обработаны.`)) {
+    if (
+      !window.confirm(
+        `Отменить рассылку «${broadcast.name}»? Оставшиеся получатели не будут обработаны.`,
+      )
+    ) {
       return;
     }
     cancel.mutate(broadcast.id);
@@ -711,7 +762,11 @@ export function MailingsSection() {
                     #{broadcast.id}
                   </td>
                   <td className={cn(TABLE_TD, 'font-semibold text-body')}>
-                    <button type="button" onClick={() => setDetail(broadcast)} className="btn-arrow">
+                    <button
+                      type="button"
+                      onClick={() => setDetail(broadcast)}
+                      className="btn-arrow"
+                    >
                       {broadcast.name}
                     </button>
                   </td>
@@ -719,7 +774,9 @@ export function MailingsSection() {
                     {AUDIENCE_LABELS[broadcast.audience]}
                   </td>
                   <td className={TABLE_TD}>
-                    <span className={statusBadge(broadcast.status)}>{STATUS_LABELS[broadcast.status]}</span>
+                    <span className={statusBadge(broadcast.status)}>
+                      {STATUS_LABELS[broadcast.status]}
+                    </span>
                   </td>
                   <td className={cn(TABLE_TD, 'text-[14px] text-body-subtle')}>
                     {broadcast.total_recipients > 0
@@ -779,7 +836,9 @@ export function MailingsSection() {
                       <button
                         type="button"
                         onClick={() => handleDelete(broadcast)}
-                        disabled={deleteBroadcast.isPending && deleteBroadcast.variables === broadcast.id}
+                        disabled={
+                          deleteBroadcast.isPending && deleteBroadcast.variables === broadcast.id
+                        }
                         className="btn-ghost btn-sm text-clay disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {deleteBroadcast.isPending && deleteBroadcast.variables === broadcast.id

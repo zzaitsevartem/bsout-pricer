@@ -1,35 +1,45 @@
+import asyncio
 import logging
 from datetime import datetime, timezone
 
-from arq import cron, func
-from arq.connections import RedisSettings
 from sqlalchemy import delete, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.celery_app import celery_app
 from src.config import settings
 from src.database import async_session_factory
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import Subscription
 from src.modules.auth.service.password_service import deliver_mail
-from src.modules.broadcast.service.broadcast_service import (
-    BROADCAST_QUEUE_JOB,
-    BroadcastService,
-)
+from src.modules.broadcast.service.broadcast_service import BroadcastService
 from src.modules.parser.service.parser_service import FULL_SYNC_LOCK_TTL, parser_service
 from src.modules.parser.service.parsers import register_default_parsers
-from src.modules.parser.service.queue import PARSER_QUEUE_JOB
 from src.modules.tracking.service.alert_service import AlertService
 from src.modules.tracking.service.price_refresh import refresh_tracked_offers
 from src.modules.tracking.service.retention import run_retention
 
 logger = logging.getLogger(__name__)
 
-
-async def startup(ctx) -> None:
-    register_default_parsers()
+register_default_parsers()
 
 
-async def sync_catalog(ctx) -> dict:
+@celery_app.task(
+    name="run_parser",
+    time_limit=FULL_SYNC_LOCK_TTL,
+    soft_time_limit=FULL_SYNC_LOCK_TTL - 60,
+)
+def run_parser(
+    store_slug: str,
+    full_sync: bool = False,
+    limit: int | None = None,
+    section: str | None = None,
+) -> dict:
+    return asyncio.run(
+        parser_service.run_isolated(store_slug, full_sync=full_sync, limit=limit, section=section)
+    )
+
+
+async def _sync_catalog() -> dict:
     if not settings.parser_full_sync_enabled:
         result = {"status": "disabled", "stores": []}
         logger.info("sync_catalog: %s", result)
@@ -41,21 +51,12 @@ async def sync_catalog(ctx) -> dict:
     return result
 
 
-async def run_parser(
-    ctx,
-    store_slug: str,
-    full_sync: bool = False,
-    limit: int | None = None,
-    section: str | None = None,
-) -> dict:
-    result = await parser_service.run_isolated(
-        store_slug, full_sync=full_sync, limit=limit, section=section
-    )
-    logger.info("run_parser: %s", result)
-    return result
+@celery_app.task(name="sync_catalog", time_limit=FULL_SYNC_LOCK_TTL)
+def sync_catalog() -> dict:
+    return asyncio.run(_sync_catalog())
 
 
-async def sync_prices(ctx) -> dict:
+async def _sync_prices() -> dict:
     async with async_session_factory() as db:
         stats = await refresh_tracked_offers(db)
         notifications = await AlertService.scan_for_drops(db)
@@ -65,22 +66,12 @@ async def sync_prices(ctx) -> dict:
     return stats
 
 
-async def send_password_mail(
-    ctx,
-    to: str,
-    subject: str,
-    text: str,
-    html: str | None = None,
-) -> dict:
-    await deliver_mail(to, subject, text, html)
-    return {"delivered": True}
+@celery_app.task(name="sync_prices")
+def sync_prices() -> dict:
+    return asyncio.run(_sync_prices())
 
 
-async def send_broadcast(ctx, broadcast_id: int) -> dict:
-    return await BroadcastService.run_broadcast_job(broadcast_id)
-
-
-async def _expire_subscriptions(db: AsyncSession) -> dict:
+async def _expire_subscriptions_impl(db: AsyncSession) -> dict:
     result = await db.execute(
         update(Subscription)
         .where(
@@ -93,14 +84,19 @@ async def _expire_subscriptions(db: AsyncSession) -> dict:
     return {"expired": result.rowcount or 0}
 
 
-async def expire_subscriptions(ctx, db: AsyncSession | None = None) -> dict:
+async def _expire_subscriptions(db: AsyncSession | None = None) -> dict:
     if db is not None:
-        return await _expire_subscriptions(db)
+        return await _expire_subscriptions_impl(db)
     async with async_session_factory() as session:
-        return await _expire_subscriptions(session)
+        return await _expire_subscriptions_impl(session)
 
 
-async def _cleanup_refresh_tokens(db: AsyncSession) -> dict:
+@celery_app.task(name="expire_subscriptions")
+def expire_subscriptions() -> dict:
+    return asyncio.run(_expire_subscriptions())
+
+
+async def _cleanup_refresh_tokens_impl(db: AsyncSession) -> dict:
     result = await db.execute(
         delete(RefreshToken).where(
             or_(
@@ -113,45 +109,43 @@ async def _cleanup_refresh_tokens(db: AsyncSession) -> dict:
     return {"deleted": result.rowcount or 0}
 
 
-async def cleanup_refresh_tokens(ctx, db: AsyncSession | None = None) -> dict:
+async def _cleanup_refresh_tokens(db: AsyncSession | None = None) -> dict:
     if db is not None:
-        return await _cleanup_refresh_tokens(db)
+        return await _cleanup_refresh_tokens_impl(db)
     async with async_session_factory() as session:
-        return await _cleanup_refresh_tokens(session)
+        return await _cleanup_refresh_tokens_impl(session)
 
 
-async def _prune_history(db: AsyncSession) -> dict:
-    return await run_retention(db)
+@celery_app.task(name="cleanup_refresh_tokens")
+def cleanup_refresh_tokens() -> dict:
+    return asyncio.run(_cleanup_refresh_tokens())
 
 
-async def prune_history(ctx, db: AsyncSession | None = None) -> dict:
+async def _prune_history(db: AsyncSession | None = None) -> dict:
     if db is not None:
-        return await _prune_history(db)
+        return await run_retention(db)
     async with async_session_factory() as session:
-        return await _prune_history(session)
+        return await run_retention(session)
 
 
-class WorkerSettings:
-    redis_settings = RedisSettings(
-        host=settings.redis_host,
-        port=settings.redis_port,
-        password=settings.redis_password,
-    )
-    on_startup = startup
-    functions = [
-        func(run_parser, name=PARSER_QUEUE_JOB, timeout=FULL_SYNC_LOCK_TTL),
-        sync_catalog,
-        sync_prices,
-        expire_subscriptions,
-        cleanup_refresh_tokens,
-        send_password_mail,
-        func(send_broadcast, name=BROADCAST_QUEUE_JOB),
-        prune_history,
-    ]
-    cron_jobs = [
-        cron(sync_catalog, hour=3, minute=0),
-        cron(sync_prices, hour={7, 13, 19}, minute=30),
-        cron(expire_subscriptions, minute=5),
-        cron(cleanup_refresh_tokens, hour=4, minute=30),
-        cron(prune_history, weekday="sun", hour=4, minute=45, timeout=3600),
-    ]
+@celery_app.task(name="prune_history", time_limit=3600, soft_time_limit=3540)
+def prune_history() -> dict:
+    return asyncio.run(_prune_history())
+
+
+async def _send_password_mail(to: str, subject: str, text: str, html: str | None = None) -> None:
+    await deliver_mail(to, subject, text, html)
+
+
+@celery_app.task(name="send_password_mail")
+def send_password_mail(to: str, subject: str, text: str, html: str | None = None) -> None:
+    asyncio.run(_send_password_mail(to, subject, text, html))
+
+
+async def _send_broadcast(broadcast_id: int) -> dict:
+    return await BroadcastService.run_broadcast_job(broadcast_id)
+
+
+@celery_app.task(name="send_broadcast")
+def send_broadcast(broadcast_id: int) -> dict:
+    return asyncio.run(_send_broadcast(broadcast_id))

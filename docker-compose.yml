@@ -52,7 +52,7 @@ services:
   worker:
     build: ./backend
     container_name: bscout-worker
-    command: ["arq", "src.worker.WorkerSettings"]
+    command: ["celery", "-A", "src.worker", "worker", "--loglevel=info", "--concurrency=1"]
     env_file:
       - ./backend/.env
     depends_on:
@@ -72,11 +72,64 @@ services:
       DEBUG: ${DEBUG:-false}
       PARSER_FULL_SYNC_ENABLED: ${PARSER_FULL_SYNC_ENABLED:-false}
     healthcheck:
-      test: ["CMD", "arq", "src.worker.WorkerSettings", "--check"]
+      test: ["CMD-SHELL", "celery -A src.worker inspect ping --timeout=10"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  beat:
+    build: ./backend
+    container_name: bscout-beat
+    command: ["celery", "-A", "src.worker", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule", "--pidfile=/tmp/celerybeat.pid"]
+    env_file:
+      - ./backend/.env
+    depends_on:
+      redis:
+        condition: service_started
+      worker:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-to-a-random-secret}
+      DEBUG: ${DEBUG:-false}
+      PARSER_FULL_SYNC_ENABLED: ${PARSER_FULL_SYNC_ENABLED:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/celerybeat.pid"]
       interval: 60s
       timeout: 10s
       retries: 3
       start_period: 30s
+    restart: unless-stopped
+
+  flower:
+    build: ./backend
+    container_name: bscout-flower
+    command: ["celery", "-A", "src.worker", "flower", "--port=5555", "--loglevel=info"]
+    env_file:
+      - ./backend/.env
+    depends_on:
+      redis:
+        condition: service_started
+      worker:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-to-a-random-secret}
+      DEBUG: ${DEBUG:-false}
+      PARSER_FULL_SYNC_ENABLED: ${PARSER_FULL_SYNC_ENABLED:-false}
+      FLOWER_UNAUTHENTICATED_API: ${FLOWER_UNAUTHENTICATED_API:-true}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5555/', timeout=3).status==200 else 1)\""]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    ports:
+      - "${FLOWER_HOST_PORT:-5555}:5555"
     restart: unless-stopped
 
 volumes:

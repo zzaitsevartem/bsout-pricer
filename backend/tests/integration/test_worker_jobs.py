@@ -1,12 +1,18 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from celery.schedules import crontab
 from sqlalchemy import func, select
 
+from src.celery_app import celery_app
 from src.modules.auth.model.refresh_token import RefreshToken
 from src.modules.auth.model.user import PlanEnum, Subscription, User
 from src.modules.auth.service.auth import hash_password
-from src.worker import WorkerSettings, cleanup_refresh_tokens, expire_subscriptions, sync_catalog
+from src.worker import (
+    _cleanup_refresh_tokens,
+    _expire_subscriptions,
+    _sync_catalog,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -43,7 +49,7 @@ async def test_expire_subscriptions_deactivates_only_finished_ones(db_session):
     )
     await db_session.commit()
 
-    await expire_subscriptions(None, db=db_session)
+    await _expire_subscriptions(db=db_session)
 
     stale = (
         await db_session.execute(
@@ -93,7 +99,7 @@ async def test_cleanup_removes_expired_and_revoked_but_keeps_live_tokens(db_sess
     )
     await db_session.commit()
 
-    await cleanup_refresh_tokens(None, db=db_session)
+    await _cleanup_refresh_tokens(db=db_session)
 
     left = (
         (await db_session.execute(select(RefreshToken.jti).where(RefreshToken.user_id == user.id)))
@@ -105,10 +111,16 @@ async def test_cleanup_removes_expired_and_revoked_but_keeps_live_tokens(db_sess
 
 
 def test_worker_schedule_does_not_crawl_stores_more_than_once_a_day():
-    catalog_crons = [c for c in WorkerSettings.cron_jobs if "sync_catalog" in c.name]
+    entries = [
+        name
+        for name, conf in celery_app.conf.beat_schedule.items()
+        if conf["task"] == "sync_catalog"
+    ]
 
-    assert len(catalog_crons) == 1
-    assert catalog_crons[0].hour == 3
+    assert entries == ["sync_catalog_daily"]
+    assert celery_app.conf.beat_schedule["sync_catalog_daily"]["schedule"] == crontab(
+        hour=3, minute=0
+    )
 
 
 async def test_catalog_sync_is_disabled_by_default(monkeypatch):
@@ -119,7 +131,7 @@ async def test_catalog_sync_is_disabled_by_default(monkeypatch):
 
     monkeypatch.setattr("src.worker.parser_service.run_all", fail_run_all)
 
-    assert await sync_catalog(None) == {"status": "disabled", "stores": []}
+    assert await _sync_catalog() == {"status": "disabled", "stores": []}
 
 
 async def test_catalog_sync_runs_only_after_explicit_opt_in(monkeypatch):
@@ -131,7 +143,7 @@ async def test_catalog_sync_runs_only_after_explicit_opt_in(monkeypatch):
 
     monkeypatch.setattr("src.worker.parser_service.run_all", run_all)
 
-    assert await sync_catalog(None) == {
+    assert await _sync_catalog() == {
         "status": "done",
         "stores": [{"store_slug": "tgsm", "status": "done"}],
     }

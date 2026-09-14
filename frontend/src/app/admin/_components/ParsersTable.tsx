@@ -110,7 +110,7 @@ function RunScopeControls({
             disabled={disabled || fullSync}
             onChange={(event) => onLimitChange(event.target.value)}
             placeholder={String(DEFAULT_RUN_LIMIT)}
-            className="w-[110px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-[110px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </label>
 
@@ -122,7 +122,7 @@ function RunScopeControls({
             disabled={disabled}
             onChange={(event) => onSectionChange(event.target.value)}
             placeholder="displey"
-            className="w-[190px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-default transition-colors focus:outline-none focus:border-slate focus:shadow-[0_0_0_2px_theme(colors.slate)] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-[190px] rounded-full px-3 py-[6px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </label>
       </div>

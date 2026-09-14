@@ -2,8 +2,10 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
+from celery.schedules import crontab
 from sqlalchemy import func, select
 
+from src.celery_app import celery_app
 from src.modules.auth.model.user import User
 from src.modules.auth.service.auth import hash_password
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
@@ -14,7 +16,7 @@ from src.modules.tracking.service.retention import (
     purge_search_history,
     run_retention,
 )
-from src.worker import WorkerSettings, prune_history
+from src.worker import _prune_history, prune_history
 
 pytestmark = pytest.mark.integration
 
@@ -280,10 +282,11 @@ async def test_run_retention_reports_both_tables(db_session):
 
 
 async def test_prune_history_job_is_registered_and_runs(db_session):
-    assert prune_history in WorkerSettings.functions
-    assert any(job.name == "cron:prune_history" for job in WorkerSettings.cron_jobs)
+    assert prune_history.name == "prune_history"
+    assert celery_app.conf.beat_schedule["prune_history_weekly"]["task"] == "prune_history"
+    assert isinstance(celery_app.conf.beat_schedule["prune_history_weekly"]["schedule"], crontab)
 
-    stats = await prune_history(None, db=db_session)
+    stats = await _prune_history(db=db_session)
 
     assert "price_history" in stats
     assert "search_history" in stats

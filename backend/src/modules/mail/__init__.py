@@ -12,7 +12,6 @@ from src.modules.mail.service.mailer import (
 from src.modules.mail.service.queue import (
     MAIL_QUEUE_ENV_FLAG,
     MAIL_QUEUE_JOB,
-    close_mail_queue,
     dispatch_mail,
     drain_pending_mail,
     queue_enabled,
@@ -43,7 +42,6 @@ __all__ = [
     "PASSWORD_RESET_PATH",
     "PASSWORD_RESET_SUBJECT",
     "SmtpMailer",
-    "close_mail_queue",
     "dispatch_mail",
     "drain_pending_mail",
     "frontend_link",
