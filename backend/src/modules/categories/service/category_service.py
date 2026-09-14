@@ -5,7 +5,6 @@ from src.modules.categories.model.category import Category
 
 
 class CategoryService:
-
     @staticmethod
     async def get_all(db: AsyncSession) -> list[Category]:
         result = await db.execute(select(Category).order_by(Category.name))

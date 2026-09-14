@@ -4,6 +4,44 @@
 
 ---
 
+## 🛠️ Доступ к почте (заглушка)
+
+Два способа выдать доступ (администратора) через терминал. В обоих случаях пароль задаётся как bcrypt-хеш — его невозможно прочитать из базы, только сбросить.
+
+### Вариант 1 — создать пользователя-админа с нуля
+
+```bash
+docker exec bscout-postgres psql -U bscout -d bscout -c "
+  INSERT INTO users (email, password_hash, full_name, is_active, is_admin)
+  VALUES (
+    'admin@example.com',
+    crypt('admin12345', gen_salt('bf', 12)),
+    'Администратор',
+    true,
+    true
+  );
+"
+```
+
+Здесь `admin@example.com` — адрес, `admin12345` — пароль-заглушка. После вставки можно заходить по этим данным.
+
+### Вариант 2 — выдать статус администратора уже существующему пользователю
+
+```bash
+docker exec bscout-postgres psql -U bscout -d bscout -c "
+  UPDATE users SET is_admin = true WHERE email = 'user@example.com';
+"
+```
+
+Замените `user@example.com` на email нужного аккаунта. После этого не забудьте: пользователю нужно **выйти и войти заново**, чтобы новый статус подхватился.
+
+> 📌 Для функции `crypt`/`gen_salt` может потребоваться расширение:
+> ```bash
+> docker exec bscout-postgres psql -U bscout -d bscout -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+> ```
+
+---
+
 ## 📌 О проекте
 
 **BScout** — это городской ценовой агрегатор для техники и запчастей:

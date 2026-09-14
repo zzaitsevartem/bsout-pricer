@@ -1,10 +1,19 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { setAuth } from '@/shared/config/store';
 import { authApi } from './service';
 import type { RegisterRequest, LoginRequest } from './schema';
 
 export function useRegister() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
+    onSuccess: (response) => {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      setAuth(true);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
   });
 }
 
@@ -16,6 +25,7 @@ export function useLogin() {
     onSuccess: (response) => {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
+      setAuth(true);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -29,7 +39,16 @@ export function useLogout() {
     onSettled: () => {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      setAuth(false);
       queryClient.clear();
     },
+  });
+}
+
+export function useUsernameAvailable(username: string) {
+  return useQuery({
+    queryKey: ['username-available', username],
+    queryFn: () => authApi.usernameAvailable(username),
+    enabled: /^[a-zA-Z0-9_.-]{3,32}$/.test(username),
   });
 }

@@ -1,0 +1,34 @@
+# Секреты и локальные оверрайды — НИКОГДА не должны попасть в образ
+.env
+.env.*
+!.env.example
+
+# Виртуальные окружения
+.venv/
+venv/
+../venv/
+
+# Байткод и кэши
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Тесты и документация в рантайм-образе не нужны
+tests/
+pytest.ini
+*.md
+
+# Poetry не используется в pip-воркфлоу (lock устарел)
+poetry.lock
+
+# Прочее
+.git/
+.gitignore
+.DS_Store
+Dockerfile
+.dockerignore

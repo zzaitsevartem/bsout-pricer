@@ -6,6 +6,8 @@ from src.modules.auth.service.auth import (
     decode_token,
     get_user_by_email,
     get_user_by_id,
+    get_user_by_identifier,
+    get_user_by_username,
     hash_password,
     verify_password,
 )
@@ -18,6 +20,8 @@ __all__ = [
     "decode_token",
     "get_user_by_email",
     "get_user_by_id",
+    "get_user_by_identifier",
+    "get_user_by_username",
     "create_user",
     "authenticate_user",
 ]

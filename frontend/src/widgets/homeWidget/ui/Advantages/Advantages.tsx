@@ -49,7 +49,7 @@ const Advantages: React.FC = () => {
         <div className="grid grid-cols-3 gap-6 max-md:grid-cols-1">
           {advantages.map((item) => (
             <div key={item.title} className="rounded-[24px] p-[31px] bg-ivory-elevated">
-              <div className="w-12 h-12 bg-ivory-warm flex items-center justify-center text-slate mb-4">
+              <div className="w-12 h-12 rounded-full bg-ivory-warm flex items-center justify-center text-slate mb-4">
                 {item.icon}
               </div>
               <h4 className="text-xl leading-[1.4] mb-3 text-slate font-semibold">{item.title}</h4>

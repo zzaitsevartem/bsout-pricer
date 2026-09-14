@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 export const registerRequestSchema = z.object({
   email: z.string().email(),
+  username: z
+    .string()
+    .regex(/^[a-zA-Z0-9_.-]{3,32}$/, 'Логин: 3–32 символа, латиница, цифры, _ . -')
+    .optional()
+    .or(z.literal('')),
   password: z.string().min(6).max(128),
   full_name: z.string().min(1).max(255),
   phone: z.string().max(20).optional(),
@@ -9,7 +14,7 @@ export const registerRequestSchema = z.object({
 });
 
 export const loginRequestSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1).max(255),
   password: z.string(),
 });
 

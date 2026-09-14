@@ -1,3 +1,18 @@
+from src.modules.products.schema.comparison import (
+    AlternativeTierResponse,
+    BrandRef,
+    CatalogItemResponse,
+    CatalogListResponse,
+    ClusterRef,
+    ComparisonDetailResponse,
+    ComparisonOfferResponse,
+    ComparisonStatsResponse,
+    DeviceRef,
+    PartTypeRef,
+    PricePointResponse,
+    ProductPriceHistoryResponse,
+    QualityTierRef,
+)
 from src.modules.products.schema.product import (
     PriceHistoryResponse,
     ProductCreateRequest,
@@ -6,4 +21,23 @@ from src.modules.products.schema.product import (
     ProductSearchParams,
 )
 
-__all__ = ["ProductResponse", "ProductCreateRequest", "ProductSearchParams", "ProductListResponse", "PriceHistoryResponse"]
+__all__ = [
+    "ProductResponse",
+    "ProductCreateRequest",
+    "ProductSearchParams",
+    "ProductListResponse",
+    "PriceHistoryResponse",
+    "BrandRef",
+    "DeviceRef",
+    "PartTypeRef",
+    "QualityTierRef",
+    "ClusterRef",
+    "CatalogItemResponse",
+    "CatalogListResponse",
+    "ComparisonOfferResponse",
+    "ComparisonStatsResponse",
+    "AlternativeTierResponse",
+    "ComparisonDetailResponse",
+    "PricePointResponse",
+    "ProductPriceHistoryResponse",
+]
