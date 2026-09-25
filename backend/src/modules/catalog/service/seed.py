@@ -163,6 +163,10 @@ BRANDS: dict[str, str] = {
     "Meizu": "meizu",
     "Alcatel": "alcatel",
     "Asus": "asus",
+    "Sony": "sony",
+    "LG": "lg",
+    "Fly": "fly",
+    "Explay": "explay",
 }
 
 DEVICES: list[tuple[str, str, str, list[str]]] = [
@@ -1070,6 +1074,19 @@ DEVICES: list[tuple[str, str, str, list[str]]] = [
     ("Xiaomi", "POCO F2 Pro", "xiaomi-poco-f2-pro", ["poco f2 pro", "f2 pro"]),
     ("Asus", "Google Nexus 7", "asus-nexus-7", ["nexus 7", "asus nexus 7"]),
     ("Asus", "Asus Fonepad 7", "asus-fonepad-7", ["asus fonepad 7", "fonepad 7"]),
+    ("Sony", "Xperia Z", "sony-xperia-z", ["xperia z", "sony xperia z", "xperiaz"]),
+    ("Sony", "Xperia Z Ultra", "sony-xperia-z-ultra", ["xperia z ultra", "xzu"]),
+    ("LG", "Optimus L9 (P765)", "lg-optimus-l9", ["lg optimus l9", "optimus l9", "p765", "lg l9"]),
+    ("LG", "GD310", "lg-gd310", ["lg gd310", "gd310", "lg gd 310"]),
+    ("LG", "KG280", "lg-kg280", ["lg kg280", "kg280", "lg kg 280"]),
+    ("Fly", "SX-230", "fly-sx-230", ["fly sx-230", "fly sx230", "sx-230", "sx230"]),
+    ("Explay", "MPH-110", "explay-mph-110", ["explay мрн-110", "explay mph-110", "мрн-110"]),
+    ("Samsung", "E250", "samsung-e250", ["samsung e250", "e250", "samsung e-250"]),
+    ("Nokia", "3110c", "nokia-3110c", ["nokia 3110c", "3110c", "nokia 3110", "3110"]),
+    ("Nokia", "5700", "nokia-5700", ["nokia 5700", "5700"]),
+    ("Nokia", "5200", "nokia-5200", ["nokia 5200", "5200"]),
+    ("Nokia", "5300", "nokia-5300", ["nokia 5300", "5300"]),
+    ("Nokia", "6500s", "nokia-6500s", ["nokia 6500s", "6500s", "6500 slide"]),
 ]
 
 COLORS: dict[str, tuple[str, list[str]]] = {

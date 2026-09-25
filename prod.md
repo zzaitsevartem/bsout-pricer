@@ -1,0 +1,64 @@
+# PROD — что осталось до прода
+
+Аудит только по коду (без домыслов). Формат: что сделать — где (путь:строка) — почему.
+Метка [uncertain] — факт не подтверждён кодом на 100%, требует ручной проверки.
+
+## P0 Блокеры
+
+- [ ] Создать `deploy/nginx/bscout.conf` — где (docker-compose.prod.yml:297, deploy/nginx/) — почему: прод-композ монтирует его как шаблон виртуального хоста, а в каталоге лежит только `nginx.conf`; без файла nginx не стартует и весь стенд не поднимается.
+- [ ] Починить команду worker в проде — где (docker-compose.prod.yml:218) — почему: там `["arq", "src.worker.WorkerSettings"]`, а код давно переведён на Celery (в `backend/src` ноль упоминаний arq); с этой командой воркер упадёт и расписания не выполнятся. Нужна celery-команда как в dev-файле.
+- [ ] Добавить сервис celery beat в прод-композ — где (docker-compose.prod.yml:59-321 — сервиса beat нет; расписание в backend/src/celery_app.py:17-38) — почему: без beat никогда не сработают 5 задач (парсинг каталога в 03:00, цены в 07:30/13:30/19:30, истечение подписок ежечасно, чистка токенов, чистка истории); в проде каталог протухнет в первый же день.
+- [ ] Подключить создание платежа у ЮKassa — где (backend/src/modules/payment/controller/payment.py:83-108; backend/src/modules/payment/service/payment_service.py:20 — `DEFAULT_PROVIDER = "manual"`) — почему: эндпоинт создаёт только локальный pending-платёж, провайдеру ничего не уходит, `confirmation_url` от провайдера не приходит, SDK ЮKassa нет в `backend/requirements.txt`; брать деньги нельзя — только ручное подтверждение админом.
+- [ ] Заменить заглушку проверки подписи вебхука на алгоритм провайдера — где (backend/src/modules/payment/controller/payment.py:47 — TODO; backend/src/modules/payment/controller/payment.py:138-148) — почему: сейчас HMAC-SHA256 общего секрета, а без секрета вебхук отвечает 503; до замены принимать боевые деньги нельзя.
+- [ ] Сделать страницу восстановления пароля — где (backend/src/modules/mail/service/templates.py:6 — письма ведут на `/reset-password`; frontend/src/app/login/page.tsx:95-97 — «Забыли пароль?» это мёртвый `href="#"`) — почему: страницы `/reset-password` нет в `frontend/src/app`, пользователь с забытым паролем упрётся в 404.
+- [ ] Создать страницы `/privacy` и `/terms` — где (frontend/src/widgets/Footer/ui/Footer.tsx:36-37 — ссылки есть; файлов нет; frontend/src/app/register/page.tsx:253,257 — ссылки `href="#"`) — почему: ссылки ведут в 404, а регистрация собирает согласие с несуществующими документами (вопрос 152-ФЗ и оферты для платных тарифов).
+- [ ] Оживить кнопки ВКонтакте/Телеграм на логине — где (frontend/src/app/login/page.tsx:118,133 — `type="button"` без `onClick`) — почему: кнопки ничего не делают, хотя бэкенд OAuth ВК реализован и ждёт `VK_CLIENT_ID`/`VK_CLIENT_SECRET`.
+- [ ] Починить форму «Напишите нам» на /contacts — где (frontend/src/app/contacts/page.tsx:124 — `<form>` без `onSubmit`) — почему: кнопка «Отправить» никуда не отправляет (перезагрузка страницы); заодно заменить тестовые контакты: `+7 (999) 123-45-67` (contacts/page.tsx:62), `г. Ставрополь, ул. Ленина, д. 123` (contacts/page.tsx:80).
+
+## P1 Критично
+
+- [ ] Переписать FAQ под реальные тарифы — где (frontend/src/app/faq/page.tsx:9-16 vs backend/src/modules/payment/service/plans.py:27-59) — почему: «10-дневный триал» против 7 дней в коде; «Базовый … 15+ поставщиков» против `stores=5`; «Продвинутый безлимит, 50+ поставщиков» против `tracked_products=500, stores=5`; «мгновенные платежи через шлюз» при неподключённом провайдере.
+- [ ] Уточнить/убрать обещание частоты обновления цен по тарифам — где (frontend/src/app/faq/page.tsx:12) — почему: «Пробный — 24 часа, Базовый — 6 часов, Продвинутый — реальное время» [uncertain]: механизма частоты по тарифам в `backend/src` grep не нашёл, расписание единое (celery_app.py:17-38).
+- [ ] Разобраться с GreenSpark: в сиде и витрине «5 магазинов», парсеров 4 — где (backend/src/modules/catalog/service/seed.py — стор `greenspark` в `STORES`; backend/src/modules/parser/service/parsers/__init__.py:7-12 — только tgsm/profi/liberti/divizion; frontend/src/app/faq/page.tsx:11 — «5 магазинов») — почему: магазин заявлен, но никогда не парсится — либо дописать парсер, либо убрать из списков.
+- [ ] Добавить Яндекс.Метрику, цели и cookie-баннер — где (frontend/src — ноль совпадений `ym(`/`metrika`/cookie-баннер) — почему: нет аналитики воронки (регистрация → триал → оплата) и нет согласия на cookies.
+- [ ] Добавить мониторинг ошибок (Sentry или аналог) — где (весь проект — grep `sentry|prometheus` пуст; есть только пробы в backend/src/modules/health/controller/health.py:35-46 и docker-healthcheck) — почему: падение парсера/оплаты в проде никто не заметит; сейчас это видно только по логам вручную.
+- [ ] Поставить бэкап БД на расписание — где (scripts/ops/backup_postgres.sh, scripts/ops/restore_postgres.sh — скрипты есть, расписания нет) — почему: без cron/systemd-timer копии не снимаются; проверить восстановление из копии до запуска.
+- [ ] Довести и зафиксировать грязные файлы — где (`git status`: `backend/src/modules/catalog/service/seed.py`, `backend/src/worker.py`) — почему: прод-образ соберётся с незафиксированными правками, история будет невоспроизводима.
+- [ ] Осознанно решить вопрос хранения токенов — где (frontend/src/shared/api/axios.ts:15-16,23 — токены в `localStorage`) — почему: при любой XSS-уязвимости токены stealable; альтернатива httpOnly-cookies — большая переделка, но решение нужно зафиксировать до прода.
+- [ ] Сузить CORS — где (backend/src/main.py:60-61 — `allow_methods=["*"], allow_headers=["*"]` при `allow_credentials=True`) — почему: широко открытые методы/заголовки с credentials; оставить явный минимум.
+- [ ] Усилить парольную политику или зафиксировать текущую — где (backend/src/modules/auth/schema/auth.py:19 — `min_length=6` без требований сложности) — почему: 6 символов — слабо для сервиса с оплатой.
+- [ ] Принять решение по `PARSER_FULL_SYNC_ENABLED` для прода — где (.env.prod.example:86, backend/src/worker.py:56-65) — почему: по умолчанию `false`, и тогда прод-каталог не наполнится полным синком; включать только после проверки парсеров на прод-сети (как и написано в примере).
+- [ ] Создать прод-админа и проверить SMTP — где (backend/src/cli.py:151-160 — `create-admin`; backend/.env.example:41 — `MAIL_BACKEND`, по умолчанию `console`) — почему: без админа некому подтверждать платежи вручную; без SMTP письма (подтверждение почты, сброс пароля) уходят только в лог.
+- [ ] Получить TLS-сертификаты до старта nginx — где (docker-compose.prod.yml:295-301 — `TLS_CERT_DIR` монтируется с хоста; certbot-сервиса в композе нет) — почему: с пустым каталогом сертов nginx не поднимется; нужен certbot (или ручной выпуск) + обновление по cron.
+
+## P2 Полировка
+
+- [ ] Добавить `not-found.tsx` / `error.tsx` — где (frontend/src/app — глоб по `**/{not-found,error,loading}.*` пуст) — почему: сейчас 404 и ошибки рендерят дефолт Next.
+- [ ] Допилить SEO/соцсети: `metadataBase`, canonical, og-/twitter-теги, robots.txt, sitemap.xml — где (frontend/src/app/layout.tsx:5-9 — только title/description/icons; `public/robots*`, `sitemap*` отсутствуют) — почему: без этого слабые сниппеты и шеринг.
+- [ ] Заменить webp-favicon на ico/png + apple-touch-icon — где (frontend/src/app/layout.tsx:8 — `icons: { icon: '/logo1.webp' }`) — почему: webp-фавикон не везде поддерживается (старые браузеры/iOS).
+- [ ] Убрать «появится позже» со страницы подписки — где (frontend/src/app/subscription/page.tsx:139) — почему: счётчик использования тарифа не реализован, текст обещает будущее.
+- [ ] Добавить в админку импорт офферов и модерацию связок — где (frontend/src/app/admin/page.tsx:39-42 — только StatsCards/UsersTable/ParsersTable/MailingsSection; API уже есть: `importOffers`, `reviewOffers`, `linkOffer` в frontend/src/models/admin/service.ts) — почему: иначе модерация только через API.
+- [ ] Разобрать мёртвый код поиска — где (frontend/src/models/product — не используется страницами; `BaseParser.search` нигде не вызывается; frontend/src/app/product/page.tsx:1-5 — редирект) — почему: путает и мешает аудиту; удалить или подключить.
+- [ ] Привязать чекбокс «Запомнить меня» к логике или убрать — где (frontend/src/app/login/page.tsx:73-98 — input без обработчика) — почему: сейчас декорация, вводит в заблуждение.
+- [ ] Обновить устаревшие комментарии прод-композа — где (docker-compose.prod.yml:9-10 — «появился arq-воркер»; docker-compose.prod.yml:99-104 — «пароль Redis передать некуда») — почему: пароль Redis кодом поддерживается (backend/src/config.py:20-25, backend/src/celery_app.py:6, backend/src/modules/cache/service/redis_cache.py:14), комментарии врут.
+- [ ] Разобраться с дублями `infra/nginx`, `infra/docker` — где (infra/nginx/nginx.conf, infra/nginx/base-nginx.conf, infra/docker/Dockerfile.backend, infra/docker/Dockerfile.frontend) — почему: [uncertain] не проверено, какой набор актуален (прод использует `deploy/` + корневые Dockerfile); второй набор либо удалить, либо синхронизировать.
+- [ ] Включить `output: 'standalone'` для фронта — где (frontend/next.config.mjs:1-15 — опции нет; frontend/Dockerfile:3-11 — описан блокер) — почему: образ меньше примерно в 3 раза.
+- [ ] Рассмотреть self-host шрифтов — где (frontend/src/app/globals.css:1-2 — Google Fonts CDN) — почему: внешняя зависимость; при недоступности CDN едет типографика.
+- [ ] Вручную проверить адаптив 375px и 1440px ключевых страниц (`/`, `/search`, `/product/[id]`, `/tariffs`, `/account`) — почему: классы `max-md`/`max-lg` расставлены, но визуально не проверено [uncertain].
+- [ ] Публиковать образы в registry из CI — где (.github/workflows/ci.yml:158-170 — только `docker build`, без push) — почему: иначе деплой = сборка на сервере; для воспроизводимости нужен registry + тег по коммиту.
+
+## Чеклист: залив на сервер + домен
+
+- [ ] Купить домен, направить A/AAAA-записи на сервер; зафиксировать `SERVER_NAME` и `FRONTEND_BASE_URL`.
+- [ ] Скопировать `.env.prod.example` в `.env.prod`, заполнить всё без дефолтов: `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET_KEY` (случайно, ≥32 символов — иначе бэкенд откажется стартовать: backend/src/modules/auth/service/security.py:33-47), `SMTP_*`, `VK_*`, `TELEGRAM_*`.
+- [ ] Выпустить TLS (certbot/letsencrypt) в каталог `TLS_CERT_DIR` до первого `up`; проверить автообновление.
+- [ ] Закрыть оплату: мерчант ЮKassa (тестовый → боевой), `YOOKASSA_WEBHOOK_SECRET`, заменить заглушку подписи (backend/src/modules/payment/controller/payment.py:47), прогнать тестовый платёж end-to-end и проверить вебхук.
+- [ ] Настроить SMTP (не `console`) и проверить письма: регистрация, сброс пароля, смена почты.
+- [ ] Поднять стек: `docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d` (после P0-правок); дождаться `migrate` → `backend/ worker healthy`.
+- [ ] Создать админа (`python -m src.cli create-admin`), войти в `/admin`, проверить дашборд.
+- [ ] Smoke-тест сценариев: регистрация → подтверждение почты → триал → поиск → подписка/оплата → отмена; сброс пароля; трекинг товара и алерт; экспорт CSV/PDF.
+- [ ] Включить `PARSER_FULL_SYNC_ENABLED=true` после проверки парсеров, дождаться полного синка, сверить наполнение каталога.
+- [ ] Поставить cron: `scripts/ops/backup_postgres.sh` ежедневно (+ хранение копий), certbot-renew, проверка места на диске; сделать пробное восстановление из бэкапа.
+- [ ] Подключить Метрику + цели (регистрация, оплата, подписка) и cookie-баннер; проверить события в тестовом режиме.
+- [ ] Настроить сбор логов (json-логи уже идут в stdout: backend/src/logging_config.py:99-109; лимиты файлов заданы: docker-compose.prod.yml:16-20) и алерты на 5xx / упавшие контейнеры / ошибки парсера.
+- [ ] Финальный проход: `npm run build`, `npm run lint`, `pytest tests/unit` + интеграционные, `ruff check`, CI зелёный на ветке релиза.
