@@ -20,7 +20,21 @@ from src.modules.tracking.service.retention import run_retention
 
 logger = logging.getLogger(__name__)
 
+_worker_loop: asyncio.AbstractEventLoop | None = None
+
 register_default_parsers()
+
+
+def _worker_event_loop() -> asyncio.AbstractEventLoop:
+    global _worker_loop
+    if _worker_loop is None or _worker_loop.is_closed():
+        _worker_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_worker_loop)
+    return _worker_loop
+
+
+def _run_async(coro):
+    return _worker_event_loop().run_until_complete(coro)
 
 
 @celery_app.task(
@@ -34,7 +48,7 @@ def run_parser(
     limit: int | None = None,
     section: str | None = None,
 ) -> dict:
-    return asyncio.run(
+    return _run_async(
         parser_service.run_isolated(store_slug, full_sync=full_sync, limit=limit, section=section)
     )
 
@@ -53,7 +67,7 @@ async def _sync_catalog() -> dict:
 
 @celery_app.task(name="sync_catalog", time_limit=FULL_SYNC_LOCK_TTL)
 def sync_catalog() -> dict:
-    return asyncio.run(_sync_catalog())
+    return _run_async(_sync_catalog())
 
 
 async def _sync_prices() -> dict:
@@ -68,7 +82,7 @@ async def _sync_prices() -> dict:
 
 @celery_app.task(name="sync_prices")
 def sync_prices() -> dict:
-    return asyncio.run(_sync_prices())
+    return _run_async(_sync_prices())
 
 
 async def _expire_subscriptions_impl(db: AsyncSession) -> dict:
@@ -93,7 +107,7 @@ async def _expire_subscriptions(db: AsyncSession | None = None) -> dict:
 
 @celery_app.task(name="expire_subscriptions")
 def expire_subscriptions() -> dict:
-    return asyncio.run(_expire_subscriptions())
+    return _run_async(_expire_subscriptions())
 
 
 async def _cleanup_refresh_tokens_impl(db: AsyncSession) -> dict:
@@ -118,7 +132,7 @@ async def _cleanup_refresh_tokens(db: AsyncSession | None = None) -> dict:
 
 @celery_app.task(name="cleanup_refresh_tokens")
 def cleanup_refresh_tokens() -> dict:
-    return asyncio.run(_cleanup_refresh_tokens())
+    return _run_async(_cleanup_refresh_tokens())
 
 
 async def _prune_history(db: AsyncSession | None = None) -> dict:
@@ -130,7 +144,7 @@ async def _prune_history(db: AsyncSession | None = None) -> dict:
 
 @celery_app.task(name="prune_history", time_limit=3600, soft_time_limit=3540)
 def prune_history() -> dict:
-    return asyncio.run(_prune_history())
+    return _run_async(_prune_history())
 
 
 async def _send_password_mail(to: str, subject: str, text: str, html: str | None = None) -> None:
@@ -139,7 +153,7 @@ async def _send_password_mail(to: str, subject: str, text: str, html: str | None
 
 @celery_app.task(name="send_password_mail")
 def send_password_mail(to: str, subject: str, text: str, html: str | None = None) -> None:
-    asyncio.run(_send_password_mail(to, subject, text, html))
+    _run_async(_send_password_mail(to, subject, text, html))
 
 
 async def _send_broadcast(broadcast_id: int) -> dict:
@@ -148,4 +162,4 @@ async def _send_broadcast(broadcast_id: int) -> dict:
 
 @celery_app.task(name="send_broadcast")
 def send_broadcast(broadcast_id: int) -> dict:
-    return asyncio.run(_send_broadcast(broadcast_id))
+    return _run_async(_send_broadcast(broadcast_id))
