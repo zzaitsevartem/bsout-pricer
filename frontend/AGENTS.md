@@ -1,63 +1,48 @@
-# AGENTS.md — BScout Frontend
+# Frontend Rules
 
-Инструкции для AI-агентов, работающих над фронтендом BScout.
+## Architecture
 
-## Команды
+The frontend uses Next.js 14 App Router, React 18, TypeScript, Tailwind,
+React Query, Effector, Axios, Zod, and Vitest.
+
+- `src/app/`: routes, layouts, and global styles.
+- `src/models/<entity>/`: data slices with exactly `schema.ts`, `service.ts`,
+  `hooks.ts`, and `index.ts`.
+- `src/widgets/`: composed page sections.
+- `src/shared/`: API client, providers, client stores, utilities, UI, and assets.
+
+Read `../DESIGN.md`, `../.claude/rules/frontend.md`, and the
+`bscout-design-system` skill before UI or styling work.
+
+## Conventions
+
+- Use React Query for server state; reserve Effector for client authentication
+  state.
+- Match backend JSON in `snake_case`; infer TypeScript types from Zod schemas.
+- Use `"use client"` only for React hooks or browser-only APIs.
+- Import through `@/*`, not long relative paths.
+- Use Tailwind utilities and tokens from `tailwind.config.ts`; do not add CSS
+  modules or hardcode colors, fonts, animations, or shadows.
+- Use `cn()` from `@/shared/lib/utils` for conditional classes.
+- Import images from `@/shared/assets/images/` and use the established Next.js
+  image pattern.
+- Preserve semantic HTML, keyboard operation, accessible names, and visible
+  focus states.
+
+## Commands and Tests
 
 ```bash
-npm run dev     # Dev server на :3000
-npm run build   # Проверить сборку
-npm run lint    # ESLint
+npm install
+npm run dev
+npm run format:check
+npm run build
+npm run lint
+npm test
+npm run test:unit
+npm run test:component
+npm run test:coverage
 ```
 
-## Стек
-
-- Next.js 14 (App Router), React 18, TypeScript 5
-- Tailwind CSS v3 — все стили только через utility classes (никаких .css/.scss модулей)
-- shadcn/ui — компоненты в `src/components/ui/`
-- FSD (Feature-Sliced Design) — `widgets/`, `shared/`, `components/ui/`
-
-## Структура FSD
-
-```
-src/
-├── app/              # App Router: layout.tsx, page.tsx, globals.css
-├── components/ui/    # shadcn/ui (button, card, navigation-menu, carousel)
-├── widgets/          # Композиционные блоки
-│   ├── Header/       # "use client" (usePathname, бургер)
-│   ├── Footer/       # Server component
-│   └── homeWidget/   # Hero, Carousel, Advantages, Dashboard, Prices, BannerAccount
-└── shared/
-    ├── ui/IconSVG.tsx # Все SVG (Logo, Arrow, CheckMark, TgIcon, VkIcon...)
-    └── assets/images/ # .webp изображения (через StaticImageData → .src)
-```
-
-## Соглашения по коду
-
-- **"use client"** — только если есть React-хуки (useState, useEffect, usePathname). Все остальные — Server Components
-- **Импорты** — относительные (`../../shared/ui/IconSVG`)
-- **cn()** из `@/lib/utils` для условных Tailwind-классов
-- **SVG-иконки** — React.FC<React.SVGProps<SVGSVGElement>>, принимают width/height/color/className
-- **Изображения** — `import img from '@/shared/assets/images/img.webp'`, использовать как `img.src`
-- **Анимации** — в tailwind.config.ts (keyframes + animation). Не использовать styled-jsx
-- **Цвета/шрифты** — через tailwind.config.ts, не хардкодить значения
-- **Адаптивность** — Tailwind breakpoints (max-md, max-lg, lg, etc.)
-
-## Ключевые файлы
-
-- `tailwind.config.ts` — кастомные цвета, шрифты, keyframes
-- `next.config.mjs` — прокси /api/* → localhost:8000
-- `globals.css` — Tailwind directives, CSS variables, Google Fonts
-- `components.json` — shadcn/ui конфиг
-- `lib/utils.ts` — cn() функция
-
-## Дизайн-токены (кратко)
-
-- Цвет: brand-dark #010D3E, muted #6F6C90, accent #b8007b
-- Шрифты: Raleway (осн.), DM Sans/Lexend/Montserrat (доп.)
-- Градиенты: hero-gradient, dashboard-gradient, banner-gradient
-- Анимации: smoothGlow (4s), scroll (20s)
-
-## После изменений
-
-Всегда запускать `npm run build && npm run lint` перед завершением работы.
+Vitest uses Testing Library, jsdom, and MSW. Test observable behavior and add
+regression tests for fixes. Run build, lint, and the relevant Vitest project
+after changes.

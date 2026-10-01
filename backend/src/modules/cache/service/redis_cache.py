@@ -15,8 +15,14 @@ def get_redis() -> aioredis.Redis:
     return _cache
 
 
-class RedisCache:
+async def close_redis() -> None:
+    global _cache
+    if _cache is not None:
+        await _cache.aclose()
+        _cache = None
 
+
+class RedisCache:
     @staticmethod
     async def get(key: str) -> Any | None:
         r = get_redis()
@@ -48,3 +54,14 @@ class RedisCache:
     async def expire(key: str, ttl: int) -> None:
         r = get_redis()
         await r.expire(key, ttl)
+
+    @staticmethod
+    async def acquire_lock(key: str, ttl: int = 3600) -> bool:
+        r = get_redis()
+        acquired = await r.set(key, "1", nx=True, ex=ttl)
+        return bool(acquired)
+
+    @staticmethod
+    async def release_lock(key: str) -> None:
+        r = get_redis()
+        await r.delete(key)

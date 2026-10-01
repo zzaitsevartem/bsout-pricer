@@ -1,43 +1,59 @@
-# AGENTS.md — BScout (root)
+# BScout Repository Rules
 
-Инструкции для AI-агентов, работающих с проектом BScout.
+## Source of Truth
 
-## Команды
+Run all commands from this Git repository, not the parent `bscount/` directory.
+Trust code and current configuration over older prose. Read `DESIGN.md` before
+UI work and `docs/technical-specification.md` before feature implementation.
+Backend and frontend rules are refined by their nested `AGENTS.md` files.
+
+`docs/plan/MASTERPLAN.md` is the only live task plan. At session start run:
 
 ```bash
-# Frontend
-cd frontend && npm run dev      # Dev server на :3000
-cd frontend && npm run build    # Production сборка
-cd frontend && npm run lint     # ESLint
-
-# Backend
-cd backend && uvicorn src.main:app --reload  # Dev server на :8000
-
-# Docker
-docker compose -f docker/docker-compose.yml up -d  # PostgreSQL + Redis
+bash scripts/plan/plan_status.sh
+git log --oneline -10
+git status --short
 ```
 
-## Структура
+Do not create parallel TODO/plan documents. Closed details belong in
+`docs/plan/archive/`; `docs/plan/INDEX.md` is the append-only block ledger.
 
+## Architecture
+
+- `backend/src/`: FastAPI, async SQLAlchemy, Redis, and module-based MVC.
+- `backend/tests/{unit,integration}/`: Pytest suites.
+- `frontend/src/`: Next.js App Router organized into `app/`, `models/`,
+  `widgets/`, and `shared/`.
+- `docs/`: specifications, audits, plans, and manual verification.
+- `docker-compose.yml`, `infra/`, `deploy/`: local and production infrastructure.
+
+## Commands
+
+```bash
+docker compose up -d
+cd backend
+source ../venv/bin/activate
+pip install -r requirements-dev.txt
+python -m alembic upgrade head
+python -m pytest tests/unit
+ruff check src tests
+
+cd ../frontend
+npm install
+npm run build
+npm run lint
+npm test
 ```
-bscout/
-├── frontend/    # Next.js 14 + Tailwind + shadcn/ui + FSD
-├── backend/     # FastAPI + SQLAlchemy + Alembic
-├── docker/      # docker-compose.yml (PostgreSQL 16 + Redis 7)
-└── docs/        # ТЗ и бизнес-план
-```
 
-## Ключевые файлы
+Use Python 3.11 and the existing `venv`/pip workflow; Poetry is not installed
+for this checkout. Local ports may be overridden by gitignored environment
+files; never read or edit real `.env` files. Use `.env.example` templates.
 
-- **DESIGN.md** — полное описание дизайна, цветов, шрифтов, анимаций, FSD-структуры
-- `docs/technical-specification.md` — ТЗ на 7 этапов
-- `docs/bussines-plan.md` — бизнес-план
+## Working Rules
 
-## Соглашения
-
-- Все новые файлы создавать только по запросу пользователя
-- ALWAYS читать DESIGN.md перед началом работы над дизайном/фронтендом
-- ALWAYS читать technical-specification.md перед реализацией новой фичи
-- После изменений запускать `npm run build` и `npm run lint` для фронтенда
-- Не запускать `git commit` без явной просьбы пользователя
-- Не создавать README/doc-файлы без явной просьбы
+- Preserve unrelated dirty-worktree changes.
+- Do not commit unless explicitly asked.
+- Do not create README or planning files without an explicit request.
+- Add regression tests for fixes and verify changes proportionally to risk.
+- Use the project skills under `.agents/skills/` for backend modules, frontend
+  entities, UI/design work, and convention reviews.

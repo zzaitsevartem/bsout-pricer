@@ -9,4 +9,6 @@ export const searchHistoryResponseSchema = z.object({
   created_at: z.string(),
 });
 
+export const searchHistoryListResponseSchema = z.array(searchHistoryResponseSchema);
+
 export type SearchHistoryResponse = z.infer<typeof searchHistoryResponseSchema>;

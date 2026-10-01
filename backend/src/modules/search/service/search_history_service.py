@@ -5,7 +5,6 @@ from src.modules.search.model.search_history import SearchHistory
 
 
 class SearchHistoryService:
-
     @staticmethod
     async def get_by_user(db: AsyncSession, user_id: int, limit: int = 20) -> list[SearchHistory]:
         result = await db.execute(
@@ -18,7 +17,11 @@ class SearchHistoryService:
 
     @staticmethod
     async def record(
-        db: AsyncSession, user_id: int, query: str, filters: dict | None = None, results_count: int = 0
+        db: AsyncSession,
+        user_id: int,
+        query: str,
+        filters: dict | None = None,
+        results_count: int = 0,
     ) -> SearchHistory:
         entry = SearchHistory(
             user_id=user_id,

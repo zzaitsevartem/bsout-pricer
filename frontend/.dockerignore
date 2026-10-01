@@ -1,0 +1,34 @@
+# Зависимости и результаты сборки ставятся внутри образа заново
+node_modules/
+.next/
+out/
+build/
+coverage/
+
+# Секреты и локальные оверрайды — НИКОГДА не должны попасть в образ
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Кэши и мусор
+tsconfig.tsbuildinfo
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Не используется в npm-воркфлоу (в репозитории лежит лишний lock)
+pnpm-lock.yaml
+
+# Исходники макетов и документация в образе не нужны
+img/
+mockups3/
+*.md
+
+# Прочее
+.git/
+.gitignore
+Dockerfile
+.dockerignore

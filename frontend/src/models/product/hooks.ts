@@ -9,18 +9,18 @@ export function useProductSearch(params: ProductSearchParams) {
   });
 }
 
-export function useProduct(id: number) {
+export function useProduct(offerId: number) {
   return useQuery({
-    queryKey: ['products', id],
-    queryFn: () => productApi.getById(id).then((r) => r.data),
-    enabled: !!id,
+    queryKey: ['products', offerId],
+    queryFn: () => productApi.getById(offerId).then((r) => r.data),
+    enabled: !!offerId,
   });
 }
 
-export function usePriceHistory(productId: number) {
+export function usePriceHistory(offerId: number) {
   return useQuery({
-    queryKey: ['products', productId, 'price-history'],
-    queryFn: () => productApi.getPriceHistory(productId).then((r) => r.data),
-    enabled: !!productId,
+    queryKey: ['products', offerId, 'price-history'],
+    queryFn: () => productApi.getPriceHistory(offerId).then((r) => r.data),
+    enabled: !!offerId,
   });
 }

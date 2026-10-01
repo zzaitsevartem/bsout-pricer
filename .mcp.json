@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@crystaldba/postgres-mcp@latest",
+        "--access-mode=restricted",
+        "${BSCOUT_DB_URL:-postgresql://bscout:bscout@localhost:5434/bscout}"
+      ]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "security-scanner": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "agent-security-scanner-mcp"]
+    }
+  }
+}

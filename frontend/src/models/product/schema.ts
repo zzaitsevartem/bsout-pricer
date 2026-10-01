@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+export const STOCK_STATUSES = ['in_stock', 'low', 'out', 'preorder', 'unknown'] as const;
+export const PRODUCT_SORT_OPTIONS = ['price_asc', 'price_desc', 'date'] as const;
+
+export type StockStatus = (typeof STOCK_STATUSES)[number];
+export type ProductSortOption = (typeof PRODUCT_SORT_OPTIONS)[number];
+
 export const storeRefSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -10,30 +16,21 @@ export const productResponseSchema = z.object({
   id: z.number(),
   store_id: z.number(),
   category_id: z.number().nullable(),
-  external_id: z.string(),
-  name: z.string(),
+  product_id: z.number().nullable(),
+  source_sku: z.string(),
+  title: z.string(),
   description: z.string().nullable(),
   image_url: z.string().nullable(),
-  price: z.string(),
-  old_price: z.string().nullable(),
+  price_retail: z.string(),
+  price_opt: z.string().nullable(),
+  price_old: z.string().nullable(),
   currency: z.string(),
-  in_stock: z.boolean(),
-  product_url: z.string(),
-  last_updated: z.string(),
+  stock_status: z.string(),
+  stock_qty: z.number().nullable(),
+  url: z.string(),
+  last_seen_at: z.string(),
   is_cheapest: z.boolean(),
   store: storeRefSchema.nullable(),
-});
-
-export const productSearchParamsSchema = z.object({
-  q: z.string().max(500).default(''),
-  store: z.string().optional(),
-  category: z.string().optional(),
-  min_price: z.string().optional(),
-  max_price: z.string().optional(),
-  in_stock: z.boolean().optional(),
-  sort_by: z.string().default('price_asc'),
-  page: z.number().min(1).default(1),
-  per_page: z.number().min(1).max(100).default(20),
 });
 
 export const productListResponseSchema = z.object({
@@ -43,15 +40,31 @@ export const productListResponseSchema = z.object({
   per_page: z.number(),
 });
 
+export const productSearchParamsSchema = z.object({
+  q: z.string().max(500).optional(),
+  store: z.string().optional(),
+  category: z.string().optional(),
+  min_price: z.number().optional(),
+  max_price: z.number().optional(),
+  in_stock: z.boolean().optional(),
+  sort_by: z.string().optional(),
+  page: z.number().int().min(1).optional(),
+  per_page: z.number().int().min(1).max(100).optional(),
+});
+
 export const priceHistoryResponseSchema = z.object({
   id: z.number(),
-  product_id: z.number(),
-  price: z.string(),
+  offer_id: z.number(),
+  price_retail: z.string(),
+  price_opt: z.string().nullable(),
+  stock_status: z.string(),
   recorded_at: z.string(),
 });
 
+export const priceHistoryListResponseSchema = z.array(priceHistoryResponseSchema);
+
 export type StoreRef = z.infer<typeof storeRefSchema>;
 export type ProductResponse = z.infer<typeof productResponseSchema>;
-export type ProductSearchParams = z.infer<typeof productSearchParamsSchema>;
 export type ProductListResponse = z.infer<typeof productListResponseSchema>;
+export type ProductSearchParams = z.infer<typeof productSearchParamsSchema>;
 export type PriceHistoryResponse = z.infer<typeof priceHistoryResponseSchema>;

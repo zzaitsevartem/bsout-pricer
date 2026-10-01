@@ -7,15 +7,17 @@ from typing import Any
 
 @dataclass
 class ParseResult:
-    external_id: str
-    name: str
-    price: Decimal
-    old_price: Decimal | None = None
+    source_sku: str
+    title: str
+    price_retail: Decimal
+    price_opt: Decimal | None = None
+    price_old: Decimal | None = None
     description: str | None = None
     image_url: str | None = None
     category: str | None = None
-    in_stock: bool = True
-    product_url: str = ""
+    stock_status: str = "unknown"
+    stock_qty: int | None = None
+    url: str = ""
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -28,12 +30,14 @@ class BaseParser(ABC):
         self.errors: list[str] = []
 
     @abstractmethod
-    async def search(self, query: str) -> list[ParseResult]:
-        ...
+    async def search(self, query: str) -> list[ParseResult]: ...
 
     @abstractmethod
-    async def update_catalog(self) -> list[ParseResult]:
-        ...
+    async def update_catalog(
+        self,
+        limit: int | None = None,
+        section: str | None = None,
+    ) -> list[ParseResult]: ...
 
     async def parse_product(self, url: str) -> ParseResult | None:
         raise NotImplementedError
