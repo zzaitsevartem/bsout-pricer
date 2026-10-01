@@ -38,9 +38,11 @@ class Settings(BaseSettings):
     auth_rate_limit_max_requests: int = 10
     auth_rate_limit_window: int = 300
 
-    yookassa_webhook_secret: str | None = None
+    yookassa_shop_id: str | None = None
+    yookassa_secret_key: str | None = None
 
     frontend_base_url: str = "http://localhost:3000"
+    support_email: str = "support@bscout.ru"
     cors_origins_raw: str = "http://localhost:3000"
     log_level: str = "INFO"
 

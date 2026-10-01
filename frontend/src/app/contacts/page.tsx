@@ -1,8 +1,112 @@
 'use client';
 
 import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
+import { feedbackRequestSchema, useSendFeedback, type FeedbackRequest } from '@/models/feedback';
+
+function extractError(error: unknown): string {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
+    if (typeof detail === 'string' && detail.length > 0) {
+      return detail;
+    }
+  }
+  return 'Не удалось отправить сообщение. Попробуйте позже.';
+}
+
+function FeedbackForm() {
+  const sendFeedback = useSendFeedback();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FeedbackRequest>({
+    resolver: zodResolver(feedbackRequestSchema),
+  });
+
+  if (sendFeedback.isSuccess) {
+    return (
+      <div className="text-center py-6">
+        <h4 className="text-xl font-semibold text-slate mb-2">Сообщение отправлено</h4>
+        <p className="text-[15px] text-body mb-0">Спасибо! Мы ответим на указанную почту.</p>
+      </div>
+    );
+  }
+
+  const inputClassName =
+    'block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default';
+  const errorClassName = 'text-[13px] text-clay mt-[6px]';
+
+  return (
+    <form onSubmit={handleSubmit((data) => sendFeedback.mutate(data))} noValidate>
+      <div className="mb-4">
+        <label htmlFor="name" className="block text-[15px] font-medium text-slate mb-2">
+          Имя
+        </label>
+        <input
+          type="text"
+          id="name"
+          {...register('name')}
+          placeholder="Ваше имя"
+          className={inputClassName}
+        />
+        {errors.name && <p className={errorClassName}>{errors.name.message}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="email" className="block text-[15px] font-medium text-slate mb-2">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          {...register('email')}
+          placeholder="your@email.com"
+          className={inputClassName}
+        />
+        {errors.email && <p className={errorClassName}>{errors.email.message}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="subject" className="block text-[15px] font-medium text-slate mb-2">
+          Тема
+        </label>
+        <input
+          type="text"
+          id="subject"
+          {...register('subject')}
+          placeholder="Чем мы можем помочь?"
+          className={inputClassName}
+        />
+        {errors.subject && <p className={errorClassName}>{errors.subject.message}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="message" className="block text-[15px] font-medium text-slate mb-2">
+          Сообщение
+        </label>
+        <textarea
+          id="message"
+          rows={5}
+          {...register('message')}
+          placeholder="Ваше сообщение..."
+          className="block w-full rounded-3xl px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default resize-y min-h-[96px]"
+        />
+        {errors.message && <p className={errorClassName}>{errors.message.message}</p>}
+      </div>
+      {sendFeedback.isError && (
+        <p className="text-[14px] text-clay mb-4">{extractError(sendFeedback.error)}</p>
+      )}
+      <button
+        type="submit"
+        disabled={sendFeedback.isPending}
+        className="btn-primary w-full justify-center disabled:opacity-60"
+      >
+        {sendFeedback.isPending ? 'Отправляем…' : 'Отправить'}
+      </button>
+    </form>
+  );
+}
 
 export default function ContactsPage() {
   return (
@@ -45,59 +149,6 @@ export default function ContactsPage() {
                 title: 'Email',
                 lines: ['hello@bscout.ru', 'support@bscout.ru'],
               },
-              {
-                icon: (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                ),
-                title: 'Телефон',
-                lines: ['+7 (999) 123-45-67'],
-                caption: 'Пн–Пт, 09:00–18:00',
-              },
-              {
-                icon: (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                ),
-                title: 'Адрес',
-                lines: ['г. Ставрополь, ул. Ленина, д. 123'],
-                caption: 'По предварительной договорённости',
-              },
-              {
-                icon: (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m0 8v-2" />
-                  </svg>
-                ),
-                title: 'Поддержка',
-                lines: [
-                  'Чат поддержки доступен в личном кабинете для тарифов Базовый и Продвинутый',
-                ],
-              },
             ].map((item) => (
               <div key={item.title} className="flex gap-4 mb-6">
                 <div className="w-10 h-10 rounded-full bg-ivory-elevated flex items-center justify-center flex-shrink-0 text-slate">
@@ -110,9 +161,6 @@ export default function ContactsPage() {
                       {line}
                     </p>
                   ))}
-                  {item.caption && (
-                    <p className="text-[14px] text-body-muted mt-1">{item.caption}</p>
-                  )}
                 </div>
               </div>
             ))}
@@ -121,61 +169,7 @@ export default function ContactsPage() {
           <div>
             <div className="rounded-[24px] p-[31px] bg-ivory-elevated">
               <h4 className="text-xl font-semibold text-slate mb-4">Напишите нам</h4>
-              <form>
-                <div className="mb-4">
-                  <label htmlFor="name" className="block text-[15px] font-medium text-slate mb-2">
-                    Имя
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
-                    placeholder="Ваше имя"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="email" className="block text-[15px] font-medium text-slate mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
-                    placeholder="your@email.com"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="subject"
-                    className="block text-[15px] font-medium text-slate mb-2"
-                  >
-                    Тема
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
-                    placeholder="Чем мы можем помочь?"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="message"
-                    className="block text-[15px] font-medium text-slate mb-2"
-                  >
-                    Сообщение
-                  </label>
-                  <textarea
-                    id="message"
-                    rows={5}
-                    className="block w-full rounded-3xl px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default resize-y min-h-[96px]"
-                    placeholder="Ваше сообщение..."
-                  />
-                </div>
-                <button type="submit" className="btn-primary w-full justify-center">
-                  Отправить
-                </button>
-              </form>
+              <FeedbackForm />
             </div>
           </div>
         </div>

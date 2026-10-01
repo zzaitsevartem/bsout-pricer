@@ -14,6 +14,7 @@ from src.modules.broadcast.controller import broadcast_router
 from src.modules.cache.service.redis_cache import close_redis
 from src.modules.categories.controller import categories_router
 from src.modules.export.controller import export_router
+from src.modules.feedback.controller import feedback_router
 from src.modules.health.controller import health_router
 from src.modules.parser.controller import parser_router
 from src.modules.parser.service.parsers import register_default_parsers
@@ -75,3 +76,4 @@ app.include_router(parser_router)
 app.include_router(tracking_router)
 app.include_router(notifications_router)
 app.include_router(export_router)
+app.include_router(feedback_router)

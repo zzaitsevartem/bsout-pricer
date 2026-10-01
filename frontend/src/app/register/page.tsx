@@ -250,13 +250,13 @@ export default function RegisterPage() {
                   </span>
                   <span className="text-[14px] text-body">
                     Я принимаю{' '}
-                    <a href="#" className="text-slate">
+                    <Link href="/terms" className="text-slate">
                       условия использования
-                    </a>{' '}
+                    </Link>{' '}
                     и{' '}
-                    <a href="#" className="text-slate">
+                    <Link href="/privacy" className="text-slate">
                       политику конфиденциальности
-                    </a>
+                    </Link>
                   </span>
                 </label>
                 {errors.terms && (

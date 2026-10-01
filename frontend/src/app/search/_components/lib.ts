@@ -3,6 +3,7 @@ import type { CatalogItemResponse, CatalogSortOption } from '@/models/catalog';
 
 export const PER_PAGE = 20;
 export const FACETS_SAMPLE_SIZE = 100;
+export const OFFERS_PER_PAGE = 20;
 
 export const SORT_OPTIONS: { value: CatalogSortOption; label: string }[] = [
   { value: 'min_price_asc', label: 'Сначала дешёвые' },

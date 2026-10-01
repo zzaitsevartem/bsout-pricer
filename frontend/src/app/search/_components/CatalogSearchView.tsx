@@ -3,17 +3,21 @@
 import React, { useMemo } from 'react';
 import { useCatalogSearch } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
+import { useProductSearch } from '@/models/product';
+import type { ProductSearchParams } from '@/models/product';
 import { useExportCatalog } from '@/models/export';
 import type { ExportCatalogParams } from '@/models/export';
 import { cn } from '@/shared/lib/utils';
 import { SearchLayout } from '@/app/search/_components/SearchLayout';
 import { ExportCsvButton, ExportNotice } from '@/widgets/CatalogExport/ui/CatalogExport';
 import { CatalogResultCard } from '@/app/search/_components/CatalogResultCard';
+import { OfferResultCard } from '@/app/search/_components/OfferResultCard';
 import { ResultsSkeleton } from '@/app/search/_components/ResultsSkeleton';
 import { Pagination } from '@/app/search/_components/Pagination';
 import {
   EMPTY_FACETS,
   FACETS_SAMPLE_SIZE,
+  OFFERS_PER_PAGE,
   PER_PAGE,
   apiErrorMessage,
   collectFacets,
@@ -72,6 +76,17 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
   const facetsQuery = useCatalogSearch(facetParams);
   const exportCatalog = useExportCatalog();
 
+  const offersParams = useMemo<ProductSearchParams>(
+    () => ({
+      q: state.q || undefined,
+      sort_by: 'price_asc',
+      page: 1,
+      per_page: OFFERS_PER_PAGE,
+    }),
+    [state.q],
+  );
+  const offersQuery = useProductSearch(offersParams);
+
   const facets = useMemo(
     () => (facetsQuery.data ? collectFacets(facetsQuery.data.results) : EMPTY_FACETS),
     [facetsQuery.data],
@@ -89,9 +104,13 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
 
   let content: React.ReactNode;
 
+  const hasCatalog = (results.data?.results.length ?? 0) > 0;
+  const hasOffers = (offersQuery.data?.results.length ?? 0) > 0;
+  const offersDone = !offersQuery.isLoading;
+
   if (results.isLoading) {
     content = <ResultsSkeleton />;
-  } else if (results.isError) {
+  } else if (results.isError && !hasOffers) {
     content = (
       <div className="rounded-[24px] bg-ivory-elevated p-8 text-center">
         <p className="text-[15px] text-clay mb-4">
@@ -102,7 +121,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
         </button>
       </div>
     );
-  } else if (!results.data || results.data.results.length === 0) {
+  } else if (!hasCatalog && !hasOffers && offersDone) {
     content = (
       <div className="rounded-[24px] bg-ivory-elevated p-8 text-center">
         <p className="text-base font-semibold text-slate mb-2">Ничего не найдено</p>
@@ -114,7 +133,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
       </div>
     );
   } else {
-    content = (
+    content = hasCatalog ? (
       <>
         <div
           className={cn(
@@ -122,7 +141,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
             results.isFetching && 'opacity-60',
           )}
         >
-          {results.data.results.map((item) => (
+          {(results.data?.results ?? []).map((item) => (
             <CatalogResultCard key={item.id} item={item} />
           ))}
         </div>
@@ -132,10 +151,34 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
           onPageChange={controls.onPageChange}
         />
       </>
-    );
+    ) : null;
   }
 
-  const hasResults = (results.data?.results.length ?? 0) > 0;
+  const hasResults = hasCatalog;
+  const offersTotal = offersQuery.data?.total ?? 0;
+  const shownOffers = offersQuery.data?.results ?? [];
+
+  let offersSection: React.ReactNode = null;
+  if (hasOffers) {
+    offersSection = (
+      <section className="mt-10">
+        <h2 className="text-[24px] font-semibold text-slate mb-4">
+          Предложения магазинов: {offersTotal}
+        </h2>
+        <div className="rounded-[24px] overflow-hidden bg-ivory-elevated">
+          {shownOffers.map((offer) => (
+            <OfferResultCard key={offer.id} item={offer} />
+          ))}
+        </div>
+        {offersTotal > shownOffers.length && (
+          <p className="text-[14px] text-body-subtle mt-3">
+            Показаны первые {shownOffers.length} из {offersTotal}. Уточните запрос, чтобы увидеть
+            остальные.
+          </p>
+        )}
+      </section>
+    );
+  }
 
   return (
     <SearchLayout
@@ -153,6 +196,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
     >
       {exportCatalog.error && <ExportNotice error={exportCatalog.error} />}
       {content}
+      {offersSection}
     </SearchLayout>
   );
 }

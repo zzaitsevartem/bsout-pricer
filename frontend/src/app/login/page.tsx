@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Header } from '@/widgets/Header/ui/Header';
-import { loginRequestSchema, useLogin, type LoginRequest } from '@/models/auth';
+import { loginRequestSchema, useLogin, useVkAuthorize, type LoginRequest } from '@/models/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
+  const vkAuthorize = useVkAuthorize();
   const {
     register,
     handleSubmit,
@@ -92,9 +93,12 @@ export default function LoginPage() {
                   </span>
                   Запомнить меня
                 </label>
-                <a href="#" className="text-[14px] text-body-subtle no-underline hover:text-slate">
+                <Link
+                  href="/reset-password"
+                  className="text-[14px] text-body-subtle no-underline hover:text-slate"
+                >
                   Забыли пароль?
-                </a>
+                </Link>
               </div>
 
               {login.isError && (
@@ -114,8 +118,13 @@ export default function LoginPage() {
               или
             </div>
 
-            <div className="flex gap-3">
-              <button type="button" className="btn-secondary w-full justify-center">
+            <div>
+              <button
+                type="button"
+                onClick={() => vkAuthorize.mutate()}
+                disabled={vkAuthorize.isPending}
+                className="btn-secondary w-full justify-center disabled:opacity-60"
+              >
                 <svg
                   width="16"
                   height="16"
@@ -128,14 +137,13 @@ export default function LoginPage() {
                   <path d="M12 9v6" />
                   <path d="M9 12h6" />
                 </svg>
-                ВКонтакте
+                {vkAuthorize.isPending ? 'Открываем ВКонтакте…' : 'ВКонтакте'}
               </button>
-              <button type="button" className="btn-secondary w-full justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                </svg>
-                Телеграм
-              </button>
+              {vkAuthorize.isError && (
+                <p className="text-[13px] text-clay mt-[6px] text-center">
+                  Вход через ВКонтакте недоступен. Попробуйте позже или войдите по паролю.
+                </p>
+              )}
             </div>
 
             <p className="text-center text-[14px] text-body-muted mt-6">

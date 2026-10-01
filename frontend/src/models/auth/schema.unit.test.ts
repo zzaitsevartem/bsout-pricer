@@ -4,6 +4,11 @@ import {
   loginRequestSchema,
   registerRequestSchema,
   tokenResponseSchema,
+  passwordResetRequestSchema,
+  passwordResetConfirmSchema,
+  vkAuthorizeResponseSchema,
+  vkCallbackRequestSchema,
+  vkAuthResponseSchema,
 } from './schema';
 
 describe('registerRequestSchema', () => {
@@ -55,12 +60,12 @@ describe('registerRequestSchema', () => {
 
 describe('loginRequestSchema', () => {
   it('accepts identifier (email or username) + password', () => {
-    expect(
-      loginRequestSchema.safeParse({ identifier: 'a@b.com', password: 'x' }).success,
-    ).toBe(true);
-    expect(
-      loginRequestSchema.safeParse({ identifier: 'sugarfree', password: 'x' }).success,
-    ).toBe(true);
+    expect(loginRequestSchema.safeParse({ identifier: 'a@b.com', password: 'x' }).success).toBe(
+      true,
+    );
+    expect(loginRequestSchema.safeParse({ identifier: 'sugarfree', password: 'x' }).success).toBe(
+      true,
+    );
   });
 
   it('rejects a missing password', () => {
@@ -89,5 +94,79 @@ describe('tokenResponseSchema (snake_case API contract)', () => {
       tokenType: 'bearer',
     });
     expect(parsed.success).toBe(false);
+  });
+});
+
+describe('passwordResetRequestSchema', () => {
+  it('accepts a valid email', () => {
+    expect(passwordResetRequestSchema.safeParse({ email: 'user@example.com' }).success).toBe(true);
+  });
+
+  it('rejects an invalid email', () => {
+    expect(passwordResetRequestSchema.safeParse({ email: 'not-an-email' }).success).toBe(false);
+  });
+});
+
+describe('passwordResetConfirmSchema', () => {
+  it('accepts matching passwords of 8+ chars', () => {
+    const parsed = passwordResetConfirmSchema.safeParse({
+      token: 'tok',
+      new_password: 's3cret-pass',
+      confirm_password: 's3cret-pass',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects short passwords', () => {
+    const parsed = passwordResetConfirmSchema.safeParse({
+      token: 'tok',
+      new_password: 'short',
+      confirm_password: 'short',
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it('rejects mismatched passwords', () => {
+    const parsed = passwordResetConfirmSchema.safeParse({
+      token: 'tok',
+      new_password: 's3cret-pass',
+      confirm_password: 'other-pass',
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe('vkAuthorizeResponseSchema', () => {
+  it('accepts the authorize payload', () => {
+    const parsed = vkAuthorizeResponseSchema.safeParse({
+      authorize_url: 'https://id.vk.com/authorize?x=1',
+      state: 'abc',
+      expires_in: 600,
+    });
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe('vkCallbackRequestSchema', () => {
+  it('accepts code + state', () => {
+    const parsed = vkCallbackRequestSchema.safeParse({ code: 'c', state: 's' });
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects an empty code', () => {
+    const parsed = vkCallbackRequestSchema.safeParse({ code: '', state: 's' });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe('vkAuthResponseSchema (snake_case API contract)', () => {
+  it('accepts tokens with the created flag', () => {
+    const parsed = vkAuthResponseSchema.safeParse({
+      access_token: 'a',
+      refresh_token: 'r',
+      token_type: 'bearer',
+      created: false,
+    });
+    expect(parsed.success).toBe(true);
   });
 });

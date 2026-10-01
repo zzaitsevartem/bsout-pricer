@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { setAuth } from '@/shared/config/store';
 import { authApi } from './service';
-import type { RegisterRequest, LoginRequest } from './schema';
+import type {
+  RegisterRequest,
+  LoginRequest,
+  PasswordResetRequest,
+  PasswordResetConfirm,
+  VkCallbackRequest,
+} from './schema';
 
 export function useRegister() {
   const queryClient = useQueryClient();
@@ -50,5 +56,41 @@ export function useUsernameAvailable(username: string) {
     queryKey: ['username-available', username],
     queryFn: () => authApi.usernameAvailable(username),
     enabled: /^[a-zA-Z0-9_.-]{3,32}$/.test(username),
+  });
+}
+
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: (data: PasswordResetRequest) => authApi.requestPasswordReset(data),
+  });
+}
+
+export function useConfirmPasswordReset() {
+  return useMutation({
+    mutationFn: (data: Omit<PasswordResetConfirm, 'confirm_password'>) =>
+      authApi.confirmPasswordReset(data),
+  });
+}
+
+export function useVkAuthorize() {
+  return useMutation({
+    mutationFn: () => authApi.vkAuthorize('login'),
+    onSuccess: (response) => {
+      window.location.href = response.data.authorize_url;
+    },
+  });
+}
+
+export function useVkCallback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: VkCallbackRequest) => authApi.vkCallback(data),
+    onSuccess: (response) => {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      setAuth(true);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
   });
 }

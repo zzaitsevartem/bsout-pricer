@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.auth.model.user import PlanEnum, Subscription
 from src.modules.payment.model.payment import Payment
+from src.modules.payment.service import yookassa
 from src.modules.payment.service.plans import PLANS, get_plan, price_for
 
 PENDING = "pending"
@@ -123,6 +124,33 @@ class PaymentService:
                 raise
             return existing, False
         return payment, True
+
+    @staticmethod
+    async def attach_provider_payment(
+        db: AsyncSession,
+        payment: Payment,
+        idempotence_key: str,
+        return_url: str,
+    ) -> Payment:
+        if payment.status != PENDING:
+            return payment
+        if payment.provider != DEFAULT_PROVIDER or payment.confirmation_url:
+            return payment
+        if not yookassa.is_configured():
+            return payment
+        provider_id, confirmation_url = await yookassa.create_payment(
+            amount=payment.amount,
+            currency=payment.currency,
+            description=payment.description or PaymentService.describe(payment.plan),
+            return_url=return_url,
+            idempotence_key=idempotence_key,
+            metadata={"payment_id": str(payment.id), "idempotence_key": idempotence_key},
+        )
+        payment.provider = yookassa.YOOKASSA_PROVIDER
+        payment.provider_payment_id = provider_id
+        payment.confirmation_url = confirmation_url
+        await db.flush()
+        return payment
 
     @staticmethod
     async def mark_paid(

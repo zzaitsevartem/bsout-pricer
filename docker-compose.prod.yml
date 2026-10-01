@@ -6,8 +6,9 @@
 #   * порты Postgres и Redis больше НЕ публикуются на хост (только внутренняя сеть);
 #   * ни одного секрета со значением по умолчанию — всё через ${VAR:?...};
 #   * Redis закрыт паролем (см. оговорку у сервиса redis);
-#   * появился arq-воркер: без него не работают расписания парсинга, уведомления
-#     о снижении цены, истечение подписок и очистка refresh-токенов;
+#   * появился celery-воркер и планировщик beat: без них не работают расписания
+#     парсинга, уведомления о снижении цены, истечение подписок и очистка
+#     refresh-токенов (расписание — в src/celery_app.py);
 #   * миграции вынесены в одноразовый сервис migrate (в образе их больше нет);
 #   * frontend и nginx (TLS-терминация, http->https, лимит тела запроса).
 #
@@ -41,7 +42,9 @@ x-backend-env: &backend-env
   AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-10}
   AUTH_RATE_LIMIT_WINDOW: ${AUTH_RATE_LIMIT_WINDOW:-300}
   FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}
-  YOOKASSA_WEBHOOK_SECRET: ${YOOKASSA_WEBHOOK_SECRET:-}
+  SUPPORT_EMAIL: ${SUPPORT_EMAIL:-support@bscout.ru}
+  YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+  YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
   MAIL_BACKEND: ${MAIL_BACKEND:-console}
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-465}
@@ -206,8 +209,9 @@ services:
         reservations:
           memory: 256m
 
-  # arq-воркер. В dev-файле его нет вовсе, поэтому на таком развёртывании
-  # молча не выполняются: sync_catalog (03:00), sync_prices (07:30/13:30/19:30),
+  # Celery-воркер. В dev-файле его команда та же; здесь убран только
+  # container_name ради масштабирования. Расписания (beat) — отдельным сервисом ниже:
+  # sync_catalog (03:00), sync_prices (07:30/13:30/19:30),
   # expire_subscriptions (ежечасно), cleanup_refresh_tokens (04:30)
   # и отправка писем восстановления пароля.
   worker:
@@ -215,7 +219,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: bscout-backend:${IMAGE_TAG:-latest}
-    command: ["arq", "src.worker.WorkerSettings"]
+    command: ["celery", "-A", "src.worker", "worker", "--loglevel=info", "--concurrency=1"]
     environment: *backend-env
     depends_on:
       postgres:
@@ -224,12 +228,10 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    # arq пишет ключ здоровья в Redis, `--check` читает его и возвращает 0/1.
-    # Окно грубое: WorkerSettings.health_check_interval = 3600 (см. needs_shared_change).
     healthcheck:
-      test: ["CMD", "arq", "src.worker.WorkerSettings", "--check"]
+      test: ["CMD-SHELL", "celery -A src.worker inspect ping --timeout=10"]
       interval: 60s
-      timeout: 10s
+      timeout: 15s
       retries: 3
       start_period: 30s
     networks:
@@ -244,6 +246,47 @@ services:
           memory: 1g
         reservations:
           memory: 256m
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bscout-backend:${IMAGE_TAG:-latest}
+    command:
+      [
+        "celery",
+        "-A",
+        "src.worker",
+        "beat",
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule",
+        "--pidfile=/tmp/celerybeat.pid",
+      ]
+    environment: *backend-env
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/celerybeat.pid"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - data
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+        reservations:
+          memory: 128m
 
   frontend:
     build:

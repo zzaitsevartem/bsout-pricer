@@ -1,7 +1,4 @@
-import hashlib
-import hmac
 import json
-import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
@@ -20,6 +17,7 @@ from src.modules.payment.schema.payment import (
     WebhookAck,
     WebhookEvent,
 )
+from src.modules.payment.service import yookassa
 from src.modules.payment.service.payment_service import (
     CANCELED,
     FAILED,
@@ -28,28 +26,11 @@ from src.modules.payment.service.payment_service import (
     PaymentService,
 )
 from src.modules.payment.service.plans import PLANS, price_for
+from src.modules.payment.service.yookassa import YooKassaError
 from src.modules.shared import get_current_user
 from src.modules.shared.deps import get_current_admin
 
 router = APIRouter(prefix="/api/payment", tags=["payment"])
-
-SIGNATURE_HEADER = "X-Payment-Signature"
-
-
-def _webhook_secret() -> str | None:
-    configured = getattr(settings, "yookassa_webhook_secret", None)
-    if configured:
-        return str(configured)
-    return os.getenv("YOOKASSA_WEBHOOK_SECRET") or None
-
-
-def _signature_is_valid(secret: str, raw_body: bytes, signature: str | None) -> bool:
-    # TODO: заменить на настоящую проверку подписи ЮKassa (сертификат/алгоритм провайдера),
-    # пока используется HMAC-SHA256 общего секрета. Без секрета вебхук отвечает 503.
-    if not signature:
-        return False
-    expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature.strip().lower())
 
 
 @router.get("/plans", response_model=list[PlanResponse])
@@ -103,6 +84,19 @@ async def subscribe(
         idempotence_key=idempotence_key,
         amount=amount,
     )
+    if payment.status == PENDING:
+        try:
+            await PaymentService.attach_provider_payment(
+                db,
+                payment,
+                idempotence_key=idempotence_key,
+                return_url=f"{settings.frontend_base_url}/subscription",
+            )
+        except YooKassaError:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Платёжный провайдер недоступен, попробуйте позже",
+            ) from None
     if not created:
         response.status_code = status.HTTP_200_OK
     return payment
@@ -140,19 +134,13 @@ async def provider_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    secret = _webhook_secret()
-    if not secret:
+    if not yookassa.is_configured():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Проверка подписи вебхука не настроена: задайте YOOKASSA_WEBHOOK_SECRET",
+            detail="Проверка уведомлений не настроена: задайте реквизиты мерчанта",
         )
 
     raw_body = await request.body()
-    if not _signature_is_valid(secret, raw_body, request.headers.get(SIGNATURE_HEADER)):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook signature"
-        )
-
     try:
         payload = json.loads(raw_body or b"{}")
     except ValueError:
@@ -175,12 +163,29 @@ async def provider_webhook(
         provider_payment_id=str(provider_payment_id) if provider_payment_id else None,
         idempotence_key=str(idempotence_key) if idempotence_key else None,
     )
-    if payment is None:
+    if payment is None or not payment.provider_payment_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
 
-    event_name = (event.event or obj.get("status") or "").lower()
+    try:
+        remote = await yookassa.get_payment(payment.provider_payment_id)
+    except YooKassaError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Платёжный провайдер недоступен, попробуйте позже",
+        ) from None
 
-    if event_name.endswith(SUCCEEDED):
+    if str(remote.get("id")) != payment.provider_payment_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Provider object mismatch")
+    remote_amount = remote.get("amount") if isinstance(remote.get("amount"), dict) else {}
+    if (
+        remote_amount.get("value") != f"{payment.amount:.2f}"
+        or (remote_amount.get("currency") or "RUB") != payment.currency
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Provider amount mismatch")
+
+    remote_status = str(remote.get("status") or "").lower()
+    remote_paid = bool(remote.get("paid"))
+    if remote_paid or remote_status == SUCCEEDED:
         if payment.status == SUCCEEDED:
             return WebhookAck(
                 detail="already applied", payment_id=payment.id, status=payment.status
@@ -188,17 +193,17 @@ async def provider_webhook(
         await PaymentService.mark_paid(
             db,
             payment,
-            provider_payment_id=str(provider_payment_id) if provider_payment_id else None,
+            provider_payment_id=payment.provider_payment_id,
             raw=payload,
         )
         return WebhookAck(detail="applied", payment_id=payment.id, status=payment.status)
 
-    if event_name.endswith((CANCELED, FAILED)):
+    if remote_status in (CANCELED, FAILED):
         if payment.status != PENDING:
             return WebhookAck(
                 detail="already applied", payment_id=payment.id, status=payment.status
             )
-        new_status = FAILED if event_name.endswith(FAILED) else CANCELED
+        new_status = FAILED if remote_status == FAILED else CANCELED
         await PaymentService.mark_status(db, payment, new_status, raw=payload)
         return WebhookAck(detail="applied", payment_id=payment.id, status=payment.status)
 

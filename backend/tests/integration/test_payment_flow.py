@@ -1,20 +1,56 @@
-import hashlib
-import hmac
-import json
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import httpx
 import pytest
 from sqlalchemy import func, select
 
 from src.modules.auth.model.user import PlanEnum, Subscription, User
 from src.modules.auth.service.auth import create_access_token
 from src.modules.payment.model.payment import Payment
+from src.modules.payment.service import yookassa as yookassa_module
 from src.modules.payment.service.payment_service import PaymentService
 
 pytestmark = pytest.mark.integration
 
-WEBHOOK_SECRET = "test-webhook-secret"
+PROVIDER_SHOP_ID = "test-shop"
+PROVIDER_SECRET_KEY = "test-secret"
+
+
+def _provider_env(monkeypatch):
+    monkeypatch.setenv("YOOKASSA_SHOP_ID", PROVIDER_SHOP_ID)
+    monkeypatch.setenv("YOOKASSA_SECRET_KEY", PROVIDER_SECRET_KEY)
+
+
+def _remote_object(status: str, paid: bool, value: str = "319.20") -> dict:
+    return {
+        "id": "yk-test-1",
+        "status": status,
+        "paid": paid,
+        "amount": {"value": value, "currency": "RUB"},
+    }
+
+
+def _provider_api(monkeypatch, objects: dict):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(
+                200,
+                json={
+                    "id": "yk-test-1",
+                    "confirmation": {"confirmation_url": "https://pay.example/x"},
+                },
+            )
+        payment_id = request.url.path.rsplit("/", 1)[-1]
+        if payment_id in objects:
+            return httpx.Response(200, json=objects[payment_id])
+        return httpx.Response(404, json={})
+
+    monkeypatch.setattr(
+        yookassa_module,
+        "_client_factory",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
 
 
 def _auth(user: User) -> dict[str, str]:
@@ -56,10 +92,10 @@ async def _get_payment(db, payment_id: int) -> Payment:
     return (await db.execute(select(Payment).where(Payment.id == payment_id))).scalar_one()
 
 
-def _signed(payload: dict) -> tuple[bytes, dict[str, str]]:
-    raw = json.dumps(payload).encode("utf-8")
-    signature = hmac.new(WEBHOOK_SECRET.encode("utf-8"), raw, hashlib.sha256).hexdigest()
-    return raw, {"X-Payment-Signature": signature, "Content-Type": "application/json"}
+async def _subscribe_basic(client, user: User) -> dict:
+    resp = await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(user))
+    assert resp.status_code == 201, resp.text
+    return resp.json()
 
 
 async def test_plans_endpoint_is_public(client):
@@ -257,8 +293,9 @@ async def test_second_confirm_returns_409_and_no_second_subscription(client, db_
     assert await _count_subscriptions(db_session, user.id) == 1
 
 
-async def test_webhook_without_configured_secret_returns_503(client, db_session, monkeypatch):
-    monkeypatch.delenv("YOOKASSA_WEBHOOK_SECRET", raising=False)
+async def test_webhook_without_provider_credentials_returns_503(client, db_session, monkeypatch):
+    monkeypatch.delenv("YOOKASSA_SHOP_ID", raising=False)
+    monkeypatch.delenv("YOOKASSA_SECRET_KEY", raising=False)
     user = await _make_user(db_session, "webhook-nosecret@example.com")
     payment_id = (
         await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(user))
@@ -275,86 +312,111 @@ async def test_webhook_without_configured_secret_returns_503(client, db_session,
     assert await _count_subscriptions(db_session, user.id) == 0
 
 
-async def test_webhook_with_bad_signature_returns_401(client, db_session, monkeypatch):
-    monkeypatch.setenv("YOOKASSA_WEBHOOK_SECRET", WEBHOOK_SECRET)
-    raw, headers = _signed({"event": "payment.succeeded", "object": {"id": "yk-2"}})
-
-    resp = await client.post(
-        "/api/payment/webhook",
-        content=raw,
-        headers={**headers, "X-Payment-Signature": "deadbeef"},
-    )
-
-    assert resp.status_code == 401, resp.text
-
-
 async def test_webhook_succeeded_activates_subscription_once(client, db_session, monkeypatch):
-    monkeypatch.setenv("YOOKASSA_WEBHOOK_SECRET", WEBHOOK_SECRET)
+    _provider_env(monkeypatch)
+    _provider_api(monkeypatch, {"yk-test-1": _remote_object("succeeded", True)})
     user = await _make_user(db_session, "webhook-ok@example.com")
-    payment_id = (
-        await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(user))
-    ).json()["id"]
-    payment = await _get_payment(db_session, payment_id)
+    payment = await _subscribe_basic(client, user)
 
-    raw, headers = _signed(
-        {
-            "type": "notification",
-            "event": "payment.succeeded",
-            "object": {
-                "id": "yk-success-1",
-                "status": "succeeded",
-                "metadata": {"idempotence_key": payment.idempotence_key},
-            },
-        }
-    )
-
-    first = await client.post("/api/payment/webhook", content=raw, headers=headers)
-    second = await client.post("/api/payment/webhook", content=raw, headers=headers)
+    first = await client.post("/api/payment/webhook", json={"object": {"id": "yk-test-1"}})
+    second = await client.post("/api/payment/webhook", json={"object": {"id": "yk-test-1"}})
 
     assert first.status_code == 200, first.text
     assert first.json()["detail"] == "applied"
     assert second.status_code == 200, second.text
     assert second.json()["detail"] == "already applied"
 
-    await db_session.refresh(payment)
-    assert payment.status == "succeeded"
-    assert payment.provider_payment_id == "yk-success-1"
-    assert payment.subscription_id is not None
+    stored = await _get_payment(db_session, payment["id"])
+    assert stored.status == "succeeded"
+    assert stored.provider_payment_id == "yk-test-1"
+    assert stored.subscription_id is not None
     assert await _count_subscriptions(db_session, user.id, only_active=True) == 1
     assert await _count_subscriptions(db_session, user.id) == 1
 
 
-async def test_webhook_canceled_sets_status_without_subscription(client, db_session, monkeypatch):
-    monkeypatch.setenv("YOOKASSA_WEBHOOK_SECRET", WEBHOOK_SECRET)
-    user = await _make_user(db_session, "webhook-cancel@example.com")
-    payment_id = (
-        await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(user))
-    ).json()["id"]
-    payment = await _get_payment(db_session, payment_id)
+async def test_webhook_ignores_forged_body_when_provider_says_pending(
+    client, db_session, monkeypatch
+):
+    _provider_env(monkeypatch)
+    _provider_api(monkeypatch, {"yk-test-1": _remote_object("pending", False)})
+    user = await _make_user(db_session, "webhook-forged@example.com")
+    payment = await _subscribe_basic(client, user)
 
-    raw, headers = _signed(
-        {
-            "event": "payment.canceled",
-            "object": {
-                "id": "yk-cancel-1",
-                "metadata": {"idempotence_key": payment.idempotence_key},
-            },
-        }
+    resp = await client.post(
+        "/api/payment/webhook",
+        json={"event": "payment.succeeded", "object": {"id": "yk-test-1", "status": "succeeded"}},
     )
 
-    resp = await client.post("/api/payment/webhook", content=raw, headers=headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["detail"] == "ignored"
+    stored = await _get_payment(db_session, payment["id"])
+    assert stored.status == "pending"
+    assert await _count_subscriptions(db_session, user.id) == 0
+
+
+async def test_webhook_canceled_sets_status_without_subscription(client, db_session, monkeypatch):
+    _provider_env(monkeypatch)
+    _provider_api(monkeypatch, {"yk-test-1": _remote_object("canceled", False)})
+    user = await _make_user(db_session, "webhook-cancel@example.com")
+    payment = await _subscribe_basic(client, user)
+
+    resp = await client.post("/api/payment/webhook", json={"object": {"id": "yk-test-1"}})
 
     assert resp.status_code == 200, resp.text
-    await db_session.refresh(payment)
-    assert payment.status == "canceled"
+    stored = await _get_payment(db_session, payment["id"])
+    assert stored.status == "canceled"
+    assert await _count_subscriptions(db_session, user.id) == 0
+
+
+async def test_webhook_amount_mismatch_returns_409(client, db_session, monkeypatch):
+    _provider_env(monkeypatch)
+    _provider_api(monkeypatch, {"yk-test-1": _remote_object("succeeded", True, value="1.00")})
+    user = await _make_user(db_session, "webhook-mismatch@example.com")
+    payment = await _subscribe_basic(client, user)
+
+    resp = await client.post("/api/payment/webhook", json={"object": {"id": "yk-test-1"}})
+
+    assert resp.status_code == 409, resp.text
+    stored = await _get_payment(db_session, payment["id"])
+    assert stored.status == "pending"
+    assert await _count_subscriptions(db_session, user.id) == 0
+
+
+async def test_webhook_provider_unreachable_returns_502(client, db_session, monkeypatch):
+    _provider_env(monkeypatch)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(
+                200,
+                json={
+                    "id": "yk-test-1",
+                    "confirmation": {"confirmation_url": "https://pay.example/x"},
+                },
+            )
+        raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(
+        yookassa_module,
+        "_client_factory",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    user = await _make_user(db_session, "webhook-down@example.com")
+    payment = await _subscribe_basic(client, user)
+
+    resp = await client.post("/api/payment/webhook", json={"object": {"id": "yk-test-1"}})
+
+    assert resp.status_code == 502, resp.text
+    stored = await _get_payment(db_session, payment["id"])
+    assert stored.status == "pending"
     assert await _count_subscriptions(db_session, user.id) == 0
 
 
 async def test_webhook_for_unknown_payment_returns_404(client, monkeypatch):
-    monkeypatch.setenv("YOOKASSA_WEBHOOK_SECRET", WEBHOOK_SECRET)
-    raw, headers = _signed({"event": "payment.succeeded", "object": {"id": "yk-unknown"}})
+    _provider_env(monkeypatch)
+    _provider_api(monkeypatch, {})
 
-    resp = await client.post("/api/payment/webhook", content=raw, headers=headers)
+    resp = await client.post("/api/payment/webhook", json={"object": {"id": "yk-nope"}})
 
     assert resp.status_code == 404
 
@@ -439,3 +501,32 @@ async def test_cancel_without_subscription_returns_404(client, db_session):
     user = await _make_user(db_session, "cancel-none@example.com")
 
     assert (await client.post("/api/payment/cancel", headers=_auth(user))).status_code == 404
+
+
+async def test_subscribe_creates_provider_payment_when_configured(client, db_session, monkeypatch):
+    monkeypatch.setenv("YOOKASSA_SHOP_ID", "shop-1")
+    monkeypatch.setenv("YOOKASSA_SECRET_KEY", "secret-1")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "id": "yk-int-1",
+                "confirmation": {"confirmation_url": "https://pay.example/x"},
+            },
+        )
+
+    monkeypatch.setattr(
+        yookassa_module,
+        "_client_factory",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    user = await _make_user(db_session, "provider@example.com")
+    resp = await client.post("/api/payment/subscribe", json={"plan": "basic"}, headers=_auth(user))
+
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["provider"] == "yookassa"
+    assert body["provider_payment_id"] == "yk-int-1"
+    assert body["confirmation_url"] == "https://pay.example/x"
