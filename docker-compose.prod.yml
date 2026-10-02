@@ -99,13 +99,13 @@ services:
   redis:
     image: redis:7-alpine
     ports: !reset []
-    # ⚠️ REDIS_PASSWORD пока ДОЛЖЕН оставаться пустым: src/config.py собирает
-    # redis_url только из host/port, а src/worker.py — RedisSettings(host, port),
-    # пароль передать некуда, и приложение получит NOAUTH.
-    # Пустое значение => `--requirepass ""` => пароль выключен, и это работает.
-    # Как только в конфиге появится redis_password (см. needs_shared_change),
-    # достаточно вписать пароль в .env.prod — здесь менять нечего.
-    # До тех пор Redis защищён тем, что порт не опубликован, а сеть data — internal.
+    # Пароль поддерживается кодом и должен быть задан в .env.prod:
+    #   src/config.py — поле redis_password, redis_url собирает его как redis://:pass@host:port/0;
+    #   src/celery_app.py — broker и backend оба берут settings.redis_url, пароль уходит в оба;
+    #   REDIS_PASSWORD прокидывается в backend/worker/migrate через x-backend-env.
+    # Пустое значение => `--requirepass ""` => пароль выключен. Это рабочий, но НЕ безопасный
+    # режим: оставлять его можно только в связке с двумя другими рубежами — порт не опубликован,
+    # а сеть data помечена internal. В бою пароль обязателен (см. .env.prod.example).
     command:
       - redis-server
       - --appendonly
@@ -115,7 +115,8 @@ services:
       - --maxmemory
       - ${REDIS_MAXMEMORY:-256mb}
       # volatile-lru, а не allkeys-lru: вытесняем только ключи с TTL (кэш,
-      # счётчики rate limit) и никогда — задачи arq, у которых TTL нет.
+      # счётчики rate limit) и никогда — ключи без TTL. Очередь celery лежит
+      # в Redis, поэтому allkeys-lru вытеснил бы непрочитанные задачи.
       - --maxmemory-policy
       - volatile-lru
     environment:
