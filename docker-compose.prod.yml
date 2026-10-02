@@ -293,12 +293,20 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Рерайт /api/* вычисляется на сборке и попадает в routes-manifest,
+        # поэтому адрес бэкенда передаётся именно сюда, а не только в
+        # environment ниже. Прод-значение — внутреннее имя сервиса.
+        BACKEND_URL: http://backend:8000
     image: bscout-frontend:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production
       PORT: "3000"
-      # Резервный путь: next.config.mjs проксирует /api/* сюда, если запрос
-      # всё-таки дошёл до Next.js минуя nginx-локацию /api/.
+      # Резервный путь: рерайт /api/* в Next.js сюда, если запрос всё-таки
+      # дошёл до Next.js минуя nginx-локацию /api/. Основной /api/ проксирует
+      # nginx (deploy/nginx/bscout.conf), так что это действительно запасной
+      # путь. Учти: destination рерайта запечён при сборке из build.args
+      # BACKEND_URL выше — environment здесь на него не влияет.
       BACKEND_URL: http://backend:8000
     depends_on:
       backend:
