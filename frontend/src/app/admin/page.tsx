@@ -9,6 +9,8 @@ import { StatsCards } from '@/app/admin/_components/StatsCards';
 import { UsersTable } from '@/app/admin/_components/UsersTable';
 import { ParsersTable } from '@/app/admin/_components/ParsersTable';
 import { MailingsSection } from '@/app/admin/_components/MailingsSection';
+import { OfferImportSection } from '@/app/admin/_components/OfferImportSection';
+import { ModerationSection } from '@/app/admin/_components/ModerationSection';
 
 function AdminDashboard() {
   const queryClient = useQueryClient();
@@ -38,6 +40,8 @@ function AdminDashboard() {
 
         <StatsCards />
         <UsersTable />
+        <ModerationSection />
+        <OfferImportSection />
         <ParsersTable />
         <MailingsSection />
       </main>
