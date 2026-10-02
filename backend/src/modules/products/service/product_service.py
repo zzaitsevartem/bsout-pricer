@@ -27,7 +27,12 @@ class ProductService:
         per_page: int = 20,
         fuzzy: bool = False,
     ) -> tuple[list[StoreOffer], int]:
-        filtered = select(StoreOffer).where(StoreOffer.is_active.is_(True))
+        active_store_ids = select(Store.id).where(Store.is_active.is_(True))
+        filtered = (
+            select(StoreOffer)
+            .where(StoreOffer.is_active.is_(True))
+            .where(StoreOffer.store_id.in_(active_store_ids))
+        )
 
         normalized = await ProductService._normalize_query(query)
         if normalized and fuzzy:
@@ -79,6 +84,7 @@ class ProductService:
             select(StoreOffer)
             .options(joinedload(StoreOffer.price_history))
             .where(StoreOffer.id == offer_id)
+            .where(StoreOffer.store_id.in_(select(Store.id).where(Store.is_active.is_(True))))
         )
         return result.unique().scalar_one_or_none()
 
@@ -86,7 +92,10 @@ class ProductService:
     async def get_price_history(db: AsyncSession, offer_id: int) -> list[OfferPriceHistory]:
         result = await db.execute(
             select(OfferPriceHistory)
+            .join(StoreOffer, StoreOffer.id == OfferPriceHistory.offer_id)
+            .join(Store, Store.id == StoreOffer.store_id)
             .where(OfferPriceHistory.offer_id == offer_id)
+            .where(Store.is_active.is_(True))
             .order_by(OfferPriceHistory.recorded_at)
         )
         return list(result.scalars().all())

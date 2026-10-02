@@ -6,6 +6,7 @@ PASSWORD_TOO_LONG_MESSAGE = (
     f"password must not exceed {MAX_PASSWORD_BYTES} bytes in utf-8 "
     "(non-latin characters take more than one byte)"
 )
+MIN_PASSWORD_LENGTH = 12
 
 
 class RegisterRequest(BaseModel):
@@ -16,7 +17,7 @@ class RegisterRequest(BaseModel):
         max_length=32,
         pattern=r"^[a-zA-Z0-9_.-]+$",
     )
-    password: str = Field(..., min_length=6, max_length=128)
+    password: str = Field(..., min_length=MIN_PASSWORD_LENGTH, max_length=128)
     full_name: str = Field(..., min_length=1, max_length=255)
     phone: str | None = Field(None, max_length=20)
     company: str | None = Field(None, max_length=255)

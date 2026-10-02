@@ -79,7 +79,7 @@ async def test_seed_all_covers_expected_volume(db_session):
     assert counts["Device"] >= 40
     assert counts["Color"] == len(COLORS)
     assert counts["Stopword"] == len(STOPWORDS)
-    assert counts["Store"] == len(STORES) == 5
+    assert counts["Store"] >= len(STORES) == 4
     assert counts["Category"] == len(CATEGORIES)
     assert counts["DeviceAlias"] == sum(len(aliases) for *_, aliases in DEVICES)
 
@@ -139,6 +139,10 @@ async def test_alias_lookup_is_case_insensitive(db_session):
 
 
 async def test_stores_seeded_with_expected_slugs(db_session):
+    db_session.add(
+        Store(slug="greenspark", name="ГринСпарк", website_url="https://green-spark.ru")
+    )
+    await db_session.flush()
     await seed_stores(db_session)
 
     stores = {
@@ -148,7 +152,7 @@ async def test_stores_seeded_with_expected_slugs(db_session):
         ).all()
     }
 
-    assert set(stores) == {"tgsm", "profi", "liberti", "greenspark", "divizion"}
+    assert {"tgsm", "profi", "liberti", "divizion"} <= set(stores)
     assert stores["tgsm"] == ("ТГСМ", "https://taggsm.ru")
     assert stores["profi"] == ("Профи", "https://siriust.ru")
 
@@ -156,6 +160,17 @@ async def test_stores_seeded_with_expected_slugs(db_session):
         await db_session.execute(select(func.count()).select_from(Store).where(Store.is_active))
     ).scalar()
     assert active == len(STORES)
+    active_slugs = set(
+        (
+            await db_session.execute(select(Store.slug).where(Store.is_active))
+        ).scalars().all()
+    )
+    assert active_slugs == {slug for slug, _, _ in STORES}
+    assert stores["greenspark"][0] == "ГринСпарк"
+    greenspark = (
+        await db_session.execute(select(Store).where(Store.slug == "greenspark"))
+    ).scalar_one()
+    assert not greenspark.is_active
 
 
 async def test_categories_seeded(db_session):

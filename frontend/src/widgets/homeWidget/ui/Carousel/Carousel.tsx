@@ -4,14 +4,12 @@ import Image from 'next/image';
 import taggsm from '@/shared/assets/images/taggsm.webp';
 import profi from '@/shared/assets/images/profi.webp';
 import liberty from '@/shared/assets/images/liberty.webp';
-import greenSpark from '@/shared/assets/images/greenSpark.webp';
 import divizion from '@/shared/assets/images/divizion.webp';
 
 const partners = [
   { name: 'ТГСМ', src: taggsm.src, href: 'https://taggsm.ru' },
   { name: 'Профи', src: profi.src, href: 'https://siriust.ru' },
   { name: 'Либерти', src: liberty.src, href: 'https://liberti.ru' },
-  { name: 'ГринСпарк', src: greenSpark.src, href: 'https://green-spark.ru' },
   { name: 'Дивизион', src: divizion.src, href: 'https://www.divizion126.ru' },
 ];
 

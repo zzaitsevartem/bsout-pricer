@@ -114,7 +114,7 @@ function ConfirmForm({ token }: { token: string }) {
   return (
     <>
       <h1 className="text-[32px] font-bold text-slate mb-2">Новый пароль</h1>
-      <p className="text-lg text-body mb-8">Придумайте пароль минимум из 8 символов.</p>
+      <p className="text-lg text-body mb-8">Придумайте пароль минимум из 12 символов.</p>
 
       <form
         onSubmit={handleSubmit((data) =>
@@ -130,7 +130,7 @@ function ConfirmForm({ token }: { token: string }) {
             type="password"
             id="new_password"
             {...register('new_password')}
-            placeholder="Минимум 8 символов"
+            placeholder="Минимум 12 символов"
             className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
           />
           {errors.new_password && (

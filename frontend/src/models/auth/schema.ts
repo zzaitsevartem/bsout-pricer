@@ -7,7 +7,7 @@ export const registerRequestSchema = z.object({
     .regex(/^[a-zA-Z0-9_.-]{3,32}$/, 'Логин: 3–32 символа, латиница, цифры, _ . -')
     .optional()
     .or(z.literal('')),
-  password: z.string().min(6).max(128),
+  password: z.string().min(12, 'Минимум 12 символов').max(128),
   full_name: z.string().min(1).max(255),
   phone: z.string().max(20).optional(),
   company: z.string().max(255).optional(),
@@ -31,7 +31,7 @@ export const passwordResetRequestSchema = z.object({
 export const passwordResetConfirmSchema = z
   .object({
     token: z.string().min(1),
-    new_password: z.string().min(8, 'Минимум 8 символов').max(128),
+    new_password: z.string().min(12, 'Минимум 12 символов').max(128),
     confirm_password: z.string(),
   })
   .refine((data) => data.new_password === data.confirm_password, {

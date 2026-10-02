@@ -1153,7 +1153,6 @@ STORES: list[tuple[str, str, str]] = [
     ("tgsm", "ТГСМ", "https://taggsm.ru"),
     ("profi", "Профи", "https://siriust.ru"),
     ("liberti", "Либерти", "https://liberti.ru"),
-    ("greenspark", "ГринСпарк", "https://green-spark.ru"),
     ("divizion", "Дивизион", "https://divizion126.ru"),
 ]
 
@@ -1291,6 +1290,12 @@ async def seed_stores(db: AsyncSession) -> None:
             continue
         db.add(Store(slug=slug, name=name, website_url=website_url, is_active=True))
         await db.flush()
+
+    unsupported_store = (
+        await db.execute(select(Store).where(Store.slug == "greenspark"))
+    ).scalar_one_or_none()
+    if unsupported_store:
+        unsupported_store.is_active = False
 
 
 async def seed_categories(db: AsyncSession) -> None:

@@ -15,16 +15,16 @@ describe('registerRequestSchema', () => {
   it('accepts a valid payload', () => {
     const parsed = registerRequestSchema.safeParse({
       email: 'user@example.com',
-      password: 's3cret-pass',
+      password: 's3cret-password',
       full_name: 'Ivan Petrov',
     });
     expect(parsed.success).toBe(true);
   });
 
-  it('rejects passwords shorter than 6 chars', () => {
+  it('rejects passwords shorter than 12 chars', () => {
     const parsed = registerRequestSchema.safeParse({
       email: 'user@example.com',
-      password: '123',
+      password: '12345678901',
       full_name: 'Ivan',
     });
     expect(parsed.success).toBe(false);
@@ -33,7 +33,7 @@ describe('registerRequestSchema', () => {
   it('rejects an invalid email', () => {
     const parsed = registerRequestSchema.safeParse({
       email: 'not-an-email',
-      password: 's3cret-pass',
+      password: 's3cret-password',
       full_name: 'Ivan',
     });
     expect(parsed.success).toBe(false);
@@ -42,7 +42,7 @@ describe('registerRequestSchema', () => {
   it('requires a non-empty full_name', () => {
     const parsed = registerRequestSchema.safeParse({
       email: 'user@example.com',
-      password: 's3cret-pass',
+      password: 's3cret-password',
       full_name: '',
     });
     expect(parsed.success).toBe(false);
@@ -51,7 +51,7 @@ describe('registerRequestSchema', () => {
   it('treats phone and company as optional', () => {
     const parsed = registerRequestSchema.safeParse({
       email: 'user@example.com',
-      password: 's3cret-pass',
+      password: 's3cret-password',
       full_name: 'Ivan',
     });
     expect(parsed.success && parsed.data.phone).toBeUndefined();
@@ -108,11 +108,11 @@ describe('passwordResetRequestSchema', () => {
 });
 
 describe('passwordResetConfirmSchema', () => {
-  it('accepts matching passwords of 8+ chars', () => {
+  it('accepts matching passwords of 12+ chars', () => {
     const parsed = passwordResetConfirmSchema.safeParse({
       token: 'tok',
-      new_password: 's3cret-pass',
-      confirm_password: 's3cret-pass',
+      new_password: 's3cret-password',
+      confirm_password: 's3cret-password',
     });
     expect(parsed.success).toBe(true);
   });
@@ -120,8 +120,8 @@ describe('passwordResetConfirmSchema', () => {
   it('rejects short passwords', () => {
     const parsed = passwordResetConfirmSchema.safeParse({
       token: 'tok',
-      new_password: 'short',
-      confirm_password: 'short',
+      new_password: '12345678901',
+      confirm_password: '12345678901',
     });
     expect(parsed.success).toBe(false);
   });
@@ -129,8 +129,8 @@ describe('passwordResetConfirmSchema', () => {
   it('rejects mismatched passwords', () => {
     const parsed = passwordResetConfirmSchema.safeParse({
       token: 'tok',
-      new_password: 's3cret-pass',
-      confirm_password: 'other-pass',
+      new_password: 's3cret-password',
+      confirm_password: 'different-password',
     });
     expect(parsed.success).toBe(false);
   });

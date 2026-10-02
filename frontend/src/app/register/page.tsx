@@ -205,7 +205,7 @@ export default function RegisterPage() {
                 />
                 {errors.password && (
                   <p className="text-[13px] text-clay mt-[6px]">
-                    Пароль должен быть не короче 6 символов
+                    Пароль должен быть не короче 12 символов
                   </p>
                 )}
               </div>
