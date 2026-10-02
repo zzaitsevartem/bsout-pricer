@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { offerImportItemSchema, type OfferImportItem } from '@/models/admin';
 
 export type OfferImportParseIssue = {
@@ -11,7 +13,7 @@ export type OfferImportParseResult =
 
 export const MAX_IMPORT_ROWS = 5000;
 
-function formatSchemaError(error: { issues: { path: (string | number)[]; message: string }[] }): string {
+function formatSchemaError(error: z.ZodError): string {
   return error.issues
     .map((issue) => {
       const field = issue.path.length > 0 ? issue.path.join('.') : 'строка';

@@ -9,6 +9,7 @@ import { TariffPlans } from '@/widgets/TariffPlans';
 import { RequireAuth } from '@/shared/lib/RequireAuth';
 import { useSubscription } from '@/models/user';
 import { usePaymentHistory, usePlans, useSubscribe, useCancelSubscription } from '@/models/payment';
+import { useTrackingUsage } from '@/models/tracking';
 import type { PaymentResponse } from '@/models/payment';
 import type { Plan } from '@/models/user';
 import { formatDate, planLabel } from '@/shared/lib/format';
@@ -79,6 +80,7 @@ function SubscriptionContent() {
   const history = usePaymentHistory();
   const subscribe = useSubscribe();
   const cancel = useCancelSubscription();
+  const trackingUsage = useTrackingUsage();
 
   const currentPlan = subscription.data?.plan;
   const currentPlanDefinition = plans.data?.find((item) => item.plan === currentPlan);
@@ -133,10 +135,14 @@ function SubscriptionContent() {
                       <p className="text-[15px] text-body-subtle mt-2 mb-0">
                         Действует до {formatDate(subscription.data.end_date)} · {subscription.data.auto_renew ? 'Автопродление включено' : 'Автопродление выключено'}
                       </p>
-                      {currentPlanDefinition && (
+                      {trackingUsage.data && (
                         <p className="text-[14px] text-body-subtle mt-2 mb-0">
-                          Лимит отслеживаемых товаров: {currentPlanDefinition.trackedProducts}. Счётчик
-                          фактического использования появится позже.
+                          Отслеживаемых товаров: {trackingUsage.data.used} из {trackingUsage.data.limit}
+                        </p>
+                      )}
+                      {currentPlanDefinition && !trackingUsage.data && (
+                        <p className="text-[14px] text-body-subtle mt-2 mb-0">
+                          Лимит отслеживаемых товаров: {currentPlanDefinition.trackedProducts}
                         </p>
                       )}
                     </div>

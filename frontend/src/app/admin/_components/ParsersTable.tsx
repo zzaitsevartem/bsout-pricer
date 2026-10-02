@@ -171,7 +171,7 @@ function runErrorMessage(error: unknown): string {
   if (status === 503) {
     return apiErrorMessage(
       error,
-      'Очередь задач недоступна — проверьте, что запущен воркер (arq src.worker.WorkerSettings)',
+      'Очередь задач недоступна — проверьте, что запущен celery-воркер (celery -A src.worker worker)',
     );
   }
   return apiErrorMessage(error, 'Не удалось поставить парсер в очередь');

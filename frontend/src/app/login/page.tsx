@@ -71,28 +71,7 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <div className="flex justify-between items-center mb-6">
-                <label className="inline-flex items-center gap-2 cursor-pointer text-[15px] text-slate">
-                  <input type="checkbox" className="hidden peer" />
-                  <span className="w-[18px] h-[18px] rounded-full border border-[#87867F] bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate transition-colors">
-                    <svg
-                      width="12"
-                      height="6"
-                      viewBox="0 0 12 6"
-                      fill="none"
-                      className="hidden peer-checked:block"
-                    >
-                      <path
-                        d="M1 3L4 6L11 1"
-                        stroke="#FAF9F5"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                  Запомнить меня
-                </label>
+              <div className="flex justify-end mb-6">
                 <Link
                   href="/reset-password"
                   className="text-[14px] text-body-subtle no-underline hover:text-slate"
