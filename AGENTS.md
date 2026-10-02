@@ -25,7 +25,8 @@ Do not create parallel TODO/plan documents. Closed details belong in
 - `frontend/src/`: Next.js App Router organized into `app/`, `models/`,
   `widgets/`, and `shared/`.
 - `docs/`: specifications, audits, plans, and manual verification.
-- `docker-compose.yml`, `infra/`, `deploy/`: local and production infrastructure.
+- `docker-compose.yml`, `docker-compose.prod.yml`, `deploy/nginx/`:
+  local and production infrastructure.
 
 ## Commands
 
