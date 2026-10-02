@@ -298,6 +298,10 @@ services:
         # поэтому адрес бэкенда передаётся именно сюда, а не только в
         # environment ниже. Прод-значение — внутреннее имя сервиса.
         BACKEND_URL: http://backend:8000
+        # Тот же принцип для FRONTEND_BASE_URL: из него собираются
+        # metadataBase, robots.txt и sitemap.xml, иначе в образе останется
+        # http://localhost:3000 и ссылки в соцсетях будут вести на localhost.
+        FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}
     image: bscout-frontend:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production

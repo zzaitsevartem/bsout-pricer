@@ -3,7 +3,7 @@ import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
 
 export const metadata: Metadata = {
-  title: 'Условия использования — BScout',
+  title: 'Условия использования',
   description: 'Условия использования сервиса BScout: тарифы, оплата, отмена подписки.',
 };
 

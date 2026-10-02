@@ -3,7 +3,7 @@ import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
 
 export const metadata: Metadata = {
-  title: 'Политика конфиденциальности — BScout',
+  title: 'Политика конфиденциальности',
   description: 'Какие данные собирает BScout, зачем они нужны и как их удалить.',
 };
 
