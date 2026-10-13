@@ -22,3 +22,25 @@ class ParserStatusResponse(BaseModel):
     last_run: str | None
     products_found: int
     errors: list[str]
+
+
+class ParserSearchRequest(BaseModel):
+    store_slug: str = Field(..., min_length=1, max_length=100)
+    query: str = Field(..., min_length=1, max_length=200)
+    limit: int = Field(20, ge=1, le=100)
+
+
+class ParserSearchItemResponse(BaseModel):
+    source_sku: str
+    title: str
+    price_retail: str
+    price_opt: str | None = None
+    stock_status: str
+    url: str
+
+
+class ParserSearchResponse(BaseModel):
+    store_slug: str
+    query: str
+    found: int
+    results: list[ParserSearchItemResponse]
