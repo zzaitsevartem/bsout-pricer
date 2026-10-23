@@ -233,6 +233,11 @@ export type MatchCandidateListResponse = z.infer<typeof matchCandidateListRespon
 export type MatchCandidateStatusFilter = z.infer<typeof matchCandidateStatusFilterSchema>;
 export type MatchCandidateListParams = z.infer<typeof matchCandidateListParamsSchema>;
 export type OfferStateResponse = z.infer<typeof offerStateResponseSchema>;
+export const bulkCandidateDecisionResponseSchema = z.object({
+  approved: z.number(),
+  rejected: z.number(),
+});
+export type BulkCandidateDecisionResponse = z.infer<typeof bulkCandidateDecisionResponseSchema>;
 export type CandidateDecisionResponse = z.infer<typeof candidateDecisionResponseSchema>;
 export type OfferLinkRequest = z.infer<typeof offerLinkRequestSchema>;
 export type OfferLinkResponse = z.infer<typeof offerLinkResponseSchema>;

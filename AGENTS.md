@@ -18,6 +18,10 @@ git status --short
 Do not create parallel TODO/plan documents. Closed details belong in
 `docs/plan/archive/`; `docs/plan/INDEX.md` is the append-only block ledger.
 
+Session results and handoff context live in `gptaudits/1.md`, `2.md`, etc.
+At session start read the latest numbered audit; save the next session's results
+in the next numbered file. Keep the live task plan in `docs/plan/MASTERPLAN.md`.
+
 ## Architecture
 
 - `backend/src/`: FastAPI, async SQLAlchemy, Redis, and module-based MVC.

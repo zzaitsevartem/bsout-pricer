@@ -12,6 +12,10 @@ celery_app.conf.update(
     task_track_started=True,
     task_events=True,
     task_ignore_result=True,
+    task_routes={
+        "send_broadcast": {"queue": "mail"},
+        "send_password_mail": {"queue": "mail"},
+    },
 )
 
 celery_app.conf.beat_schedule = {

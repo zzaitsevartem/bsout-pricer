@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.modules.admin.schema.admin import AdminStatsResponse, UserBriefResponse
 from src.modules.admin.schema.moderation import (
+    BulkCandidateDecisionRequest,
+    BulkCandidateDecisionResponse,
     CandidateDecisionResponse,
     MatchCandidateListResponse,
     OfferLinkRequest,
@@ -146,6 +148,18 @@ async def list_review_offers(
 ):
     results, total = await ModerationService.list_review_offers(db, page=page, per_page=per_page)
     return ReviewOfferListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.post("/match-candidates/bulk-decision", response_model=BulkCandidateDecisionResponse)
+async def decide_all_match_candidates(
+    payload: BulkCandidateDecisionRequest,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    try:
+        return await ModerationService.decide_all(db, payload.action, admin.id)
+    except ModerationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 
 
 @router.post("/match-candidates/{candidate_id}/approve", response_model=CandidateDecisionResponse)

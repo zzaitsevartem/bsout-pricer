@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     telegram_bot_username: str | None = None
 
     parser_full_sync_enabled: bool = False
+    parser_profi_browser_enabled: bool = False
+    parser_profi_city: str = "Ставрополь"
 
     broadcast_send_delay_seconds: float = 0.3
     broadcast_batch_size: int = 10

@@ -51,6 +51,21 @@ def _client(routes: dict[str, str], seen: list[httpx.Request] | None = None):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True)
 
 
+async def test_full_catalog_prioritizes_parts_without_losing_other_urls():
+    category = "https://siriust.ru/zapchasti-dlya-sotovyh/"
+    part = "https://siriust.ru/zapchasti-dlya-sotovyh/huawei/displei/product/"
+    other = "https://siriust.ru/oborudovanie/turizm/sumki/product/"
+    xml = (
+        "<urlset>"
+        + "".join(f"<url><loc>{url}</loc></url>" for url in [other, category, part])
+        + "</urlset>"
+    )
+    async with _client({SITEMAP_URL: xml}) as client:
+        urls = await ProfiParser(client=client).catalog_urls()
+
+    assert urls == [part, category, other]
+
+
 def test_parse_product_html_extracts_core_fields(parser, product_html):
     result = parser.parse_product_html(product_html, PRODUCT_URL)
 
@@ -62,6 +77,51 @@ def test_parse_product_html_extracts_core_fields(parser, product_html):
     assert result.category == "Запчасти"
     assert result.url == PRODUCT_URL
     assert result.image_url.endswith(".jpg")
+
+
+def test_ut2_product_without_microdata_uses_primary_prices_and_sku(parser):
+    html = """
+    <div class="ut2-pb ty-product-block --single">
+      <h1>Дисплей Huawei Ascend P7+тачскрин (черный)</h1>
+      <div id="product_code_20324"><div class="ut2--sku-text">М0949777</div></div>
+      <span class="ty-product-block__price-first">
+        <span class="ty-price-num">‍120‍</span></span>
+      <span class="ty-product-block__price-second">
+        <span class="ty-price-num">‍100‍</span></span>
+      <span class="ty-qty-in-stock" id="in_stock_info_20324">В наличии</span>
+    </div>
+    """
+    result = parser.parse_product_html(html, "https://siriust.ru/product/")
+
+    assert result is not None
+    assert result.source_sku == "М0949777"
+    assert result.price_retail == Decimal("120")
+    assert result.price_opt == Decimal("100")
+    assert result.stock_status == "in_stock"
+
+
+def test_ut2_listing_has_retail_and_wholesale_prices(parser):
+    html = """
+    <div class="ut2-gl__item">
+      <a class="product-title" href="/product/">Дисплей Huawei Ascend P7</a>
+      <div class="ut2--sku-text">М0949777</div>
+      <div class="ut2-gl__price">
+        <span class="ty-product-block__price-two-price">
+          <span class="ty-price-num">120</span><span class="two_prices_title">Розница</span>
+        </span>
+        <span class="ty-product-block__price-two-price">
+          <span class="ty-price-num">100</span><span class="two_prices_title">Опт</span>
+        </span>
+      </div>
+      <span class="ty-qty-in-stock">В наличии</span>
+    </div>
+    """
+    result = parser.parse_listing_html(html)
+
+    assert len(result) == 1
+    assert result[0].source_sku == "М0949777"
+    assert result[0].price_retail == Decimal("120")
+    assert result[0].price_opt == Decimal("100")
     assert parser.errors == []
 
 

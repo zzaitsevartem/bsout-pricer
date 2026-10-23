@@ -7,6 +7,7 @@ import type {
   BroadcastRecipientListResponse,
   BroadcastResponse,
   BroadcastSendTestResponse,
+  BulkCandidateDecisionResponse,
   CandidateDecisionResponse,
   MatchCandidateListParams,
   MatchCandidateListResponse,
@@ -38,6 +39,9 @@ export const adminApi = {
 
   getMatchCandidates: (params: MatchCandidateListParams = {}) =>
     api.get<MatchCandidateListResponse>('/admin/match-candidates', { params }),
+
+  decideAllMatchCandidates: (action: 'approve' | 'reject') =>
+    api.post<BulkCandidateDecisionResponse>('/admin/match-candidates/bulk-decision', { action }),
 
   approveMatchCandidate: (candidateId: number) =>
     api.post<CandidateDecisionResponse>(`/admin/match-candidates/${candidateId}/approve`),

@@ -293,6 +293,8 @@ def truncate(value: str, limit: int) -> str:
 
 
 class BitrixParser(BaseParser):
+    supports_catalog_batches = True
+
     sitemap_path = "/sitemap.xml"
     search_path = "/search/"
     search_param = "q"
@@ -424,6 +426,26 @@ class BitrixParser(BaseParser):
                 if limit is not None and len(urls) >= limit:
                     return urls
         return urls
+
+    async def catalog_urls(self, section: str | None = None) -> list[str]:
+        async with self._http() as client:
+            return await self.collect_sitemap_urls(client=client, section=section)
+
+    async def parse_catalog_batch(self, urls: list[str]) -> list[ParseResult]:
+        results = []
+        async with self._http() as client:
+            for index, url in enumerate(urls):
+                if index and self.catalog_delay:
+                    await asyncio.sleep(self.catalog_delay)
+                markup = await self.fetch(url, client=client)
+                if markup is None:
+                    continue
+                result = self.parse_page(markup, url)
+                if result is None:
+                    self.log_error(f"no product data at {url}")
+                    continue
+                results.append(result)
+        return results
 
     async def update_catalog(
         self,

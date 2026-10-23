@@ -22,6 +22,8 @@ class ParseResult:
 
 
 class BaseParser(ABC):
+    supports_catalog_batches = False
+
     def __init__(self, store_slug: str, store_name: str, base_url: str):
         self.store_slug = store_slug
         self.store_name = store_name
@@ -40,6 +42,12 @@ class BaseParser(ABC):
     ) -> list[ParseResult]: ...
 
     async def parse_product(self, url: str) -> ParseResult | None:
+        raise NotImplementedError
+
+    async def catalog_urls(self, section: str | None = None) -> list[str]:
+        raise NotImplementedError
+
+    async def parse_catalog_batch(self, urls: list[str]) -> list[ParseResult]:
         raise NotImplementedError
 
     def reset_errors(self):

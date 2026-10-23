@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.admin.schema.moderation import (
+    BulkCandidateDecisionResponse,
     CandidateDecisionResponse,
     MatchCandidateResponse,
     ModerationOfferRef,
@@ -12,6 +13,7 @@ from src.modules.admin.schema.moderation import (
     OfferLinkResponse,
     OfferStateResponse,
 )
+from src.modules.parser.service.parser_service import CATALOG_WRITE_LOCK_ID
 from src.modules.products.model.product import MatchCandidate, Product, StoreOffer
 from src.modules.products.schema.product import StoreRef
 from src.modules.stores.model.store import Store
@@ -161,6 +163,39 @@ class ModerationService:
         if candidate is None:
             raise ModerationError(404, "Match candidate not found")
         return candidate
+
+    @classmethod
+    async def decide_all(
+        cls, db: AsyncSession, action: str, admin_id: int
+    ) -> BulkCandidateDecisionResponse:
+        await db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": CATALOG_WRITE_LOCK_ID})
+        candidates = (
+            (
+                await db.execute(
+                    select(MatchCandidate)
+                    .where(MatchCandidate.status == "pending")
+                    .order_by(MatchCandidate.score.desc(), MatchCandidate.id)
+                    .with_for_update()
+                )
+            )
+            .scalars()
+            .all()
+        )
+        approved = rejected = 0
+        for candidate in candidates:
+            if candidate.status != "pending":
+                continue
+            if action == "approve":
+                result = await cls.approve(db, candidate.id, admin_id)
+                approved += 1
+                rejected += len(result.rejected_candidate_ids)
+            else:
+                await cls.reject(db, candidate.id, admin_id)
+                rejected += 1
+        from src.modules.products.service.matching_service import MatchingService
+
+        await MatchingService.recalc_cluster_aggregates(db)
+        return BulkCandidateDecisionResponse(approved=approved, rejected=rejected)
 
     @staticmethod
     def _ensure_pending(candidate: MatchCandidate) -> None:

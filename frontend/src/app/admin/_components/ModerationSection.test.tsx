@@ -73,6 +73,49 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 describe('ModerationSection', () => {
+  it.each([
+    ['approve', 'Одобрить все', { approved: 53, rejected: 0 }],
+    ['reject', 'Отклонить все', { approved: 0, rejected: 53 }],
+  ] as const)('applies %s to all pages in one request', async (action, label, result) => {
+    let completed = false;
+    const requests: unknown[] = [];
+    server.use(
+      http.get('*/api/admin/match-candidates', () =>
+        HttpResponse.json(
+          completed ? listResponse([]) : { ...listResponse([candidate]), total: 53 },
+        ),
+      ),
+      http.post('*/api/admin/match-candidates/bulk-decision', async ({ request }) => {
+        requests.push(await request.json());
+        completed = true;
+        return HttpResponse.json(result);
+      }),
+    );
+    renderSection();
+
+    await userEvent.click(await screen.findByRole('button', { name: `${label} (53)` }));
+
+    expect(await screen.findByText('Кандидатов нет — всё разобрано')).toBeInTheDocument();
+    expect(requests).toEqual([{ action }]);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      `Одобрено: ${result.approved}. Отклонено: ${result.rejected}.`,
+    );
+  });
+
+  it('keeps pending rows and shows an error when bulk decision fails', async () => {
+    server.use(
+      http.get('*/api/admin/match-candidates', () => HttpResponse.json(listResponse([candidate]))),
+      http.post('*/api/admin/match-candidates/bulk-decision', () =>
+        HttpResponse.json({ detail: 'Не удалось обработать связки' }, { status: 500 }),
+      ),
+    );
+    renderSection();
+    await userEvent.click(await screen.findByRole('button', { name: 'Отклонить все (1)' }));
+    expect(await screen.findByText('Не удалось обработать связки')).toBeInTheDocument();
+    expect(screen.getByText('Дисплей iPhone 13')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Отклонить все (1)' })).toBeEnabled();
+  });
+
   it('renders pending candidates with offer, product and score', async () => {
     server.use(
       http.get('*/api/admin/match-candidates', () =>
@@ -85,6 +128,10 @@ describe('ModerationSection', () => {
     expect(await screen.findByText('Дисплей iPhone 13')).toBeInTheDocument();
     expect(screen.getByText('iPhone 13')).toBeInTheDocument();
     expect(screen.getByText('92%')).toBeInTheDocument();
+    const sourceLink = screen.getByRole('link', { name: 'Открыть товар в магазине' });
+    expect(sourceLink).toHaveAttribute('href', offer.url);
+    expect(sourceLink).toHaveAttribute('target', '_blank');
+    expect(sourceLink).toHaveAttribute('rel', 'noopener noreferrer');
     expect(screen.getByRole('button', { name: 'Подтвердить' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Отклонить' })).toBeInTheDocument();
   });

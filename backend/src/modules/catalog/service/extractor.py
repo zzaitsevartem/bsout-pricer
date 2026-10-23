@@ -14,6 +14,12 @@ _INCOMPLETE_CORE_FACTOR = 0.5
 _FUZZY_FACTOR = 0.9
 _FUZZY_MIN_LEN = 6
 _FUZZY_MAX_DISTANCE = 1
+_MODEL_SUFFIXES = frozenset(
+    {"v", "x", "s", "hd", "pro", "max", "plus", "mini", "lite", "ultra", "neo"}
+)
+_MODEL_NUMBER_UNITS = frozenset(
+    {"pin", "пин", "контактов", "контакта", "шт", "mah", "мач", "я", "ая", "категория", "категории"}
+)
 
 
 @dataclass(frozen=True)
@@ -37,6 +43,7 @@ class _Entry:
 @dataclass(frozen=True)
 class _Index:
     devices: tuple[_Entry, ...]
+    brands: tuple[_Entry, ...]
     part_types: tuple[_Entry, ...]
     qualities: tuple[_Entry, ...]
     colors: tuple[_Entry, ...]
@@ -55,7 +62,7 @@ class _Match:
 _index_cache: dict[int, _Index] = {}
 
 
-def _build_entries(source: dict[str, int]) -> tuple[_Entry, ...]:
+def _build_entries(source: dict[str, int], literal_short: bool = False) -> tuple[_Entry, ...]:
     entries: list[_Entry] = []
     for surface, entity_id in source.items():
         parts = surface.split()
@@ -65,7 +72,12 @@ def _build_entries(source: dict[str, int]) -> tuple[_Entry, ...]:
             _Entry(
                 entity_id=entity_id,
                 surface=surface,
-                tokens=tuple(token_variants(part) for part in parts),
+                tokens=tuple(
+                    frozenset({part})
+                    if literal_short and part.isascii() and part.isalpha() and len(part) <= 3
+                    else token_variants(part)
+                    for part in parts
+                ),
             )
         )
     return tuple(entries)
@@ -79,8 +91,15 @@ def _build_index(dicts: Dictionaries) -> _Index:
             break
     return _Index(
         devices=_build_entries(dicts.device_by_alias),
+        brands=_build_entries(
+            {
+                key.split("-")[0]: dicts.device_brand[device_id]
+                for device_id, key in dicts.device_model_key.items()
+                if device_id in dicts.device_brand
+            }
+        ),
         part_types=_build_entries(dicts.part_type_by_synonym),
-        qualities=_build_entries(dicts.quality_by_synonym),
+        qualities=_build_entries(dicts.quality_by_synonym, literal_short=True),
         colors=_build_entries(dicts.color_by_synonym),
         unknown_quality_id=unknown_quality_id,
     )
@@ -128,12 +147,25 @@ def _assign_positions(
 
 
 def _best_match(
-    entries: tuple[_Entry, ...], variants: list[frozenset[str]], union: frozenset[str]
+    entries: tuple[_Entry, ...],
+    variants: list[frozenset[str]],
+    union: frozenset[str],
+    ordered: bool = False,
 ) -> _Match | None:
     best: _Match | None = None
     best_key: tuple[int, int, int, int] | None = None
     for entry in entries:
-        positions = _assign_positions(entry, variants, union)
+        if ordered:
+            positions = next(
+                (
+                    list(range(start, start + len(entry.tokens)))
+                    for start in range(len(variants) - len(entry.tokens) + 1)
+                    if all(token & variants[start + i] for i, token in enumerate(entry.tokens))
+                ),
+                None,
+            )
+        else:
+            positions = _assign_positions(entry, variants, union)
         if positions is None:
             continue
         size = len(positions)
@@ -193,20 +225,36 @@ def extract(title: str, dicts: Dictionaries) -> ExtractedAttrs:
     variants = [token_variants(token) for token in tokens]
     union = frozenset().union(*variants)
 
-    device = _best_match(index.devices, variants, union)
-    part_type = _best_match(index.part_types, variants, union)
-    quality = _best_match(index.qualities, variants, union)
-    color = _best_match(index.colors, variants, union)
+    brand = _best_match(index.brands, variants, union)
+    device_entries = index.devices
+    if brand is not None:
+        device_entries = tuple(
+            entry
+            for entry in device_entries
+            if dicts.device_brand.get(entry.entity_id) == brand.entity_id
+        )
+    device = _best_match(device_entries, variants, union)
+    part_type = _best_match(index.part_types, variants, union, ordered=True)
+    quality = _best_match(index.qualities, variants, union, ordered=True)
+    color = _best_match(index.colors, variants, union, ordered=True)
 
     fuzzy_fields: list[str] = []
     if device is None:
-        device = _fuzzy_match(index.devices, tokens)
+        device = _fuzzy_match(device_entries, tokens)
         if device is not None:
             fuzzy_fields.append("device")
     if part_type is None:
         part_type = _fuzzy_match(index.part_types, tokens)
         if part_type is not None:
             fuzzy_fields.append("part_type")
+
+    if device is not None and device.contiguous:
+        end = device.start + device.size
+        if end < len(tokens):
+            suffix = tokens[end]
+            unit = tokens[end + 1] if end + 1 < len(tokens) else None
+            if suffix in _MODEL_SUFFIXES or (suffix.isdigit() and unit not in _MODEL_NUMBER_UNITS):
+                device = None
 
     device_id = device.entity_id if device else None
     part_type_id = part_type.entity_id if part_type else None

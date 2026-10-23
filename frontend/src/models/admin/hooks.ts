@@ -106,6 +106,20 @@ export function useApproveMatchCandidate() {
   });
 }
 
+export function useDecideAllMatchCandidates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (action: 'approve' | 'reject') =>
+      adminApi.decideAllMatchCandidates(action).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'match-candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+    },
+  });
+}
+
 export function useRejectMatchCandidate() {
   const queryClient = useQueryClient();
 

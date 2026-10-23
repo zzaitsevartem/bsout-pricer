@@ -289,6 +289,40 @@ services:
         reservations:
           memory: 128m
 
+  # Почтовый воркер: только очередь mail (рассылки, письма восстановления).
+  # Отдельно от основного, чтобы тяжёлый парсинг не задерживал отправку писем.
+  mail-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bscout-backend:${IMAGE_TAG:-latest}
+    command: ["celery", "-A", "src.worker", "worker", "--loglevel=info", "--concurrency=1", "-Q", "mail"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A src.worker inspect ping --timeout=10"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    networks:
+      - data
+    restart: always
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+        reservations:
+          memory: 128m
+
   frontend:
     build:
       context: ./frontend

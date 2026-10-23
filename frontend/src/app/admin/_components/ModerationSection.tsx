@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   useApproveMatchCandidate,
+  useDecideAllMatchCandidates,
   useLinkOffer,
   useMatchCandidates,
   useRejectMatchCandidate,
@@ -98,6 +99,16 @@ function CandidateRow({
           {candidate.offer?.store?.name ?? candidate.offer?.store?.slug ?? '—'}
           {candidate.offer?.source_sku ? ` · ${candidate.offer.source_sku}` : ''}
         </div>
+        {candidate.offer?.url && /^https?:\/\//i.test(candidate.offer.url) && (
+          <a
+            href={candidate.offer.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-arrow text-[13px] mt-1"
+          >
+            Открыть товар в магазине
+          </a>
+        )}
       </td>
       <td className={TABLE_TD}>
         <div className="text-body">{candidate.product?.canonical_name ?? '—'}</div>
@@ -181,15 +192,17 @@ export function ModerationSection() {
   const candidates = useMatchCandidates({ status, page, per_page: PAGE_SIZE });
   const approve = useApproveMatchCandidate();
   const reject = useRejectMatchCandidate();
+  const bulk = useDecideAllMatchCandidates();
   const link = useLinkOffer();
   const unlink = useUnlinkOffer();
 
-  const busy = approve.isPending || reject.isPending || link.isPending || unlink.isPending;
+  const busy =
+    approve.isPending || reject.isPending || link.isPending || unlink.isPending || bulk.isPending;
   const list = candidates.data;
   const rows = list?.results ?? [];
   const totalPages = list ? Math.max(1, Math.ceil(list.total / (list.per_page || PAGE_SIZE))) : 1;
 
-  const mutationError = approve.error ?? reject.error ?? link.error ?? unlink.error;
+  const mutationError = bulk.error ?? approve.error ?? reject.error ?? link.error ?? unlink.error;
 
   return (
     <section id="moderation">
@@ -222,6 +235,39 @@ export function ModerationSection() {
           ))}
         </div>
       </div>
+
+      {status === 'pending' && rows.length > 0 && (
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={busy || candidates.isFetching}
+              className="btn-primary btn-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => bulk.mutate('approve', { onSuccess: () => setPage(1) })}
+            >
+              Одобрить все ({list?.total})
+            </button>
+            <button
+              type="button"
+              disabled={busy || candidates.isFetching}
+              className="btn-danger btn-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => bulk.mutate('reject', { onSuccess: () => setPage(1) })}
+            >
+              Отклонить все ({list?.total})
+            </button>
+            {bulk.isPending && <span role="status">Применяем решения…</span>}
+          </div>
+          <p className="text-[13px] text-body-subtle mt-2 mb-0">
+            Для всех ожидающих на всех страницах. Если у оффера несколько кандидатов, при одобрении
+            выбирается связка с наибольшим совпадением, остальные отклоняются.
+          </p>
+        </div>
+      )}
+      {bulk.isSuccess && (
+        <p role="status" className="text-[14px] text-body mb-3">
+          Одобрено: {bulk.data.approved}. Отклонено: {bulk.data.rejected}.
+        </p>
+      )}
 
       {candidates.isLoading ? (
         <p className="text-[15px] text-body-subtle">Загрузка…</p>
@@ -269,7 +315,9 @@ export function ModerationSection() {
                     busy={busy}
                     onApprove={(id) => approve.mutate(id)}
                     onReject={(id) => reject.mutate(id)}
-                    onLink={(offerId, productId) => link.mutate({ offerId, data: { product_id: productId } })}
+                    onLink={(offerId, productId) =>
+                      link.mutate({ offerId, data: { product_id: productId } })
+                    }
                     onUnlink={(offerId) => unlink.mutate(offerId)}
                   />
                 ))}

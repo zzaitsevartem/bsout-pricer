@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 from celery.schedules import crontab
@@ -137,13 +138,17 @@ async def test_catalog_sync_is_disabled_by_default(monkeypatch):
 async def test_catalog_sync_runs_only_after_explicit_opt_in(monkeypatch):
     monkeypatch.setattr("src.worker.settings.parser_full_sync_enabled", True)
 
-    async def run_all(full_sync):
+    async def enqueue_run(slug, full_sync):
+        assert slug == "tgsm"
         assert full_sync is True
-        return [{"store_slug": "tgsm", "status": "done"}]
+        return {"store_slug": "tgsm", "status": "queued"}
 
-    monkeypatch.setattr("src.worker.parser_service.run_all", run_all)
+    monkeypatch.setattr("src.worker.parser_service.enqueue_run", enqueue_run)
+    monkeypatch.setattr(
+        "src.worker.parser_service.list_parsers", lambda: [SimpleNamespace(store_slug="tgsm")]
+    )
 
     assert await _sync_catalog() == {
-        "status": "done",
-        "stores": [{"store_slug": "tgsm", "status": "done"}],
+        "status": "queued",
+        "stores": [{"store_slug": "tgsm", "status": "queued"}],
     }

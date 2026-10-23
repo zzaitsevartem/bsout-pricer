@@ -1,7 +1,8 @@
 import asyncio
+import time
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import async_session_factory
@@ -19,6 +20,10 @@ LOCK_TTL = 3600
 FULL_SYNC_LOCK_TTL = 6 * 3600
 DEFAULT_RUN_LIMIT = 500
 MIN_DEACTIVATION_COVERAGE = 0.8
+CATALOG_BATCH_SIZE = 50
+CATALOG_JOB_SECONDS = 600
+CHECKPOINT_TTL = 7 * 86400
+CATALOG_WRITE_LOCK_ID = 0x4253434F5554
 
 
 def _status_key(slug: str) -> str:
@@ -210,6 +215,146 @@ class ParserService:
         await db.flush()
         return result.rowcount or 0
 
+    async def _run_full_catalog(
+        self, db: AsyncSession, slug: str, parser: BaseParser, section: str | None
+    ) -> dict:
+        from src.modules.catalog.service.dictionaries import load_dictionaries
+        from src.modules.products.service.matching_service import MatchingService
+
+        if not await RedisCache.acquire_lock(_lock_key(slug), FULL_SYNC_LOCK_TTL):
+            return {"store_slug": slug, "status": "already_running", "upserted": 0}
+        checkpoint_key = f"parser:checkpoint:{slug}:{section or 'all'}"
+        started = time.monotonic()
+        state = None
+        parser.reset_errors()
+        try:
+            await RedisCache.set(
+                _status_key(slug), _running_status(slug, parser, None), ttl=STATUS_TTL
+            )
+            store_id = await self._resolve_store_id(db, slug)
+            state = await RedisCache.get(checkpoint_key)
+            if not state:
+                urls = await parser.catalog_urls(section)
+                if not urls:
+                    raise ParserError("; ".join(parser.errors) or "catalog has no product URLs")
+                state = {
+                    "urls": urls,
+                    "offset": 0,
+                    "upserted": 0,
+                    "skipped": 0,
+                    "errors": list(parser.errors),
+                    "started_at": datetime.now(timezone.utc).isoformat(),
+                    "active_before": await self._active_offer_count(db, store_id),
+                }
+                await RedisCache.set(checkpoint_key, state, ttl=CHECKPOINT_TTL)
+            parser.errors = list(state["errors"])
+            dicts = await load_dictionaries(db)
+            while state["offset"] < len(state["urls"]):
+                end = min(state["offset"] + CATALOG_BATCH_SIZE, len(state["urls"]))
+                results = await parser.parse_catalog_batch(state["urls"][state["offset"] : end])
+                saved = 0
+                skipped = 0
+                await db.execute(
+                    text("SELECT pg_advisory_xact_lock(:key)"), {"key": CATALOG_WRITE_LOCK_ID}
+                )
+                for result in results:
+                    try:
+                        offer = await self.upsert_offer(db, store_id, result)
+                    except ParserParseError as exc:
+                        parser.errors.append(str(exc))
+                        skipped += 1
+                        continue
+                    await MatchingService.match_offer(db, offer, dicts)
+                    saved += 1
+                await MatchingService.recalc_cluster_aggregates(db)
+                await db.commit()
+                state.update(
+                    offset=end,
+                    upserted=state["upserted"] + saved,
+                    skipped=state["skipped"] + skipped,
+                    errors=list(parser.errors),
+                )
+                await RedisCache.set(checkpoint_key, state, ttl=CHECKPOINT_TTL)
+                await RedisCache.set(
+                    _status_key(slug),
+                    {
+                        "store_slug": slug,
+                        "is_running": True,
+                        "last_run": None,
+                        "products_found": state["upserted"],
+                        "urls_processed": end,
+                        "urls_total": len(state["urls"]),
+                        "errors": parser.errors,
+                    },
+                    ttl=STATUS_TTL,
+                )
+                if end < len(state["urls"]) and time.monotonic() - started >= CATALOG_JOB_SECONDS:
+                    job_id = await enqueue_parser_run(slug, True, None, section)
+                    return {
+                        "store_slug": slug,
+                        "status": "continued",
+                        "job_id": job_id,
+                        "upserted": state["upserted"],
+                        "urls_processed": end,
+                        "urls_total": len(state["urls"]),
+                    }
+            deactivated = 0
+            active_before = state["active_before"]
+            coverage = None if not active_before else state["upserted"] / active_before
+            if (
+                not section
+                and state["upserted"]
+                and not parser.errors
+                and (coverage is None or coverage >= MIN_DEACTIVATION_COVERAGE)
+            ):
+                deactivated = await self._deactivate_stale_offers(
+                    db, store_id, datetime.fromisoformat(state["started_at"])
+                )
+                await MatchingService.recalc_cluster_aggregates(db)
+            await db.commit()
+            parser.last_run = datetime.now(timezone.utc)
+            await RedisCache.set(
+                _status_key(slug),
+                {
+                    "store_slug": slug,
+                    "is_running": False,
+                    "last_run": parser.last_run.isoformat(),
+                    "products_found": state["upserted"],
+                    "urls_processed": state["offset"],
+                    "urls_total": len(state["urls"]),
+                    "errors": parser.errors,
+                },
+                ttl=STATUS_TTL,
+            )
+            await RedisCache.delete(checkpoint_key)
+            return {
+                "store_slug": slug,
+                "status": ("partial" if state["upserted"] else "error")
+                if parser.errors
+                else "done",
+                "upserted": state["upserted"],
+                "skipped": state["skipped"],
+                "deactivated": deactivated,
+                "urls_processed": state["offset"],
+                "urls_total": len(state["urls"]),
+                "errors": parser.errors,
+            }
+        except Exception as exc:
+            await RedisCache.set(
+                _status_key(slug),
+                {
+                    "store_slug": slug,
+                    "is_running": False,
+                    "last_run": None,
+                    "products_found": state["upserted"] if state else 0,
+                    "errors": [str(exc)],
+                },
+                ttl=STATUS_TTL,
+            )
+            raise
+        finally:
+            await RedisCache.release_lock(_lock_key(slug))
+
     async def run_one(
         self,
         db: AsyncSession,
@@ -223,6 +368,9 @@ class ParserService:
             raise ParserError(f"parser '{slug}' not found")
 
         catalog_limit = resolve_catalog_limit(full_sync, limit)
+
+        if catalog_limit is None and parser.supports_catalog_batches:
+            return await self._run_full_catalog(db, slug, parser, section)
 
         if not await RedisCache.acquire_lock(_lock_key(slug), resolve_lock_ttl(catalog_limit)):
             return {
@@ -248,6 +396,9 @@ class ParserService:
             run_started_at = datetime.now(timezone.utc)
 
             results = await parser.update_catalog(limit=catalog_limit, section=section)
+            await db.execute(
+                text("SELECT pg_advisory_xact_lock(:key)"), {"key": CATALOG_WRITE_LOCK_ID}
+            )
             for result in results:
                 try:
                     await self.upsert_offer(db, store_id, result)
@@ -291,7 +442,8 @@ class ParserService:
             )
             return {
                 "store_slug": slug,
-                "status": "done",
+                "status": ("partial" if upserted else "error") if parser.errors else "done",
+                "errors": list(parser.errors),
                 "upserted": upserted,
                 "skipped": skipped,
                 "deactivated": deactivated,
@@ -366,7 +518,7 @@ class ParserService:
         await RedisCache.set(
             _status_key(slug),
             _running_status(slug, parser, previous),
-            ttl=QUEUED_STATUS_TTL,
+            ttl=STATUS_TTL if full_sync else QUEUED_STATUS_TTL,
         )
         return {
             "store_slug": slug,

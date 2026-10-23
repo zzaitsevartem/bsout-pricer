@@ -94,6 +94,27 @@ def _codes(
 
 SYNTHETIC_CASES = [
     (
+        "Дисплей для iPhone 13 + тачскрин + рамка (черный), In-Cell",
+        ("apple-iphone-13", "display", "unknown", "black"),
+    ),
+    ("Рамка дисплея iPhone 13", ("apple-iphone-13", "frame", "unknown", None)),
+    (
+        "LCD дисплей iPhone 13 матрица ZY In-Cell FHD a-si",
+        ("apple-iphone-13", "display", "unknown", None),
+    ),
+    (
+        "Пленка на дисплей для HTC Desire 500 (матовая)",
+        ("htc-desire-500", "screen_protector", "unknown", None),
+    ),
+    ("LCD дисплей HTC Desire 500/506e черный", ("htc-desire-500", "display", "unknown", "black")),
+    ("LCD дисплей HTC Desire V T328w черный", ("htc-desire-v", "display", "unknown", "black")),
+    ("LCD дисплей HTC Desire X T328e черный", ("htc-desire-x", "display", "unknown", "black")),
+    ("LCD дисплей HTC Desire 816, 45 pin", ("htc-desire-816", "display", "unknown", None)),
+    ("Тачскрин HTC Desire HD/A9191/G10", ("htc-desire-hd", "touchscreen", "unknown", None)),
+    ("Дисплей HTC Desire 99999", (None, "display", "unknown", None)),
+    ("АКБ для Nokia X6 оригинал", (None, "battery", "original", None)),
+    ("Тачскрин HTC Desire V 1-я категория", ("htc-desire-v", "touchscreen", "category_1", None)),
+    (
         "Дисплей Apple iPhone 13 в сборе с тачскрином (Original)",
         ("apple-iphone-13", "display", "original", None),
     ),

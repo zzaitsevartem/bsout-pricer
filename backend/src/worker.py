@@ -59,8 +59,11 @@ async def _sync_catalog() -> dict:
         logger.info("sync_catalog: %s", result)
         return result
 
-    stores = await parser_service.run_all(full_sync=True)
-    result = {"status": "done", "stores": stores}
+    stores = [
+        await parser_service.enqueue_run(parser.store_slug, full_sync=True)
+        for parser in parser_service.list_parsers()
+    ]
+    result = {"status": "queued", "stores": stores}
     logger.info("sync_catalog: %s", result)
     return result
 

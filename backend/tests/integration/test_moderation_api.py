@@ -13,6 +13,77 @@ pytestmark = pytest.mark.integration
 QUEUE_URL = "/api/admin/match-candidates"
 
 
+@pytest.mark.parametrize("action", ["approve", "reject"])
+async def test_bulk_decision_covers_all_pages_and_preserves_decided(client, db_session, action):
+    store = await _make_store(db_session)
+    headers = await _admin_headers(db_session)
+    product = await _make_product(db_session, "bulk-product", "Товар")
+    candidates = []
+    for index in range(23):
+        offer = await _make_offer(db_session, store, sku=f"bulk-{index}")
+        candidates.append(await _make_candidate(db_session, offer, product))
+    decided_offer = await _make_offer(db_session, store, sku="decided")
+    decided = await _make_candidate(db_session, decided_offer, product, status="approved")
+
+    response = await client.post(
+        f"{QUEUE_URL}/bulk-decision", json={"action": action}, headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "approved": 23 if action == "approve" else 0,
+        "rejected": 23 if action == "reject" else 0,
+    }
+    for candidate in candidates:
+        await db_session.refresh(candidate)
+        assert candidate.status == ("approved" if action == "approve" else "rejected")
+        assert candidate.decided_by is not None
+        assert candidate.decided_at is not None
+        offer = await db_session.get(StoreOffer, candidate.offer_id)
+        assert offer.product_id == (product.id if action == "approve" else None)
+    await db_session.refresh(decided)
+    assert decided.status == "approved"
+    assert decided.decided_at is None
+    repeated = await client.post(
+        f"{QUEUE_URL}/bulk-decision", json={"action": action}, headers=headers
+    )
+    assert repeated.json() == {"approved": 0, "rejected": 0}
+
+
+async def test_bulk_approve_selects_strongest_candidate_for_each_offer(client, db_session):
+    store = await _make_store(db_session)
+    headers = await _admin_headers(db_session)
+    offer = await _make_offer(db_session, store)
+    weak = await _make_product(db_session, "weak", "Слабый кандидат")
+    strong = await _make_product(db_session, "strong", "Сильный кандидат")
+    weak_candidate = await _make_candidate(db_session, offer, weak, score="0.5")
+    strong_candidate = await _make_candidate(db_session, offer, strong, score="0.79")
+
+    response = await client.post(
+        f"{QUEUE_URL}/bulk-decision", json={"action": "approve"}, headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"approved": 1, "rejected": 1}
+    await db_session.refresh(offer)
+    await db_session.refresh(weak_candidate)
+    await db_session.refresh(strong_candidate)
+    assert offer.product_id == strong.id
+    assert offer.match_status == "manual"
+    assert weak_candidate.status == "rejected"
+    assert strong_candidate.status == "approved"
+
+
+async def test_bulk_decision_requires_admin(client, db_session):
+    user = await _make_user(db_session, "bulk-user@example.com", is_admin=False)
+    response = await client.post(
+        f"{QUEUE_URL}/bulk-decision",
+        json={"action": "reject"},
+        headers=_auth(create_access_token(user.id)),
+    )
+    assert response.status_code == 403
+
+
 def _auth(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 

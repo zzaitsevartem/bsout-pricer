@@ -65,6 +65,7 @@ export {
   useImportOffers,
   useMatchCandidates,
   useApproveMatchCandidate,
+  useDecideAllMatchCandidates,
   useRejectMatchCandidate,
   useLinkOffer,
   useUnlinkOffer,

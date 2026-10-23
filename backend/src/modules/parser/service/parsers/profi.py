@@ -8,9 +8,11 @@ from urllib.parse import quote, urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 
+from src.config import settings
 from src.modules.parser.service.base import BaseParser, ParseResult
-from src.modules.parser.service.exceptions import ParserError
+from src.modules.parser.service.exceptions import ParserAuthError, ParserError
 from src.modules.parser.service.parsers.bitrix_common import matches_section
+from src.modules.parser.service.parsers.profi_browser import ProfiBrowserSession
 from src.modules.parser.service.utils import parse_price, safe_request
 
 STORE_SLUG = "profi"
@@ -90,6 +92,8 @@ def _stock_from_text(text: str) -> tuple[str, int | None]:
 
 
 class ProfiParser(BaseParser):
+    supports_catalog_batches = True
+
     def __init__(
         self,
         store_slug: str = STORE_SLUG,
@@ -105,14 +109,20 @@ class ProfiParser(BaseParser):
         if self._client is not None:
             yield self._client
             return
+        if settings.parser_profi_browser_enabled:
+            async with ProfiBrowserSession(self.base_url, settings.parser_profi_city) as client:
+                yield client
+            return
         async with httpx.AsyncClient(
             headers={"User-Agent": USER_AGENT},
             follow_redirects=True,
         ) as client:
             yield client
 
-    async def _fetch(self, client: httpx.AsyncClient, url: str) -> str | None:
+    async def _fetch(self, client: httpx.AsyncClient | ProfiBrowserSession, url: str) -> str | None:
         try:
+            if isinstance(client, ProfiBrowserSession):
+                return await client.fetch(url)
             response = await safe_request(
                 client,
                 url,
@@ -121,6 +131,8 @@ class ProfiParser(BaseParser):
                 timeout=REQUEST_TIMEOUT,
                 headers={"User-Agent": USER_AGENT},
             )
+        except ParserAuthError:
+            raise
         except ParserError as exc:
             self.errors.append(f"fetch failed: {url} ({exc})")
             return None
@@ -195,7 +207,9 @@ class ProfiParser(BaseParser):
             self.errors.append(f"html parse failed: {url} ({exc})")
             return None
 
-        block = soup.select_one('[itemtype*="schema.org/Product"]')
+        block = soup.select_one('[itemtype*="schema.org/Product"]') or soup.select_one(
+            ".ut2-pb.--single"
+        )
         if block is None:
             return None
 
@@ -253,17 +267,23 @@ class ProfiParser(BaseParser):
             price = _safe_price(meta.get("content"))
             if price is not None:
                 return price
-        return _price_from_block(soup.select_one(".ty-product-block__price-actual"))
+        return _price_from_block(
+            soup.select_one(".ty-product-block__price-actual, .ty-product-block__price-first")
+        )
 
     def _extract_sku(self, soup: BeautifulSoup, block) -> str:
         meta = block.select_one("meta[itemprop=sku]")
         if meta is not None and _clean(meta.get("content")):
             return _clean(meta.get("content"))
-        node = soup.select_one(".ty-product-block__sku .ty-control-group__item")
+        node = soup.select_one(
+            ".ty-product-block__sku .ty-control-group__item"
+        ) or block.select_one(".ut2--sku-text")
         return _clean(node.get_text(" ", strip=True)) if node is not None else ""
 
     def _extract_product_id(self, soup: BeautifulSoup) -> str:
         node = soup.select_one(".ty-product-block__sku [id^=sku_update_]")
+        if node is None:
+            node = soup.select_one("[id^=product_code_]")
         if node is None:
             node = soup.select_one("[id^=product_amount_update_]")
         if node is not None:
@@ -328,7 +348,9 @@ class ProfiParser(BaseParser):
             qty = _stock_from_text(scoped.get_text(" ", strip=True))[1] if scoped else None
             return "in_stock", qty
 
-        scoped = soup.select_one(f"#product_amount_update_{product_id}") if product_id else None
+        scoped = soup.select_one(f"#in_stock_info_{product_id}") if product_id else None
+        if scoped is None:
+            scoped = soup.select_one(f"#product_amount_update_{product_id}") if product_id else None
         if scoped is None:
             scoped = soup.select_one(".ty-qty-in-stock")
         if scoped is None:
@@ -339,7 +361,7 @@ class ProfiParser(BaseParser):
     def parse_listing_html(self, html: str, limit: int | None = None) -> list[ParseResult]:
         soup = BeautifulSoup(html, "lxml")
         results: list[ParseResult] = []
-        for tile in soup.select(".ty-grid-list__item"):
+        for tile in soup.select(".ty-grid-list__item, .ut2-gl__item"):
             try:
                 item = self._parse_tile(tile)
             except Exception as exc:
@@ -359,13 +381,13 @@ class ProfiParser(BaseParser):
         if not title:
             return None
 
-        price_block = tile.select_one(".ty-grid-list__price")
+        price_block = tile.select_one(".ty-grid-list__price, .ut2-gl__price")
         price_retail, price_opt = self._tile_prices(price_block)
         if price_retail is None:
             self.errors.append(f"no price in tile: {title}")
             return None
 
-        sku_node = tile.select_one(".ty-sku-item .ty-control-group__item")
+        sku_node = tile.select_one(".ty-sku-item .ty-control-group__item, .ut2--sku-text")
         source_sku = _clean(sku_node.get_text(" ", strip=True)) if sku_node is not None else ""
         product_id = ""
         field = tile.select_one('input[name*="[product_id]"]')
@@ -409,7 +431,10 @@ class ProfiParser(BaseParser):
         retail: Decimal | None = None
         opt: Decimal | None = None
         fallback: list[Decimal] = []
-        for holder in price_block.select("div"):
+        holders = price_block.select(".ty-product-block__price-two-price") or price_block.select(
+            "div"
+        )
+        for holder in holders:
             price = _price_from_block(holder)
             if price is None:
                 continue
@@ -440,7 +465,15 @@ class ProfiParser(BaseParser):
                 self.errors.append(f"parse failed: {url} ({exc})")
                 return None
 
-        parsed = await asyncio.gather(*(worker(url) for url in urls))
+        parsed = await asyncio.gather(
+            *(worker(url) for url in urls),
+            return_exceptions=isinstance(client, ProfiBrowserSession),
+        )
+        for item in parsed:
+            if isinstance(item, Exception):
+                raise item
+            if item is not None and isinstance(client, ProfiBrowserSession):
+                item.raw["city"] = client.city
         return [item for item in parsed if item is not None]
 
     async def parse_product(self, url: str) -> ParseResult | None:
@@ -464,7 +497,26 @@ class ProfiParser(BaseParser):
             html = await self._fetch(client, self.build_search_url(query.strip()))
         if html is None:
             return []
-        return self.parse_listing_html(html, limit=MAX_SEARCH_RESULTS)
+        results = self.parse_listing_html(html, limit=MAX_SEARCH_RESULTS)
+        if isinstance(client, ProfiBrowserSession):
+            for result in results:
+                result.raw["city"] = client.city
+        return results
+
+    async def catalog_urls(self, section: str | None = None) -> list[str]:
+        async with self._session() as client:
+            urls = await self.collect_product_urls(client, section)
+        return sorted(
+            urls,
+            key=lambda url: (
+                "zapchasti" not in urlparse(url).path,
+                -len([part for part in urlparse(url).path.split("/") if part]),
+            ),
+        )
+
+    async def parse_catalog_batch(self, urls: list[str]) -> list[ParseResult]:
+        async with self._session() as client:
+            return await self._parse_many(client, urls)
 
     async def update_catalog(
         self,

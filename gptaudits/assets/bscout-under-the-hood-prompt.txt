@@ -1,0 +1,59 @@
+Create ONE large, exceptionally clear, polished educational infographic IN RUSSIAN explaining the ACTUAL BScout app to its nontechnical founder. This is a visual explanation with tangible miniature illustrations, not a generic cloud architecture diagram, not a wall of jargon or tiny text. Portrait 3:4 aspect ratio, high resolution, generous readable typography. Warm ivory background, deep navy text, restrained blue for interactive search, green for collection, amber for human decisions. Consistent attractive flat/soft isometric illustrations of a laptop, shop websites, a clock, an inbox queue, a worker workstation, a file warehouse. Adult professional editorial design, no childish robot mascots, no photos. Strong numbered sequence, clean arrows that never cross. Everything must remain readable. All labels exactly in idiomatic Russian. English technical names are secondary, small captions under the Russian function name.
+
+MAIN TITLE: "BScout: что происходит под капотом"
+Subtitle: "Ваше приложение — несколько процессов, которые работают вместе"
+
+Three distinct wide horizontal chapters stacked vertically with large numbers 1, 2, 3. Give the first two chapters most of the space. Use short labels, no long explanatory paragraphs.
+
+CHAPTER 1 HEADER: "1. Мастер ищет деталь"
+A simple left-to-right path with four large illustrated stations:
+Laptop/browser with a search box containing "дисплей iPhone 13", label "Экран приложения", technical caption "Next.js".
+Arrow labelled "запрос".
+A desk/control center label "Бэкенд", technical caption "FastAPI", subtitle "Проверяет доступ и ищет".
+Two-direction connection to a warehouse/file cabinet label "База данных", technical caption "PostgreSQL", subtitle "Товары, цены, наличие, ссылки".
+Return route from backend to a results panel in the SAME laptop/browser area or at the right, clearly labelled "Карточки и сравнение цен". Represent result cards with tiny generic fields "магазин · цена · ссылка", without inventing real current prices or pretending iPhone 13 is already matched across all stores.
+A prominent short sentence below: "Поиск работает по уже собранной базе."
+
+CHAPTER 2 HEADER: "2. Данные собираются отдельно, в фоне"
+An uncluttered two-line process. TOP LINE: 
+A clock "По расписанию" / small caption "Celery Beat" and an admin click icon "Вручную из админки", converging into an illustrated inbox "Очередь заданий" / caption "Redis".
+Then arrow to a workstation "Исполнитель" / caption "Celery Worker", with a short label "До 4 задач одновременно".
+Then arrow to a GROUP of FOUR small shop website windows with these exact names: "Либерти", "ТГСМ", "Дивизион", "Профи". The arrow means worker requests store pages, with a separate clean returning arrow labelled "страницы товаров". Clearly show the worker is the actor reading sites; Redis does not scrape websites. Tiny browser icon next to Profi, labelled "Chromium".
+SECOND LINE clearly connected from collection:
+A sheet "Парсер" with a short list "название · артикул · цена · наличие · ссылка"
+→ a sorting station "Мэтчинг" with subtitle "Находит общую карточку"
+→ warehouse "PostgreSQL" with subtitle "Сохраняет результат".
+From the matching station branch a single amber arrow to a small human/admin review desk labelled "Есть сомнение → ваша модерация", then a return arrow to the shared-card process.
+Below the collection line put two small legends:
+"Оффер — предложение одного магазина."
+"Товар — общая карточка для сравнения офферов."
+Below that a succinct progress strip: "Порции по 50 ссылок → запись в БД → сохранение позиции в Redis → следующая порция".
+No claimed completion of crawling. No fake progress counts.
+
+CHAPTER 3 HEADER: "3. Что вы запускаете на компьютере"
+An illustrated wide desktop computer frame, showing TWO zones.
+Zone A: "В браузере" with "Frontend: экраны и кнопки".
+Zone B: a Docker container tray with SEVEN clearly labelled simple component tiles:
+"Backend — отвечает на запросы"
+"Worker — выполняет сбор"
+"Beat — ставит задачи по времени"
+"Redis — очередь и прогресс"
+"PostgreSQL — сохранённые данные"
+"Mail-worker — задачи писем"
+"Flower — наблюдение за очередями"
+These tiles explain real roles, not additional arrows or another complex graph.
+A clear final caption:
+"Пока всё работает локально: нужны Docker, интернет и компьютер без сна."
+Small footer, secondary:
+"На VPS эти же процессы будут работать на сервере."
+"Основа схемы: текущий код BScout. Качество мэтчинга ещё дорабатывается."
+
+ACCURACY CONSTRAINTS:
+FastAPI searches PostgreSQL, not the store sites during every user search.
+Celery Beat schedules work; it does not scrape.
+Redis is a temporary task queue/status/checkpoint store; PostgreSQL is the persistent product/offer database.
+Matching is part of backend/worker code, not a separate deployed server.
+There are FOUR implemented scraping stores, GreenSpark is not implemented so do not include it as working.
+Do not show payment integration, payment success, Kubernetes, cloud services, Nginx as currently running locally, artificial AI models, external APIs not verified in code, or any real personal data.
+Do not put technical implementation details above the human-readable role names.
+Make this helpful to a founder who knows their product but is learning how the software works. Deliver a genuinely readable, coherent explanatory picture.

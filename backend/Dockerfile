@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ---------------------------------------------------------------------------
 # Финальный образ: интерпретатор + готовое виртуальное окружение, без тулчейна.
 # ---------------------------------------------------------------------------
-FROM python:3.11-slim AS runtime
+FROM python:3.11-slim AS runtime-base
 
 # FORWARDED_ALLOW_IPS читает сам uvicorn. Без неё X-Forwarded-* принимаются
 # только от 127.0.0.1, и за nginx реальный IP клиента теряется (а rate limit
@@ -55,6 +55,17 @@ COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
 
+FROM runtime-base AS parser-dependencies
+
+COPY requirements-parser.txt ./requirements-parser.txt
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/profi-browsers \
+    PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000
+RUN pip install --no-cache-dir -r requirements-parser.txt \
+    && python -m playwright install --with-deps --no-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM runtime-base AS app-runtime
+
 COPY --chown=app:app alembic.ini ./alembic.ini
 COPY --chown=app:app alembic ./alembic
 COPY --chown=app:app src ./src
@@ -75,3 +86,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 #     docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm migrate
 # либо сервис migrate поднимается сам и backend/worker ждут его завершения.
 CMD ["sh", "-c", "exec uvicorn src.main:app --host 0.0.0.0 --port ${APP_PORT} --workers ${UVICORN_WORKERS} --proxy-headers --no-server-header"]
+
+FROM parser-dependencies AS parser-runtime
+COPY --from=app-runtime --chown=app:app /app /app
+USER app
+CMD ["celery", "-A", "src.worker", "worker", "--loglevel=info", "--concurrency=4"]
+
+FROM app-runtime AS runtime

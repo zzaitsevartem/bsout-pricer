@@ -17,6 +17,10 @@ from src.modules.categories.model.category import Category
 from src.modules.stores.model.store import Store
 
 PART_TYPES: dict[str, tuple[str, list[str]]] = {
+    "screen_protector": (
+        "Защитная плёнка",
+        ["пленка", "плёнка", "защитная пленка", "защитная плёнка"],
+    ),
     "display": (
         "Дисплей",
         [
@@ -142,6 +146,7 @@ QUALITY_TIERS: dict[str, tuple[str, int, list[str]]] = {
             "сервис пак",
         ],
     ),
+    "category_1": ("1-я категория", 4, ["1-я категория", "1 категория", "первой категории"]),
     "unknown": ("Не определено", 9, []),
 }
 
@@ -1043,6 +1048,13 @@ DEVICES: list[tuple[str, str, str, list[str]]] = [
     ("HTC", "HTC Desire", "htc-desire", ["htc desire", "хтс desire"]),
     ("HTC", "HTC Desire 300", "htc-desire-300", ["htc desire 300", "desire 300"]),
     ("HTC", "HTC Desire 310", "htc-desire-310", ["htc desire 310", "desire 310"]),
+    ("HTC", "HTC Desire 400", "htc-desire-400", ["htc desire 400", "desire 400"]),
+    ("HTC", "HTC Desire 500", "htc-desire-500", ["htc desire 500", "desire 500", "htc 506e"]),
+    ("HTC", "HTC Desire 516", "htc-desire-516", ["htc desire 516", "desire 516"]),
+    ("HTC", "HTC Desire 816", "htc-desire-816", ["htc desire 816", "desire 816"]),
+    ("HTC", "HTC Desire V", "htc-desire-v", ["htc desire v", "desire v", "htc t328w"]),
+    ("HTC", "HTC Desire X", "htc-desire-x", ["htc desire x", "desire x", "htc t328e"]),
+    ("HTC", "HTC Desire HD", "htc-desire-hd", ["htc desire hd", "desire hd", "htc a9191"]),
     ("HTC", "HTC 8S", "htc-8s", ["htc 8s", "хтс 8s"]),
     ("HTC", "HTC 8X", "htc-8x", ["htc 8x", "хтс 8x"]),
     ("HTC", "HTC 10", "htc-10", ["htc 10", "хтс 10"]),

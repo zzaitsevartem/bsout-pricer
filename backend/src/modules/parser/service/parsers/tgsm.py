@@ -65,6 +65,8 @@ def _branch_state(text: str) -> tuple[bool | None, int | None]:
 
 
 class TgsmParser(BaseParser):
+    supports_catalog_batches = True
+
     def __init__(
         self,
         store_slug: str = STORE_SLUG,
@@ -381,6 +383,14 @@ class TgsmParser(BaseParser):
             urls = self.extract_result_urls(html)
             if not urls:
                 return []
+            return await self._parse_many(client, urls)
+
+    async def catalog_urls(self, section: str | None = None) -> list[str]:
+        async with self._session() as client:
+            return await self.collect_product_urls(client, section)
+
+    async def parse_catalog_batch(self, urls: list[str]) -> list[ParseResult]:
+        async with self._session() as client:
             return await self._parse_many(client, urls)
 
     async def update_catalog(

@@ -98,7 +98,7 @@ const RECIPIENT_STATUS_LABELS: Record<RecipientStatus, string> = {
 const INPUT_CLASS =
   'w-full border border-border-input bg-ivory px-3 py-2.5 text-[15px] text-slate placeholder:text-body-muted hover:border-slate-soft focus:border-border-default focus:outline-none transition-colors duration-150';
 
-function Modal({
+export function Modal({
   onClose,
   children,
   maxWidth = 'max-w-[720px]',
@@ -108,13 +108,15 @@ function Modal({
   maxWidth?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     panelRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -124,7 +126,7 @@ function Modal({
       document.body.style.overflow = '';
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
@@ -187,7 +189,7 @@ function ModalHeader({
   );
 }
 
-function BroadcastFormModal({ onClose }: { onClose: () => void }) {
+export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [audience, setAudience] = useState<BroadcastAudience>('custom');
   const [subject, setSubject] = useState('');
@@ -237,7 +239,7 @@ function BroadcastFormModal({ onClose }: { onClose: () => void }) {
     preview.mutate(payload());
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (nextMode: 'draft' | 'launch') => {
     setFormError(null);
     if (!name.trim() || !subject.trim() || !text.trim()) {
       setFormError('Заполните название, тему и текст письма');
@@ -247,7 +249,7 @@ function BroadcastFormModal({ onClose }: { onClose: () => void }) {
       setFormError('Для аудитории «Список адресов» укажите хотя бы один email');
       return;
     }
-    if (mode === 'launch' && audience !== 'custom') {
+    if (nextMode === 'launch' && audience !== 'custom') {
       const ok = window.confirm(
         `Рассылка «${name.trim()}» пойдёт всем ${AUDIENCE_LABELS[audience]} (введённые адреса будут проигнорированы). Продолжить?`,
       );
@@ -257,7 +259,7 @@ function BroadcastFormModal({ onClose }: { onClose: () => void }) {
     }
     create.mutate(payload(), {
       onSuccess: async (broadcast) => {
-        if (mode === 'draft') {
+        if (nextMode === 'draft') {
           onClose();
           return;
         }
@@ -435,7 +437,7 @@ function BroadcastFormModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => {
               setMode('draft');
-              handleSubmit();
+              handleSubmit('draft');
             }}
             className="btn-secondary btn-sm"
             disabled={createPending}
@@ -446,7 +448,7 @@ function BroadcastFormModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => {
               setMode('launch');
-              handleSubmit();
+              handleSubmit('launch');
             }}
             className="btn-primary btn-sm"
             disabled={createPending}

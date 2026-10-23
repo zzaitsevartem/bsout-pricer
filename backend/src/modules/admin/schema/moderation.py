@@ -1,11 +1,21 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from src.modules.products.schema.product import StoreRef
 
 CANDIDATE_STATUS_FILTERS = ("pending", "approved", "rejected", "all")
+
+
+class BulkCandidateDecisionRequest(BaseModel):
+    action: Literal["approve", "reject"]
+
+
+class BulkCandidateDecisionResponse(BaseModel):
+    approved: int
+    rejected: int
 
 
 class ModerationOfferRef(BaseModel):

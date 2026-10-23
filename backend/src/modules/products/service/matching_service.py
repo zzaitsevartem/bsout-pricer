@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from sqlalchemy import Select, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.catalog.model.catalog import Brand, Device, PartType, QualityTier
+from src.modules.catalog.model.catalog import Brand, Color, Device, PartType, QualityTier
 from src.modules.catalog.service.dictionaries import Dictionaries, load_dictionaries
 from src.modules.catalog.service.extractor import UNKNOWN_QUALITY_CODE, ExtractedAttrs, extract
 from src.modules.products.model.product import Cluster, MatchCandidate, Product, StoreOffer
@@ -181,8 +181,15 @@ class MatchingService:
 
         parts = [part_type_name or "Деталь", device_label]
         name = " ".join(part for part in parts if part).strip()
-        if quality_name:
-            name = f"{name} ({quality_name})"
+        qualifiers = [quality_name] if quality_name else []
+        if attrs.color_id is not None:
+            color_name = (
+                await db.execute(select(Color.name_ru).where(Color.id == attrs.color_id))
+            ).scalar_one_or_none()
+            if color_name:
+                qualifiers.append(color_name)
+        if qualifiers:
+            name = f"{name} ({', '.join(qualifiers)})"
         return name[:500]
 
     @staticmethod
@@ -198,6 +205,9 @@ class MatchingService:
             return MatchOutcome(offer.id, offer.product_id, offer.match_status, 0.0)
 
         attrs = extract(offer.title, dicts)
+        offer.product_id = None
+        offer.match_status = "unmatched"
+        offer.match_confidence = None
         confidence = round(float(attrs.confidence), 4)
 
         if stats is not None:
