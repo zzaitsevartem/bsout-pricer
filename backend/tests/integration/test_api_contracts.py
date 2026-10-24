@@ -6,7 +6,7 @@ from src.modules.auth.service.auth import create_access_token, hash_password
 
 pytestmark = pytest.mark.integration
 
-VALID_PASSWORD = "s3cret-pass"
+VALID_PASSWORD = "s3cret-pass-valid"
 
 
 def _auth(token: str) -> dict:

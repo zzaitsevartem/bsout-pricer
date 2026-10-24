@@ -45,8 +45,8 @@
 |------|---------|------------|
 | `/backend-module` | «новый модуль/эндпоинт бэкенда» | Скаффолд `modules/<name>/` (model/schema/service/controller) + регистрация роутера в `main.py` |
 | `/frontend-entity` | «модель/хуки/запросы на фронте» | Скаффолд `models/<entity>/` (schema.ts, service.ts, hooks.ts, index.ts) |
-| `/design-system` | любая UI/вёрстка/стили | Читает `skills/claude/` (TypeUI) перед написанием JSX |
-| `/project-conventions` | «проверь по стандартам» | Чеклист-ревью diff на соответствие конвенциям |
+| `/design-system` | любая UI/вёрстка/стили | Следует `.agents/skills/bscout-design-system/` и текущим токенам проекта |
+| `/project-conventions` | «проверь по стандартам» | Сверяет diff с `.agents/skills/project-conventions/` и применимыми AGENTS.md |
 
 ## Хуки (`.claude/settings.json` → `.claude/hooks/`)
 
@@ -71,5 +71,5 @@
 
 ## Соседние системы (не Claude Code)
 - `.opencode/` — конфиг OpenCode (агенты/команды BMAD). Не трогается этим слоем.
-- `AGENTS.md` (root/frontend/backend) — формат OpenCode; частично устарел (см. `CLAUDE.md`).
+- `AGENTS.md` (root/frontend/backend) — общие инструкции проекта; Codex skills находятся в `.agents/skills/`.
 - `_bmad/` — BMAD Method.

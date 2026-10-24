@@ -2,11 +2,14 @@ import { z } from 'zod';
 import { api } from '@/shared/api/axios';
 import {
   catalogListResponseSchema,
+  catalogSuggestionsSchema,
   comparisonDetailResponseSchema,
   productPriceHistoryResponseSchema,
 } from './schema';
 import type {
   CatalogListResponse,
+  CatalogSuggestion,
+  CatalogSuggestionParams,
   CatalogSearchParams,
   ComparisonDetailResponse,
   ProductPriceHistoryResponse,
@@ -23,6 +26,14 @@ function checkContract(schema: z.ZodType, data: unknown, source: string): void {
 }
 
 export const catalogApi = {
+  suggestions: (params: CatalogSuggestionParams, signal?: AbortSignal) =>
+    api
+      .get<CatalogSuggestion[]>('/products/catalog/suggestions', { params, signal })
+      .then((response) => {
+        checkContract(catalogSuggestionsSchema, response.data, 'GET /products/catalog/suggestions');
+        return response;
+      }),
+
   search: (params: CatalogSearchParams) =>
     api.get<CatalogListResponse>('/products/catalog', { params }).then((response) => {
       checkContract(catalogListResponseSchema, response.data, 'GET /products/catalog');

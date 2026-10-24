@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useUnit } from 'effector-react';
@@ -9,12 +9,27 @@ import type { CatalogSortOption } from '@/models/catalog';
 import { SearchLayout } from '@/app/search/_components/SearchLayout';
 import { CatalogSearchView } from '@/app/search/_components/CatalogSearchView';
 import { ResultsSkeleton } from '@/app/search/_components/ResultsSkeleton';
-import { EMPTY_FACETS, parseId, parsePage, parseSort } from '@/app/search/_components/lib';
-import type { FilterKey, SearchControls, SearchUrlState } from '@/app/search/_components/lib';
+import {
+  EMPTY_FACETS,
+  parseId,
+  parsePage,
+  parseSort,
+  parsePrice,
+  parseStock,
+} from '@/app/search/_components/lib';
+import type {
+  FilterKey,
+  FilterValue,
+  SearchControls,
+  SearchUrlState,
+} from '@/app/search/_components/lib';
 
-const DEBOUNCE_MS = 350;
+const subscribeToHydration = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 export function SearchClient() {
+  const hydrated = useSyncExternalStore(subscribeToHydration, clientSnapshot, serverSnapshot);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -29,6 +44,10 @@ export function SearchClient() {
       device_id: parseId(searchParams.get('device_id')),
       part_type_id: parseId(searchParams.get('part_type_id')),
       quality_tier_id: parseId(searchParams.get('quality_tier_id')),
+      store: searchParams.get('store') || undefined,
+      min_price: parsePrice(searchParams.get('min_price')),
+      max_price: parsePrice(searchParams.get('max_price')),
+      in_stock: parseStock(searchParams.get('in_stock')),
       sort_by: parseSort(searchParams.get('sort_by')),
       page: parsePage(searchParams.get('page')),
     }),
@@ -36,7 +55,7 @@ export function SearchClient() {
   );
 
   const commit = useCallback(
-    (patch: Record<string, string | number | null>) => {
+    (patch: Record<string, FilterValue>) => {
       const next = new URLSearchParams(searchParams.toString());
       Object.entries(patch).forEach(([key, value]) => {
         if (value === null || value === '') {
@@ -51,35 +70,23 @@ export function SearchClient() {
     [pathname, router, searchParams],
   );
 
-  const [text, setText] = useState(q);
-  const committedRef = useRef(q);
-
-  useEffect(() => {
-    if (q !== committedRef.current) {
-      committedRef.current = q;
-      setText(q);
-    }
-  }, [q]);
-
-  useEffect(() => {
-    if (text === committedRef.current) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      committedRef.current = text;
-      commit({ q: text || null, page: null });
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [text, commit]);
-
-  const onSubmit = useCallback(() => {
-    committedRef.current = text;
-    commit({ q: text || null, page: null });
-  }, [commit, text]);
+  const onQueryChange = useCallback(
+    (value: string) => {
+      commit({ q: value || null, page: null });
+    },
+    [commit],
+  );
 
   const onFilterChange = useCallback(
-    (key: FilterKey, value: number | null) => {
+    (key: FilterKey, value: FilterValue) => {
       commit({ [key]: value, page: null });
+    },
+    [commit],
+  );
+
+  const onPriceChange = useCallback(
+    (min: number | null, max: number | null) => {
+      commit({ min_price: min, max_price: max, page: null });
     },
     [commit],
   );
@@ -102,23 +109,31 @@ export function SearchClient() {
   );
 
   const onReset = useCallback(() => {
-    commit({ device_id: null, part_type_id: null, quality_tier_id: null, page: null });
+    commit({
+      device_id: null,
+      part_type_id: null,
+      quality_tier_id: null,
+      store: null,
+      min_price: null,
+      max_price: null,
+      in_stock: null,
+      page: null,
+    });
   }, [commit]);
 
   const controls = useMemo<SearchControls>(
     () => ({
-      text,
-      onTextChange: setText,
-      onSubmit,
+      onQueryChange,
       onFilterChange,
+      onPriceChange,
       onSortChange,
       onPageChange,
       onReset,
     }),
-    [text, onSubmit, onFilterChange, onSortChange, onPageChange, onReset],
+    [onQueryChange, onFilterChange, onPriceChange, onSortChange, onPageChange, onReset],
   );
 
-  if (!authReady) {
+  if (!hydrated || !authReady) {
     return (
       <SearchLayout state={state} controls={controls} facets={EMPTY_FACETS} summary="Загрузка…">
         <ResultsSkeleton />
@@ -135,7 +150,9 @@ export function SearchClient() {
         summary="Поиск доступен после входа"
       >
         <div className="rounded-[24px] bg-ivory-elevated p-8 text-center">
-          <p className="text-base font-semibold text-slate mb-2">Войдите, чтобы искать по каталогу</p>
+          <p className="text-base font-semibold text-slate mb-2">
+            Войдите, чтобы искать по каталогу
+          </p>
           <p className="text-[15px] text-body-subtle mb-6">
             Сравнение цен между магазинами доступно авторизованным пользователям.
           </p>

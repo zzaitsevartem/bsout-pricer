@@ -1,4 +1,6 @@
 export {
+  catalogSuggestionSchema,
+  catalogSuggestionsSchema,
   CATALOG_SORT_OPTIONS,
   MATCH_STATUSES,
   brandRefSchema,
@@ -17,6 +19,8 @@ export {
   productPriceHistoryResponseSchema,
 } from './schema';
 export type {
+  CatalogSuggestion,
+  CatalogSuggestionParams,
   CatalogSortOption,
   MatchStatus,
   BrandRef,
@@ -35,4 +39,9 @@ export type {
   ProductPriceHistoryResponse,
 } from './schema';
 export { catalogApi } from './service';
-export { useCatalogSearch, useCatalogProduct, useCatalogPriceHistory } from './hooks';
+export {
+  useCatalogSuggestions,
+  useCatalogSearch,
+  useCatalogProduct,
+  useCatalogPriceHistory,
+} from './hooks';

@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.middleware.subscription_guard import require_feature
+from src.middleware.subscription_guard import is_fuzzy_enabled, require_feature
 from src.modules.auth.model.user import User
 from src.modules.export.schema.export import (
     MAX_EXPORT_ROWS,
@@ -61,17 +63,30 @@ async def export_catalog_csv(
     device_id: int | None = Query(default=None, ge=1),
     part_type_id: int | None = Query(default=None, ge=1),
     quality_tier_id: int | None = Query(default=None, ge=1),
+    store: str | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    max_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    in_stock: bool | None = Query(default=None),
     sort_by: str = Query(default="min_price_asc"),
     limit: int = Query(default=MAX_EXPORT_ROWS, ge=1, le=MAX_EXPORT_ROWS),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
+
+    fuzzy = await is_fuzzy_enabled(db, current_user.id)
     total = await ExportService.catalog_total(
         db=db,
         query=q,
         device_id=device_id,
         part_type_id=part_type_id,
         quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        fuzzy=fuzzy,
     )
     _enforce_limit(total, limit, MAX_EXPORT_ROWS)
 
@@ -82,6 +97,11 @@ async def export_catalog_csv(
         device_id=device_id,
         part_type_id=part_type_id,
         quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        fuzzy=fuzzy,
         sort_by=sort_by,
     )
     return StreamingResponse(
@@ -126,11 +146,18 @@ async def export_catalog_pdf(
     device_id: int | None = Query(default=None, ge=1),
     part_type_id: int | None = Query(default=None, ge=1),
     quality_tier_id: int | None = Query(default=None, ge=1),
+    store: str | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    max_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    in_stock: bool | None = Query(default=None),
     sort_by: str = Query(default="min_price_asc"),
     limit: int = Query(default=MAX_PDF_ROWS, ge=1, le=MAX_PDF_ROWS),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
+
     try:
         ensure_pdf_available()
     except PdfUnavailableError as exc:
@@ -139,12 +166,18 @@ async def export_catalog_pdf(
             detail=pdf_unavailable_detail(str(exc)),
         ) from exc
 
+    fuzzy = await is_fuzzy_enabled(db, current_user.id)
     total = await ExportService.catalog_total(
         db=db,
         query=q,
         device_id=device_id,
         part_type_id=part_type_id,
         quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        fuzzy=fuzzy,
     )
     _enforce_limit(total, limit, MAX_PDF_ROWS)
 
@@ -155,6 +188,11 @@ async def export_catalog_pdf(
         device_id=device_id,
         part_type_id=part_type_id,
         quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        fuzzy=fuzzy,
         sort_by=sort_by,
     )
     content = render_table_pdf(CATALOG_PDF_TITLE, CATALOG_HEADER, rows)

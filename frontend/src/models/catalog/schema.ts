@@ -71,6 +71,10 @@ export const catalogSearchParamsSchema = z.object({
   device_id: z.number().int().min(1).optional(),
   part_type_id: z.number().int().min(1).optional(),
   quality_tier_id: z.number().int().min(1).optional(),
+  store: z.string().optional(),
+  min_price: z.number().finite().min(0).optional(),
+  max_price: z.number().finite().min(0).optional(),
+  in_stock: z.boolean().optional(),
   sort_by: z.string().optional(),
   page: z.number().int().min(1).optional(),
   per_page: z.number().int().min(1).max(100).optional(),
@@ -154,3 +158,14 @@ export type AlternativeTierResponse = z.infer<typeof alternativeTierResponseSche
 export type ComparisonDetailResponse = z.infer<typeof comparisonDetailResponseSchema>;
 export type PricePointResponse = z.infer<typeof pricePointResponseSchema>;
 export type ProductPriceHistoryResponse = z.infer<typeof productPriceHistoryResponseSchema>;
+
+export const catalogSuggestionSchema = z.object({
+  id: z.number().int(),
+  canonical_name: z.string(),
+});
+export const catalogSuggestionsSchema = z.array(catalogSuggestionSchema);
+export type CatalogSuggestion = z.infer<typeof catalogSuggestionSchema>;
+export type CatalogSuggestionParams = Omit<CatalogSearchParams, 'sort_by' | 'page' | 'per_page'> & {
+  q: string;
+  limit?: number;
+};

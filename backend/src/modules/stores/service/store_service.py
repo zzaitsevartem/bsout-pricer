@@ -20,6 +20,13 @@ class StoreService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_ids(db: AsyncSession, store_ids: set[int]) -> list[Store]:
+        if not store_ids:
+            return []
+        result = await db.execute(select(Store).where(Store.id.in_(sorted(store_ids))))
+        return list(result.scalars().all())
+
+    @staticmethod
     async def get_by_slug(db: AsyncSession, slug: str) -> Store | None:
         result = await db.execute(select(Store).where(Store.slug == slug))
         return result.scalar_one_or_none()

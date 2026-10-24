@@ -137,3 +137,8 @@ class ProductPriceHistoryResponse(BaseModel):
     product_id: int
     days: int
     points: list[PricePointResponse]
+
+
+class CatalogSuggestion(BaseModel):
+    id: int
+    canonical_name: str

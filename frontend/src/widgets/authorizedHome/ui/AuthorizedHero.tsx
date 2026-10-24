@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ProductSearchField } from '@/widgets/ProductSearch/ui/ProductSearchField';
 import { plural } from '@/shared/lib/format';
 import type { UserResponse } from '@/models/user';
 
@@ -32,8 +33,7 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
   const router = useRouter();
   const [query, setQuery] = useState('');
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const search = (query: string) => {
     const q = query.trim();
     router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
   };
@@ -55,7 +55,7 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
   const name = firstNameOf(me);
 
   return (
-    <section className="relative isolate min-h-[656px] overflow-hidden">
+    <section className="relative z-10 isolate min-h-[656px]">
       <div
         aria-hidden="true"
         className="absolute inset-0 z-0 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat dark:brightness-[0.35]"
@@ -77,18 +77,30 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
         </h1>
         <p className="mb-8 max-w-[50ch] text-lg leading-[1.4] text-body">{lead}</p>
 
-        <form onSubmit={handleSubmit} role="search" className="max-w-[620px]">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            search(query);
+          }}
+          role="search"
+          className="max-w-[620px]"
+        >
           <label htmlFor="home-search" className="sr-only">
             Артикул, название или бренд
           </label>
           <div className="flex items-center rounded-full border border-border-input bg-ivory p-[6px] pl-7 transition-colors focus-within:border-border-default">
-            <input
+            <ProductSearchField
               id="home-search"
-              type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onValueChange={setQuery}
+              onSelect={(selected) => {
+                setQuery(selected);
+                search(selected);
+              }}
+              label="Артикул, название или бренд"
               placeholder="Артикул, название или бренд…"
-              className="h-[52px] w-full min-w-0 border-none bg-transparent text-[18px] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+              className="flex-1"
+              inputClassName="h-[52px] w-full min-w-0 border-none bg-transparent text-[18px] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
             />
             <button type="submit" className="btn-primary btn-lg shrink-0">
               Найти

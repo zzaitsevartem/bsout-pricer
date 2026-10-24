@@ -564,3 +564,198 @@ async def test_offer_endpoint_still_works_after_catalog_routes(client, db_sessio
     assert resp.status_code == 200, resp.text
     assert resp.json()["id"] == offer.id
     assert resp.json()["product_id"] == product.id
+
+
+async def test_catalog_offer_filters_share_offer_and_filter_aggregates(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    store_a = await _make_store(db_session, "store-a")
+    store_b = await _make_store(db_session, "store-b")
+    products = [
+        await _make_product(db_session, refs, refs["tier_copy"], str(i), f"Display {i}")
+        for i in range(5)
+    ]
+    await _make_offer(db_session, store_a, products[0], "A0", "100", "90")
+    await _make_offer(db_session, store_a, products[0], "A1", "200", "180", stock_status="low")
+    await _make_offer(db_session, store_b, products[0], "B0", "50", "40")
+    await _make_offer(db_session, store_a, products[0], "A2", "150", stock_status="out")
+    await _make_offer(db_session, store_a, products[1], "A3", "500")
+    await _make_offer(db_session, store_b, products[1], "B1", "100")
+    await _make_offer(db_session, store_a, products[2], "A4", "100", stock_status="out")
+    await _make_offer(db_session, store_a, products[2], "A5", "500")
+    await _make_offer(db_session, store_a, products[3], "A6", "200", stock_status="low")
+    params = {"store": "store-a", "min_price": "100", "max_price": "200", "in_stock": "true"}
+    response = await client.get("/api/products/catalog", params=params, headers=_auth(token))
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["total"] == 2
+    assert [item["id"] for item in body["results"]] == [products[0].id, products[3].id]
+    item = body["results"][0]
+    assert item["min_price_retail"] == "100.00"
+    assert item["min_price_opt"] == "90.00"
+    assert item["offers_count"] == 2
+    assert item["stores_count"] == 1
+    assert item["store_slugs"] == ["store-a"]
+    for page, expected in [(1, products[0].id), (2, products[3].id), (3, None)]:
+        response = await client.get(
+            "/api/products/catalog",
+            params={**params, "page": page, "per_page": 1},
+            headers=_auth(token),
+        )
+        assert response.json()["total"] == 2
+        assert [row["id"] for row in response.json()["results"]] == ([expected] if expected else [])
+    detail = await client.get(f"/api/products/catalog/{products[0].id}", headers=_auth(token))
+    assert detail.json()["stats"]["offers_count"] == 4
+    assert detail.json()["stats"]["min_price_retail"] == "50.00"
+    missing = await client.get(
+        "/api/products/catalog", params={"store": "missing"}, headers=_auth(token)
+    )
+    assert missing.json()["total"] == 0
+
+
+async def test_catalog_out_of_stock_filter_excludes_unknown_and_preorder(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    product = await _make_product(db_session, refs, refs["tier_copy"], "copy", "Display")
+    store = await _make_store(db_session, "store-a")
+    for index, status in enumerate(["out", "preorder", "unknown", "low", "in_stock"]):
+        await _make_offer(
+            db_session, store, product, str(index), str(index * 100), stock_status=status
+        )
+    response = await client.get("/api/products/catalog?in_stock=false", headers=_auth(token))
+    item = response.json()["results"][0]
+    assert item["offers_count"] == 1
+    assert item["min_price_retail"] == "0.00"
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"min_price": "-1"},
+        {"max_price": "-1"},
+        {"min_price": "NaN"},
+        {"max_price": "Infinity"},
+        {"min_price": "-Infinity"},
+        {"max_price": "bad"},
+        {"min_price": "2", "max_price": "1"},
+        {"in_stock": "bad"},
+    ],
+)
+async def test_catalog_rejects_invalid_offer_filters(client, db_session, params):
+    _, token = await _make_user(db_session)
+    response = await client.get("/api/products/catalog", params=params, headers=_auth(token))
+    assert response.status_code == 422, response.text
+
+
+@pytest.mark.parametrize("plan", [PlanEnum.trial, PlanEnum.basic, PlanEnum.advanced])
+async def test_catalog_and_suggestions_gate_fuzzy_and_preserve_models(client, db_session, plan):
+    from sqlalchemy import update
+
+    user, token = await _make_user(db_session)
+    await db_session.execute(
+        update(Subscription).where(Subscription.user_id == user.id).values(plan=plan)
+    )
+    refs = await _make_dictionaries(db_session)
+    store = await _make_store(db_session, "search-store")
+    names = [
+        "Дисплей iPhone 13",
+        "Дисплей iPhone 12",
+        "Nokia",
+        "Samsung Galaxy A53",
+        "Samsung Galaxy A52",
+        "Дисплей Samsung Galaxy S22 Ultra",
+    ]
+    products = []
+    for i, name in enumerate(names):
+        product = await _make_product(db_session, refs, refs["tier_copy"], str(i), name)
+        products.append(product)
+        await _make_offer(db_session, store, product, str(i), "100")
+    queries = [
+        ("Nokia", [products[2].id]),
+        ("iphone13", [products[0].id]),
+        ("a53", [products[3].id]),
+        ("dsiplay iphone13", [products[0].id]),
+        ("экран Самсунг Галакси С22", [products[5].id]),
+        ("Nokai", [products[2].id]),
+        ("dsplay iphone13", [products[0].id]),
+        ("экран самсунк галакси С22", [products[5].id]),
+        ("шзрщту 13", [products[0].id]),
+    ]
+    for query, expected in queries:
+        fuzzy_query = query in {
+            "dsiplay iphone13",
+            "экран Самсунг Галакси С22",
+            "Nokai",
+            "dsplay iphone13",
+            "экран самсунк галакси С22",
+            "шзрщту 13",
+        }
+        expected = expected if not fuzzy_query or plan == PlanEnum.advanced else []
+        for path in ["/api/products/catalog", "/api/products/catalog/suggestions"]:
+            response = await client.get(path, params={"q": query}, headers=_auth(token))
+            assert response.status_code == 200, response.text
+            body = response.json()
+            rows = body["results"] if isinstance(body, dict) else body
+            assert [row["id"] for row in rows] == expected, (plan, query, path, body)
+
+
+async def test_suggestions_filters_require_active_matching_offers_and_bound_limit(
+    client, db_session
+):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    store = await _make_store(db_session, "selected")
+    other = await _make_store(db_session, "other")
+    for index in range(10):
+        product = await _make_product(
+            db_session, refs, refs["tier_copy"], str(index), f"Nokia {index}"
+        )
+        await _make_offer(db_session, store, product, str(index), "100", stock_status="low")
+    excluded = await _make_product(db_session, refs, refs["tier_copy"], "bad", "Nokia excluded")
+    await _make_offer(db_session, store, excluded, "bad1", "900")
+    await _make_offer(db_session, other, excluded, "bad2", "100")
+    empty = await _make_product(db_session, refs, refs["tier_copy"], "empty", "Nokia empty")
+    inactive = await _make_product(
+        db_session, refs, refs["tier_copy"], "inactive", "Nokia inactive"
+    )
+    await _make_offer(db_session, store, inactive, "inactive", "100", is_active=False)
+    response = await client.get(
+        "/api/products/catalog/suggestions",
+        headers=_auth(token),
+        params={
+            "q": "Nokia",
+            "store": "selected",
+            "min_price": "100",
+            "max_price": "100",
+            "in_stock": "true",
+            "limit": 8,
+            "device_id": refs["device"].id,
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert len(response.json()) == 8
+    assert all(set(row) == {"id", "canonical_name"} for row in response.json())
+    assert not {excluded.id, empty.id, inactive.id} & {row["id"] for row in response.json()}
+    for params in [
+        {"q": "n"},
+        {"q": "Nokia", "limit": 9},
+        {"q": "Nokia", "min_price": 2, "max_price": 1},
+    ]:
+        response = await client.get(
+            "/api/products/catalog/suggestions", params=params, headers=_auth(token)
+        )
+        assert response.status_code == 422
+
+
+async def test_suggestions_reject_expired_subscription_and_anonymous(client, db_session):
+    from sqlalchemy import update
+
+    user, token = await _make_user(db_session)
+    await db_session.execute(
+        update(Subscription)
+        .where(Subscription.user_id == user.id)
+        .values(end_date=datetime.now(timezone.utc) - timedelta(days=1))
+    )
+    for headers in [{}, _auth(token)]:
+        response = await client.get("/api/products/catalog/suggestions?q=Nokia", headers=headers)
+        assert response.status_code == 403

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.catalog.model.catalog import Brand, Device, PartType, QualityTier
@@ -11,6 +11,7 @@ from src.modules.products.model.product import (
     Product,
     StoreOffer,
 )
+from src.modules.products.service.search_predicate import search_predicate
 from src.modules.stores.model.store import Store
 
 CATALOG_SORT_OPTIONS = ("min_price_asc", "min_price_desc")
@@ -23,7 +24,39 @@ def _money(value) -> Decimal | None:
     return Decimal(value).quantize(CENTS, rounding=ROUND_HALF_UP)
 
 
-def _offer_aggregate_subquery():
+def _offer_conditions(
+    store_slug: str | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
+    in_stock: bool | None = None,
+):
+    filters = [
+        StoreOffer.is_active.is_(True),
+        Store.is_active.is_(True),
+        StoreOffer.product_id.is_not(None),
+    ]
+    if store_slug is not None:
+        filters.append(Store.slug == store_slug)
+    if min_price is not None:
+        filters.append(StoreOffer.price_retail >= min_price)
+    if max_price is not None:
+        filters.append(StoreOffer.price_retail <= max_price)
+    if in_stock is not None:
+        filters.append(
+            StoreOffer.stock_status.in_(("in_stock", "low"))
+            if in_stock
+            else StoreOffer.stock_status == "out"
+        )
+    return filters
+
+
+def _offer_aggregate_subquery(
+    store_slug: str | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
+    in_stock: bool | None = None,
+):
+    filters = _offer_conditions(store_slug, min_price, max_price, in_stock)
     return (
         select(
             StoreOffer.product_id.label("product_id"),
@@ -34,9 +67,7 @@ def _offer_aggregate_subquery():
             func.array_agg(func.distinct(Store.slug)).label("store_slugs"),
         )
         .join(Store, Store.id == StoreOffer.store_id)
-        .where(StoreOffer.is_active.is_(True))
-        .where(Store.is_active.is_(True))
-        .where(StoreOffer.product_id.is_not(None))
+        .where(*filters)
         .group_by(StoreOffer.product_id)
         .subquery()
     )
@@ -105,9 +136,9 @@ class ComparisonService:
         device_id: int | None,
         part_type_id: int | None,
         quality_tier_id: int | None,
+        fuzzy: bool = False,
     ):
-        for token in (query or "").split():
-            stmt = stmt.where(Product.canonical_name.ilike(f"%{token}%"))
+        stmt = stmt.where(search_predicate(Product.canonical_name, query, fuzzy))
         if device_id is not None:
             stmt = stmt.where(Cluster.device_id == device_id)
         if part_type_id is not None:
@@ -126,16 +157,26 @@ class ComparisonService:
         sort_by: str = "min_price_asc",
         page: int = 1,
         per_page: int = 20,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+        fuzzy: bool = False,
     ) -> tuple[list[dict], int]:
-        agg = _offer_aggregate_subquery()
+        agg = _offer_aggregate_subquery(store_slug, min_price, max_price, in_stock)
+        filtered_offers = any(
+            value is not None for value in (store_slug, min_price, max_price, in_stock)
+        )
 
         count_stmt = (
             select(func.count(Product.id))
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
         )
+        if filtered_offers:
+            count_stmt = count_stmt.join(agg, agg.c.product_id == Product.id)
         count_stmt = ComparisonService._apply_filters(
-            count_stmt, query, device_id, part_type_id, quality_tier_id
+            count_stmt, query, device_id, part_type_id, quality_tier_id, fuzzy
         )
         total = (await db.execute(count_stmt)).scalar() or 0
 
@@ -161,8 +202,10 @@ class ComparisonService:
             .outerjoin(PartType, PartType.id == Cluster.part_type_id)
             .outerjoin(agg, agg.c.product_id == Product.id)
         )
+        if filtered_offers:
+            stmt = stmt.where(agg.c.product_id.is_not(None))
         stmt = ComparisonService._apply_filters(
-            stmt, query, device_id, part_type_id, quality_tier_id
+            stmt, query, device_id, part_type_id, quality_tier_id, fuzzy
         )
 
         if sort_by == "min_price_desc":
@@ -175,6 +218,47 @@ class ComparisonService:
 
         rows = (await db.execute(stmt)).all()
         return [_catalog_item(row) for row in rows], total
+
+    @staticmethod
+    async def suggestions(
+        db: AsyncSession,
+        query: str,
+        limit: int = 6,
+        fuzzy: bool = False,
+        device_id: int | None = None,
+        part_type_id: int | None = None,
+        quality_tier_id: int | None = None,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+    ) -> list[dict]:
+        offers = (
+            select(StoreOffer.id)
+            .join(Store, Store.id == StoreOffer.store_id)
+            .where(StoreOffer.product_id == Product.id)
+            .where(*_offer_conditions(store_slug, min_price, max_price, in_stock))
+            .exists()
+        )
+        stmt = (
+            select(Product.id, Product.canonical_name)
+            .outerjoin(Cluster, Cluster.id == Product.cluster_id)
+            .where(offers)
+        )
+        stmt = ComparisonService._apply_filters(
+            stmt, query, device_id, part_type_id, quality_tier_id, fuzzy
+        )
+        priority = case(
+            (Product.canonical_name.ilike(f"{query.strip()}%"), 0),
+            (search_predicate(Product.canonical_name, query, False), 1),
+            else_=2,
+        )
+        rows = (
+            await db.execute(
+                stmt.order_by(priority, Product.canonical_name, Product.id).limit(limit)
+            )
+        ).all()
+        return [{"id": row.id, "canonical_name": row.canonical_name} for row in rows]
 
     @staticmethod
     async def _load_product_row(db: AsyncSession, product_id: int):

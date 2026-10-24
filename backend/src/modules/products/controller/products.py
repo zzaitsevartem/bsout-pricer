@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -5,6 +7,7 @@ from src.database import get_db
 from src.middleware.subscription_guard import is_fuzzy_enabled, require_active_subscription
 from src.modules.products.schema.comparison import (
     CatalogListResponse,
+    CatalogSuggestion,
     ComparisonDetailResponse,
     ProductPriceHistoryResponse,
 )
@@ -98,9 +101,11 @@ async def search_products(
     if offers:
         cheapest_price = min(o.price_retail for o in offers)
 
+    stores = await StoreService.get_by_ids(db, {offer.store_id for offer in offers})
+    stores_by_id = {store.id: store for store in stores}
     results = []
     for offer in offers:
-        store_obj = await StoreService.get_by_id(db, offer.store_id)
+        store_obj = stores_by_id.get(offer.store_id)
         store_ref = None
         if store_obj:
             store_ref = {"id": store_obj.id, "name": store_obj.name, "slug": store_obj.slug}
@@ -121,23 +126,68 @@ async def search_catalog(
     device_id: int | None = Query(default=None, ge=1),
     part_type_id: int | None = Query(default=None, ge=1),
     quality_tier_id: int | None = Query(default=None, ge=1),
+    store: str | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    max_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    in_stock: bool | None = Query(default=None),
     sort_by: str = Query(default="min_price_asc"),
     page: int = Query(default=1, ge=1, le=100_000),
     per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
+
     results, total = await ComparisonService.search_catalog(
         db=db,
         query=q,
+        fuzzy=await is_fuzzy_enabled(db, user.id),
         device_id=device_id,
         part_type_id=part_type_id,
         quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
         sort_by=sort_by,
         page=page,
         per_page=per_page,
     )
     return CatalogListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.get("/catalog/suggestions", response_model=list[CatalogSuggestion])
+async def catalog_suggestions(
+    q: str = Query(min_length=2, max_length=500),
+    device_id: int | None = Query(default=None, ge=1),
+    part_type_id: int | None = Query(default=None, ge=1),
+    quality_tier_id: int | None = Query(default=None, ge=1),
+    store: str | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    max_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    in_stock: bool | None = Query(default=None),
+    limit: int = Query(default=6, ge=1, le=8),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
+    if len(q.strip()) < 2:
+        return []
+    return await ComparisonService.suggestions(
+        db=db,
+        query=q,
+        device_id=device_id,
+        part_type_id=part_type_id,
+        quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        limit=limit,
+        fuzzy=await is_fuzzy_enabled(db, user.id),
+    )
 
 
 @router.get("/catalog/{product_id}", response_model=ComparisonDetailResponse)

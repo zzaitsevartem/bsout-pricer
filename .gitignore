@@ -41,6 +41,4 @@ yarn-error.log*
 # git worktrees параллельных агентов
 .claude/worktrees/
 
-# локальные конфиги других агентов — канон живёт в .claude/, эти не коммитим
-.codex/
-.agents/
+# Project-local Codex defaults and skills are versioned with the repository.

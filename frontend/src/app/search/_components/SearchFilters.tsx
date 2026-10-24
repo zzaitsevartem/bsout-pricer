@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { withSelected } from '@/app/search/_components/lib';
 import type {
   CatalogFacets,
   FilterKey,
+  FilterValue,
+  SearchControls,
   FilterOption,
   SearchUrlState,
 } from '@/app/search/_components/lib';
@@ -16,16 +18,36 @@ type FilterGroupProps = {
 };
 
 function FilterGroup({ title, options, selectedId, onSelect }: FilterGroupProps) {
-  const visible = withSelected(options, selectedId);
+  const [search, setSearch] = useState('');
+  const allOptions = withSelected(options, selectedId);
+  const searchable = allOptions.length > 8;
+  const visible =
+    searchable && search.trim()
+      ? allOptions.filter(
+          (option) =>
+            option.id === selectedId ||
+            option.label.toLocaleLowerCase('ru').includes(search.trim().toLocaleLowerCase('ru')),
+        )
+      : allOptions;
 
-  if (visible.length === 0) {
+  if (allOptions.length === 0) {
     return null;
   }
 
   return (
     <div className="pb-6 mb-6 border-b border-border-light-subtle">
       <h4 className="text-[15px] font-semibold text-slate mb-3">{title}</h4>
-      <div className="flex flex-col gap-2">
+      {searchable && (
+        <input
+          type="search"
+          aria-label={`Найти: ${title.toLocaleLowerCase('ru')}`}
+          placeholder="Найти…"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="mb-3 w-full rounded-xl p-2 text-slate bg-ivory border border-border-input focus-visible:outline-slate"
+        />
+      )}
+      <div className="flex max-h-48 overflow-y-auto flex-col gap-2 pr-1">
         {visible.map((option) => {
           const selected = option.id === selectedId;
           return (
@@ -69,7 +91,8 @@ function FilterGroup({ title, options, selectedId, onSelect }: FilterGroupProps)
 type SearchFiltersProps = {
   facets: CatalogFacets;
   state: SearchUrlState;
-  onFilterChange: (key: FilterKey, value: number | null) => void;
+  onFilterChange: (key: FilterKey, value: FilterValue) => void;
+  onPriceChange: SearchControls['onPriceChange'];
   onReset: () => void;
   hasActiveFilters: boolean;
 };
@@ -79,16 +102,11 @@ export function SearchFilters({
   state,
   onFilterChange,
   onReset,
+  onPriceChange,
   hasActiveFilters,
 }: SearchFiltersProps) {
-  const isEmpty =
-    facets.qualityTiers.length === 0 &&
-    facets.devices.length === 0 &&
-    facets.partTypes.length === 0 &&
-    !hasActiveFilters;
-
   return (
-    <aside className="sticky top-20 self-start max-lg:hidden">
+    <aside aria-label="Фильтры каталога">
       <FilterGroup
         title="Класс качества"
         options={facets.qualityTiers}
@@ -108,20 +126,51 @@ export function SearchFilters({
         onSelect={(value) => onFilterChange('device_id', value)}
       />
 
-      {isEmpty && (
-        <div className="pb-6 mb-6 border-b border-border-light-subtle">
-          <h4 className="text-[15px] font-semibold text-slate mb-3">Фильтры</h4>
-          <p className="text-[14px] text-body-muted">
-            Фильтры появятся, когда в выдаче будут товары.
-          </p>
-        </div>
-      )}
-
+      <div className="pb-6 mb-6 border-b border-border-light-subtle">
+        <label htmlFor="catalog-store" className="block text-[15px] font-semibold text-slate mb-3">
+          Магазин
+        </label>
+        <select
+          id="catalog-store"
+          value={state.store ?? ''}
+          onChange={(event) => onFilterChange('store', event.target.value || null)}
+          className="w-full rounded-xl p-2 text-slate bg-ivory border border-border-input focus-visible:outline-slate"
+        >
+          <option value="">Все магазины</option>
+          {state.store && !facets.stores?.some((store) => store.slug === state.store) && (
+            <option value={state.store}>{state.store}</option>
+          )}
+          {facets.stores?.map((store) => (
+            <option key={store.slug} value={store.slug}>
+              {store.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <PriceRange
+        key={`${state.min_price ?? ''}:${state.max_price ?? ''}`}
+        state={state}
+        onApply={onPriceChange}
+      />
       <div className="mb-6">
-        <h4 className="text-[15px] font-semibold text-slate mb-3">Скоро</h4>
-        <p className="text-[14px] text-body-muted">
-          Отбор по магазину, диапазону цены и наличию каталог пока не поддерживает.
-        </p>
+        <label htmlFor="catalog-stock" className="block text-[15px] font-semibold text-slate mb-3">
+          Наличие
+        </label>
+        <select
+          id="catalog-stock"
+          value={state.in_stock === undefined ? '' : String(state.in_stock)}
+          onChange={(event) =>
+            onFilterChange(
+              'in_stock',
+              event.target.value === '' ? null : event.target.value === 'true',
+            )
+          }
+          className="w-full rounded-xl p-2 text-slate bg-ivory border border-border-input focus-visible:outline-slate"
+        >
+          <option value="">Любое наличие</option>
+          <option value="true">В наличии</option>
+          <option value="false">Нет в наличии</option>
+        </select>
       </div>
 
       {hasActiveFilters && (
@@ -130,5 +179,69 @@ export function SearchFilters({
         </button>
       )}
     </aside>
+  );
+}
+
+function PriceRange({
+  state,
+  onApply,
+}: {
+  state: SearchUrlState;
+  onApply: SearchControls['onPriceChange'];
+}) {
+  return (
+    <form
+      className="pb-6 mb-6 border-b border-border-light-subtle"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const minInput = form.elements.namedItem('min_price') as HTMLInputElement;
+        const maxInput = form.elements.namedItem('max_price') as HTMLInputElement;
+        const min = minInput.value === '' ? null : minInput.valueAsNumber;
+        const max = maxInput.value === '' ? null : maxInput.valueAsNumber;
+        maxInput.setCustomValidity(
+          min !== null && max !== null && min > max
+            ? 'Максимальная цена должна быть не меньше минимальной'
+            : '',
+        );
+        if (form.reportValidity()) onApply(min, max);
+      }}
+    >
+      <fieldset>
+        <legend className="text-[15px] font-semibold text-slate mb-3">Цена, ₽</legend>
+        <div className="flex gap-2 mb-3">
+          <label className="min-w-0 flex-1 text-[14px] text-body-subtle">
+            От
+            <input
+              name="min_price"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={state.min_price}
+              onInput={(event) => {
+                const form = event.currentTarget.form;
+                (form?.elements.namedItem('max_price') as HTMLInputElement)?.setCustomValidity('');
+              }}
+              className="w-full rounded-xl p-2 text-slate bg-ivory border border-border-input focus-visible:outline-slate"
+            />
+          </label>
+          <label className="min-w-0 flex-1 text-[14px] text-body-subtle">
+            До
+            <input
+              name="max_price"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={state.max_price}
+              onInput={(event) => event.currentTarget.setCustomValidity('')}
+              className="w-full rounded-xl p-2 text-slate bg-ivory border border-border-input focus-visible:outline-slate"
+            />
+          </label>
+        </div>
+        <button type="submit" className="btn-secondary btn-sm w-full">
+          Применить цену
+        </button>
+      </fieldset>
+    </form>
   );
 }

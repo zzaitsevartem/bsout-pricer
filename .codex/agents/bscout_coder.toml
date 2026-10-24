@@ -1,0 +1,8 @@
+name = "bscout_coder"
+description = "Implement an independent, bounded BScout change when separate delegation is useful; small fixes stay in the main chat."
+model = "gpt-6.1-sol"
+model_reasoning_effort = "low"
+developer_instructions = "Implement only the assigned change. Read the applicable AGENTS.md and project skill. Preserve unrelated worktree changes and never read real .env files. Add focused regression tests for fixes and run relevant checks. For React/Next tasks use vercel-react-best-practices selectively; for UI review use web-design-guidelines; for explicit security or secure-by-default work use security-best-practices. Read only relevant rules. Repository conventions and installed dependency versions take precedence: do not replace React Query with SWR or introduce unsupported React/Next APIs. Report changed paths, checks, and limitations concisely."
+
+# Skills are task guidance; these entries do not change the selected model.
+# Load project AGENTS.md first. Keep React Query and the installed React/Next versions.

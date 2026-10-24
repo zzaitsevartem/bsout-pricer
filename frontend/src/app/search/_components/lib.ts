@@ -10,7 +10,16 @@ export const SORT_OPTIONS: { value: CatalogSortOption; label: string }[] = [
   { value: 'min_price_desc', label: 'Сначала дорогие' },
 ];
 
-export type FilterKey = 'device_id' | 'part_type_id' | 'quality_tier_id';
+export type FilterKey =
+  | 'device_id'
+  | 'part_type_id'
+  | 'quality_tier_id'
+  | 'store'
+  | 'min_price'
+  | 'max_price'
+  | 'in_stock';
+export type FilterValue = string | number | boolean | null;
+export type StoreOption = { slug: string; name: string };
 
 export type FilterOption = { id: number; label: string };
 
@@ -18,6 +27,7 @@ export type CatalogFacets = {
   devices: FilterOption[];
   partTypes: FilterOption[];
   qualityTiers: FilterOption[];
+  stores?: StoreOption[];
 };
 
 export const EMPTY_FACETS: CatalogFacets = { devices: [], partTypes: [], qualityTiers: [] };
@@ -27,19 +37,32 @@ export type SearchUrlState = {
   device_id?: number;
   part_type_id?: number;
   quality_tier_id?: number;
+  store?: string;
+  min_price?: number;
+  max_price?: number;
+  in_stock?: boolean;
   sort_by: CatalogSortOption;
   page: number;
 };
 
 export type SearchControls = {
-  text: string;
-  onTextChange: (value: string) => void;
-  onSubmit: () => void;
-  onFilterChange: (key: FilterKey, value: number | null) => void;
+  onQueryChange: (value: string) => void;
+  onFilterChange: (key: FilterKey, value: FilterValue) => void;
+  onPriceChange: (min: number | null, max: number | null) => void;
   onSortChange: (value: CatalogSortOption) => void;
   onPageChange: (value: number) => void;
   onReset: () => void;
 };
+
+export function parsePrice(raw: string | null): number | undefined {
+  if (!raw?.trim()) return undefined;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+export function parseStock(raw: string | null): boolean | undefined {
+  return raw === 'true' ? true : raw === 'false' ? false : undefined;
+}
 
 export function parseSort(raw: string | null): CatalogSortOption {
   return raw === 'min_price_desc' ? 'min_price_desc' : 'min_price_asc';

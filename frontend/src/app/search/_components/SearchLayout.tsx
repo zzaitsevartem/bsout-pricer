@@ -1,8 +1,10 @@
-import React, { type ReactNode } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import type { CatalogSortOption } from '@/models/catalog';
+import { SearchInput } from '@/app/search/_components/SearchInput';
 import { SearchFilters } from '@/app/search/_components/SearchFilters';
 import { SORT_OPTIONS } from '@/app/search/_components/lib';
+import { cn } from '@/shared/lib/utils';
 import type {
   CatalogFacets,
   FilterKey,
@@ -22,6 +24,7 @@ type SearchLayoutProps = {
   summary: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
+  suggestionsEnabled?: boolean;
 };
 
 export function SearchLayout({
@@ -31,7 +34,9 @@ export function SearchLayout({
   summary,
   actions,
   children,
+  suggestionsEnabled = false,
 }: SearchLayoutProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const chips: { key: FilterKey; label: string }[] = [];
   if (state.quality_tier_id !== undefined) {
     chips.push({
@@ -46,16 +51,48 @@ export function SearchLayout({
     chips.push({ key: 'device_id', label: labelFor(facets.devices, state.device_id) });
   }
 
+  if (state.store)
+    chips.push({
+      key: 'store',
+      label: facets.stores?.find((store) => store.slug === state.store)?.name ?? state.store,
+    });
+  if (state.min_price !== undefined)
+    chips.push({ key: 'min_price', label: `От ${state.min_price} ₽` });
+  if (state.max_price !== undefined)
+    chips.push({ key: 'max_price', label: `До ${state.max_price} ₽` });
+  if (state.in_stock !== undefined)
+    chips.push({ key: 'in_stock', label: state.in_stock ? 'В наличии' : 'Нет в наличии' });
+
   return (
     <div className="max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-[264px_1fr] gap-8 py-8 min-h-[calc(100vh-64px)] max-lg:grid-cols-1">
-        <SearchFilters
-          facets={facets}
-          state={state}
-          onFilterChange={controls.onFilterChange}
-          onReset={controls.onReset}
-          hasActiveFilters={chips.length > 0}
-        />
+        <div className="self-start lg:sticky lg:top-20">
+          <div className="rounded-2xl border border-border-light-subtle p-4 lg:border-0 lg:p-0">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between font-semibold text-slate lg:hidden"
+              aria-expanded={filtersOpen}
+              aria-controls="catalog-filters-panel"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              Фильтры{chips.length > 0 ? ` (${chips.length})` : ''}
+              <span aria-hidden="true">{filtersOpen ? '−' : '+'}</span>
+            </button>
+            <div
+              id="catalog-filters-panel"
+              className={cn('mt-4 lg:mt-0 lg:block', !filtersOpen && 'hidden')}
+            >
+              <SearchFilters
+                facets={facets}
+                state={state}
+                onFilterChange={controls.onFilterChange}
+                onPriceChange={controls.onPriceChange}
+                onReset={controls.onReset}
+                hasActiveFilters={chips.length > 0}
+              />
+            </div>
+          </div>
+        </div>
 
         <main>
           <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
@@ -69,39 +106,20 @@ export function SearchLayout({
             <span>Поиск</span>
           </div>
 
-          <form
-            className="flex gap-3 mb-6"
-            onSubmit={(event) => {
-              event.preventDefault();
-              controls.onSubmit();
+          <SearchInput
+            query={state.q}
+            onQueryChange={controls.onQueryChange}
+            suggestionsEnabled={suggestionsEnabled}
+            filters={{
+              store: state.store,
+              min_price: state.min_price,
+              max_price: state.max_price,
+              in_stock: state.in_stock,
+              device_id: state.device_id,
+              part_type_id: state.part_type_id,
+              quality_tier_id: state.quality_tier_id,
             }}
-          >
-            <div className="relative flex-1">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-body-subtle pointer-events-none"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                type="text"
-                value={controls.text}
-                onChange={(event) => controls.onTextChange(event.target.value)}
-                aria-label="Поиск запчастей"
-                className="w-full rounded-full pl-9 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
-                placeholder="Поиск запчастей..."
-              />
-            </div>
-            <button type="submit" className="btn-primary">
-              Найти
-            </button>
-          </form>
+          />
 
           {chips.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap mb-4">

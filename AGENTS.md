@@ -62,3 +62,8 @@ files; never read or edit real `.env` files. Use `.env.example` templates.
 - Add regression tests for fixes and verify changes proportionally to risk.
 - Use the project skills under `.agents/skills/` for backend modules, frontend
   entities, UI/design work, and convention reviews.
+- Default to direct execution for small tasks; use
+  `.agents/skills/bscout-orchestrate/SKILL.md` for budget-aware delegation. Use Luna
+  reader for substantial exploration, separate coder for useful independent work,
+  and prompt master/reviewer only when needed. Avoid a mandatory agent chain and
+  load only task-relevant skills. Preserve user-selected models and efforts.

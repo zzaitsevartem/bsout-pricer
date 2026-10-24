@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from src.modules.products.model.product import OfferPriceHistory, StoreOffer
+from src.modules.products.service.search_predicate import search_predicate
 from src.modules.stores.model.store import Store
 
 
@@ -35,10 +36,10 @@ class ProductService:
         )
 
         normalized = await ProductService._normalize_query(query)
-        if normalized and fuzzy:
-            filtered = filtered.where(StoreOffer.normalized_title.op("%")(normalized))
-        elif normalized:
-            filtered = filtered.where(StoreOffer.normalized_title.ilike(f"%{normalized}%"))
+        if normalized:
+            filtered = filtered.where(
+                search_predicate(StoreOffer.normalized_title, normalized, fuzzy)
+            )
 
         if store_slug:
             store_subq = select(Store.id).where(Store.slug == store_slug).scalar_subquery()

@@ -3,6 +3,7 @@
 import React, { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/shared/lib/utils';
+import { ProductSearchField } from '@/widgets/ProductSearch/ui/ProductSearchField';
 import { CloseIcon, SearchIcon } from '@/shared/ui/IconSVG';
 
 type HeaderSearchProps = {
@@ -15,26 +16,37 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
   const inputId = useId();
   const router = useRouter();
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const search = (value: string) => {
     const query = value.trim();
     router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
     onSubmitted?.();
   };
 
   return (
-    <form role="search" onSubmit={handleSubmit} className={cn(className)}>
+    <form
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        search(value);
+      }}
+      className={cn(className)}
+    >
       <label htmlFor={inputId} className="sr-only">
         Поиск запчастей
       </label>
       <div className="relative flex h-11 items-center rounded-full border border-border-input bg-ivory-elevated transition-colors focus-within:border-border-default focus-within:bg-ivory focus-within:shadow-sm">
-        <input
+        <ProductSearchField
           id={inputId}
-          type="search"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onValueChange={setValue}
+          onSelect={(selected) => {
+            setValue(selected);
+            search(selected);
+          }}
+          label="Поиск запчастей"
           placeholder="Поиск запчастей…"
-          className="block h-full w-full min-w-0 bg-transparent py-0 pl-4 pr-20 text-[15px] tracking-[-0.002em] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+          className="h-full w-full"
+          inputClassName="block h-full w-full min-w-0 bg-transparent py-0 pl-4 pr-20 text-[15px] tracking-[-0.002em] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
         />
         {value && (
           <button

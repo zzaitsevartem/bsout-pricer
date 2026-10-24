@@ -8,6 +8,10 @@ export const exportCatalogParamsSchema = z.object({
   device_id: z.number().int().min(1).optional(),
   part_type_id: z.number().int().min(1).optional(),
   quality_tier_id: z.number().int().min(1).optional(),
+  store: z.string().optional(),
+  min_price: z.number().finite().min(0).optional(),
+  max_price: z.number().finite().min(0).optional(),
+  in_stock: z.boolean().optional(),
   sort_by: z.string().optional(),
   limit: z.number().int().min(1).max(10000).optional(),
 });

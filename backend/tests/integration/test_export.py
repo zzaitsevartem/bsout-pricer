@@ -487,3 +487,33 @@ async def test_pdf_export_renders_when_the_toolchain_is_present(client, db_sessi
     assert (
         resp.headers["content-disposition"] == f'attachment; filename="bscout-catalog-{stamp}.pdf"'
     )
+
+
+@pytest.mark.parametrize("url", [CATALOG_URL, CATALOG_PDF_URL])
+async def test_catalog_exports_apply_offer_filters(client, db_session, monkeypatch, url):
+    await _seed_catalog(db_session)
+    _, token = await _make_user(db_session, "adv-offer-filters@example.com")
+    captured = []
+    if url == CATALOG_PDF_URL:
+        monkeypatch.setattr(
+            "src.modules.export.controller.export.ensure_pdf_available", lambda: None
+        )
+
+        def render(title, header, rows):
+            captured.extend(rows)
+            return b"%PDF-test"
+
+        monkeypatch.setattr("src.modules.export.controller.export.render_table_pdf", render)
+    response = await client.get(
+        url,
+        params={"store": "divizion", "min_price": "5600", "max_price": "5600", "in_stock": "true"},
+        headers=_auth(token),
+    )
+    assert response.status_code == 200, response.text
+    assert response.headers["x-export-rows"] == "1"
+    rows = captured if url == CATALOG_PDF_URL else _parse_csv(response.content)[1:]
+    assert len(rows) == 1
+    assert rows[0][0] == "Дисплей iPhone 13 копия"
+    assert rows[0][5] == "5600,00"
+    assert rows[0][7:9] == ["1", "1"]
+    assert rows[0][9] == "Дивизион"

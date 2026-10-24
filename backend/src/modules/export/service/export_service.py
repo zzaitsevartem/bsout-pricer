@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +58,11 @@ class ExportService:
         device_id: int | None = None,
         part_type_id: int | None = None,
         quality_tier_id: int | None = None,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+        fuzzy: bool = False,
     ) -> int:
         _, total = await ComparisonService.search_catalog(
             db=db,
@@ -64,6 +70,11 @@ class ExportService:
             device_id=device_id,
             part_type_id=part_type_id,
             quality_tier_id=quality_tier_id,
+            store_slug=store_slug,
+            min_price=min_price,
+            max_price=max_price,
+            in_stock=in_stock,
+            fuzzy=fuzzy,
             page=1,
             per_page=1,
         )
@@ -97,6 +108,11 @@ class ExportService:
         device_id: int | None = None,
         part_type_id: int | None = None,
         quality_tier_id: int | None = None,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+        fuzzy: bool = False,
         sort_by: str = "min_price_asc",
     ) -> AsyncIterator[list[str]]:
         store_names = await ExportService.store_names(db)
@@ -110,6 +126,11 @@ class ExportService:
                 device_id=device_id,
                 part_type_id=part_type_id,
                 quality_tier_id=quality_tier_id,
+                store_slug=store_slug,
+                min_price=min_price,
+                max_price=max_price,
+                in_stock=in_stock,
+                fuzzy=fuzzy,
                 sort_by=sort_by,
                 page=page,
                 per_page=BATCH_SIZE,
@@ -135,6 +156,11 @@ class ExportService:
         device_id: int | None = None,
         part_type_id: int | None = None,
         quality_tier_id: int | None = None,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+        fuzzy: bool = False,
         sort_by: str = "min_price_asc",
     ) -> list[list[str]]:
         return [
@@ -146,6 +172,11 @@ class ExportService:
                 device_id=device_id,
                 part_type_id=part_type_id,
                 quality_tier_id=quality_tier_id,
+                store_slug=store_slug,
+                min_price=min_price,
+                max_price=max_price,
+                in_stock=in_stock,
+                fuzzy=fuzzy,
                 sort_by=sort_by,
             )
         ]

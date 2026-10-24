@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { productApi } from './service';
 import type { ProductSearchParams } from './schema';
 
-export function useProductSearch(params: ProductSearchParams) {
+export function useProductSearch(params: ProductSearchParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['products', 'search', params],
+    enabled: options?.enabled ?? true,
     queryFn: () => productApi.search(params).then((r) => r.data),
   });
 }
