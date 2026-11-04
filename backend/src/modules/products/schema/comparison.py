@@ -52,6 +52,7 @@ class ClusterRef(BaseModel):
 
 
 class CatalogItemResponse(BaseModel):
+    image_url: str | None = None
     id: int
     canonical_key: str
     canonical_name: str
@@ -79,6 +80,7 @@ class CatalogListResponse(BaseModel):
 class CatalogFacetOption(BaseModel):
     id: int
     label: str
+    count: int = 0
 
 
 class CatalogFacetsResponse(BaseModel):

@@ -10,7 +10,10 @@ const { push, query, auth } = vi.hoisted(() => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('effector-react', () => ({ useUnit: () => auth.value }));
-vi.mock('@/models/catalog', () => ({ useCatalogSuggestions: query }));
+vi.mock('@/models/catalog', () => ({
+  useCatalogSuggestions: query,
+  useCatalogDevices: () => ({ data: [] }),
+}));
 
 afterEach(() => {
   vi.useRealTimers();
@@ -20,7 +23,7 @@ afterEach(() => {
 describe('shared product search entry points', () => {
   it.each([
     ['header', () => <HeaderSearch />, 'Поиск запчастей'],
-    ['home', () => <AuthorizedHero />, 'Артикул, название или бренд'],
+    ['home', () => <AuthorizedHero />, 'Модель устройства, артикул или запчасть'],
   ] as const)('%s shows suggestions and navigates on keyboard selection', (_, component, label) => {
     vi.useFakeTimers();
     query.mockReturnValue({ data: [{ id: 1, canonical_name: 'Дисплей Nokia 5700' }] });

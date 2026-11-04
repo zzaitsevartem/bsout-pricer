@@ -39,6 +39,7 @@ export type {
   ProductPriceHistoryResponse,
 } from './schema';
 export { catalogApi } from './service';
+export { useCatalogDevices } from './hooks';
 export {
   useCatalogFacets,
   useCatalogSuggestions,

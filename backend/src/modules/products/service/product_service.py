@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.modules.products.model.product import OfferPriceHistory, StoreOffer
+from src.modules.products.model.product import Cluster, OfferPriceHistory, Product, StoreOffer
 from src.modules.products.service.search_predicate import search_predicate
 from src.modules.stores.model.store import Store
 
@@ -27,6 +27,9 @@ class ProductService:
         page: int = 1,
         per_page: int = 20,
         fuzzy: bool = False,
+        device_id: int | None = None,
+        part_type_id: int | None = None,
+        quality_tier_id: int | None = None,
     ) -> tuple[list[StoreOffer], int]:
         active_store_ids = select(Store.id).where(Store.is_active.is_(True))
         filtered = (
@@ -35,6 +38,15 @@ class ProductService:
             .where(StoreOffer.store_id.in_(active_store_ids))
         )
 
+        if any(value is not None for value in (device_id, part_type_id, quality_tier_id)):
+            products = select(Product.id).outerjoin(Cluster, Cluster.id == Product.cluster_id)
+            if device_id is not None:
+                products = products.where(Cluster.device_id == device_id)
+            if part_type_id is not None:
+                products = products.where(Cluster.part_type_id == part_type_id)
+            if quality_tier_id is not None:
+                products = products.where(Product.quality_tier_id == quality_tier_id)
+            filtered = filtered.where(StoreOffer.product_id.in_(products))
         normalized = await ProductService._normalize_query(query)
         if normalized:
             filtered = filtered.where(

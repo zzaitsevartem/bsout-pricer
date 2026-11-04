@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "waves": {
+    "research-1": {
+      "leaves": [
+        "leaf-1.1.1"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-04T18:39:58.754Z",
+      "started": {
+        "leaf-1.1.1": {
+          "handle": "/root/luna_research",
+          "at": "2026-11-04T18:40:23.398Z"
+        }
+      },
+      "returned": {
+        "leaf-1.1.1": {
+          "at": "2026-11-04T18:44:47.818Z"
+        }
+      },
+      "sealedAt": "2026-11-04T18:40:23.480Z",
+      "completedAt": "2026-11-04T18:44:47.818Z"
+    }
+  }
+}

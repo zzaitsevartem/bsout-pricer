@@ -39,12 +39,17 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
           id={inputId}
           value={value}
           onValueChange={setValue}
+          onDeviceSelect={(device) => {
+            setValue('');
+            router.push(`/search?device_id=${device.id}`);
+            onSubmitted?.();
+          }}
           onSelect={(selected) => {
             setValue(selected);
             search(selected);
           }}
           label="Поиск запчастей"
-          placeholder="Поиск запчастей…"
+          placeholder="Модель устройства…"
           className="h-full w-full"
           inputClassName="block h-full w-full min-w-0 bg-transparent py-0 pl-4 pr-20 text-[15px] tracking-[-0.002em] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
         />

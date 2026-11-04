@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.catalog.model.catalog import Brand, Device, PartType, QualityTier
+from src.modules.catalog.model.catalog import Brand, Device, DeviceAlias, PartType, QualityTier
 from src.modules.products.model.product import (
     Cluster,
     OfferPriceHistory,
@@ -65,6 +65,13 @@ def _offer_aggregate_subquery(
             func.count(StoreOffer.id).label("offers_count"),
             func.count(func.distinct(StoreOffer.store_id)).label("stores_count"),
             func.array_agg(func.distinct(Store.slug)).label("store_slugs"),
+            func.min(
+                case(
+                    (func.trim(StoreOffer.image_url).op("~*")(r"^https?://[^[:space:]]+$"),
+                     func.trim(StoreOffer.image_url)),
+                    else_=None,
+                )
+            ).label("image_url"),
             case(
                 (func.bool_or(StoreOffer.stock_status.in_(("in_stock", "low"))), "in_stock"),
                 (func.bool_and(StoreOffer.stock_status == "out"), "out"),
@@ -120,6 +127,7 @@ def _catalog_item(row) -> dict:
         "id": product.id,
         "canonical_key": product.canonical_key,
         "canonical_name": product.canonical_name,
+        "image_url": row.image_url,
         "cluster_id": product.cluster_id,
         "key_attrs": product.key_attrs,
         "brand": _brand_ref(row.Brand),
@@ -137,32 +145,118 @@ def _catalog_item(row) -> dict:
 
 class ComparisonService:
     @staticmethod
-    async def catalog_facets(db: AsyncSession, query: str = "", fuzzy: bool = False) -> dict:
-        products = (
-            select(Product.quality_tier_id, Cluster.device_id, Cluster.part_type_id)
-            .select_from(Product)
-            .outerjoin(Cluster, Cluster.id == Product.cluster_id)
-            .where(search_predicate(Product.canonical_name, query, fuzzy))
-            .subquery()
+    async def device_suggestions(db: AsyncSession, query: str, limit: int = 6) -> list[dict]:
+        query = query.strip()
+        if len(query) < 2:
+            return []
+        alias_match = (
+            select(DeviceAlias.id)
+            .where(
+                DeviceAlias.device_id == Device.id,
+                search_predicate(func.concat(Brand.name, " ", DeviceAlias.alias), query),
+            )
+            .exists()
         )
+        exact_alias = (
+            select(DeviceAlias.id)
+            .where(
+                DeviceAlias.device_id == Device.id, func.lower(DeviceAlias.alias) == query.lower()
+            )
+            .exists()
+        )
+        rows = await db.execute(
+            select(Device.id, Device.name, func.count(Product.id).label("count"))
+            .join(Brand, Brand.id == Device.brand_id)
+            .join(Cluster, Cluster.device_id == Device.id)
+            .join(Product, Product.cluster_id == Cluster.id)
+            .where(or_(
+                search_predicate(func.concat(Brand.name, " ", Device.name), query), alias_match,
+            ))
+            .group_by(Device.id)
+            .order_by(
+                case((or_(func.lower(Device.name) == query.lower(), exact_alias), 0), else_=1),
+                func.length(Device.name),
+                Device.name,
+                Device.id,
+            )
+            .limit(limit)
+        )
+        return [{"id": row.id, "label": row.name, "count": row.count} for row in rows]
+
+    @staticmethod
+    async def catalog_facets(
+        db: AsyncSession,
+        query: str = "",
+        fuzzy: bool = False,
+        device_id: int | None = None,
+        part_type_id: int | None = None,
+        quality_tier_id: int | None = None,
+        store_slug: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        in_stock: bool | None = None,
+    ) -> dict:
+        agg = _offer_aggregate_subquery(store_slug, min_price, max_price, in_stock)
+        filtered_offers = any(
+            value is not None for value in (store_slug, min_price, max_price, in_stock)
+        )
+
+        def matching_products(dimension: str):
+            stmt = (
+                select(
+                    Product.id, Product.quality_tier_id, Cluster.device_id, Cluster.part_type_id
+                )
+                .select_from(Product)
+                .outerjoin(Cluster, Cluster.id == Product.cluster_id)
+            )
+            if filtered_offers:
+                stmt = stmt.join(agg, agg.c.product_id == Product.id)
+            return ComparisonService._apply_filters(
+                stmt,
+                query,
+                None if dimension == "device" else device_id,
+                None if dimension == "part_type" else part_type_id,
+                None if dimension == "quality" else quality_tier_id,
+                fuzzy,
+            ).subquery()
+
+        products = matching_products("device")
         device_rows = await db.execute(
-            select(Device.id, Device.name).join(products, products.c.device_id == Device.id).distinct()
+            select(Device.id, Device.name, func.count(products.c.id).label("count"))
+            .outerjoin(products, products.c.device_id == Device.id)
+            .group_by(Device.id)
+            .having(or_(func.count(products.c.id) > 0, Device.id == device_id))
+            .order_by(Device.name, Device.id)
         )
+        products = matching_products("part_type")
         part_rows = await db.execute(
-            select(PartType.id, PartType.name_ru)
-            .join(products, products.c.part_type_id == PartType.id)
-            .distinct()
+            select(PartType.id, PartType.name_ru, func.count(products.c.id).label("count"))
+            .outerjoin(products, products.c.part_type_id == PartType.id)
+            .group_by(PartType.id)
+            .having(or_(func.count(products.c.id) > 0, PartType.id == part_type_id))
+            .order_by(PartType.name_ru, PartType.id)
         )
+        products = matching_products("quality")
         quality_rows = await db.execute(
-            select(QualityTier.id, QualityTier.name_ru, QualityTier.rank)
-            .join(products, products.c.quality_tier_id == QualityTier.id)
-            .distinct()
+            select(
+                QualityTier.id, QualityTier.name_ru, QualityTier.rank,
+                func.count(products.c.id).label("count"),
+            )
+            .outerjoin(products, products.c.quality_tier_id == QualityTier.id)
+            .group_by(QualityTier.id)
+            .having(or_(func.count(products.c.id) > 0, QualityTier.id == quality_tier_id))
             .order_by(QualityTier.rank, QualityTier.id)
         )
         return {
-            "devices": [{"id": row.id, "label": row.name} for row in device_rows],
-            "part_types": [{"id": row.id, "label": row.name_ru} for row in part_rows],
-            "quality_tiers": [{"id": row.id, "label": row.name_ru} for row in quality_rows],
+            "devices": [
+                {"id": row.id, "label": row.name, "count": row.count} for row in device_rows
+            ],
+            "part_types": [
+                {"id": row.id, "label": row.name_ru, "count": row.count} for row in part_rows
+            ],
+            "quality_tiers": [
+                {"id": row.id, "label": row.name_ru, "count": row.count} for row in quality_rows
+            ],
         }
 
     @staticmethod
@@ -230,6 +324,7 @@ class ComparisonService:
                 agg.c.stores_count,
                 agg.c.store_slugs,
                 agg.c.stock_status,
+                agg.c.image_url,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
@@ -314,6 +409,7 @@ class ComparisonService:
                 agg.c.stores_count,
                 agg.c.store_slugs,
                 agg.c.stock_status,
+                agg.c.image_url,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)

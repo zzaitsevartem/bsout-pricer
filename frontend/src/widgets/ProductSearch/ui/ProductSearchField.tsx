@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { $isAuth } from '@/shared/config/store';
-import { useCatalogSuggestions } from '@/models/catalog';
+import { useCatalogDevices, useCatalogSuggestions } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
 import { cn } from '@/shared/lib/utils';
 
@@ -11,6 +11,7 @@ type ProductSearchFieldProps = {
   value: string;
   onValueChange: (value: string) => void;
   onSelect: (value: string) => void;
+  onDeviceSelect?: (device: { id: number; label: string }) => void;
   suggestionsEnabled?: boolean;
   filters?: CatalogSearchParams;
   id?: string;
@@ -38,6 +39,7 @@ export function ProductSearchField({
   value,
   onValueChange,
   onSelect,
+  onDeviceSelect,
   suggestionsEnabled = true,
   filters,
   id,
@@ -67,12 +69,28 @@ export function ProductSearchField({
     { ...filters, q: suggestionText, limit: 6 },
     { enabled: ready },
   );
-  const items = ready ? (suggestions.data ?? []) : [];
+  const devices = useCatalogDevices(
+    { q: suggestionText, limit: 6 },
+    { enabled: ready && Boolean(onDeviceSelect) },
+  );
+  const items = ready
+    ? [
+        ...(onDeviceSelect ? (devices.data ?? []).map((device) => ({
+          ...device, kind: 'device' as const, name: device.label,
+        })) : []),
+        ...(suggestions.data ?? []).map((product) => ({
+          ...product, kind: 'product' as const, name: product.canonical_name,
+        })),
+      ]
+    : [];
+  const itemKeys = items.map((item) => `${item.kind}-${item.id}`).join(',');
+  useEffect(() => setActiveIndex(-1), [itemKeys]);
   const expanded = items.length > 0;
-  const choose = (value: string) => {
+  const choose = (item: (typeof items)[number]) => {
     setDismissed(true);
     setActiveIndex(-1);
-    onSelect(value);
+    if (item.kind === 'device') onDeviceSelect?.(item);
+    else onSelect(item.name);
   };
   return (
     <div className={cn('relative min-w-0', className)}>
@@ -120,7 +138,7 @@ export function ProductSearchField({
           }
           if (expanded && event.key === 'Enter' && activeIndex >= 0 && items[activeIndex]) {
             event.preventDefault();
-            choose(items[activeIndex].canonical_name);
+            choose(items[activeIndex]);
           }
         }}
         id={id}
@@ -136,7 +154,7 @@ export function ProductSearchField({
           className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
         >
           {items.map((item, index) => (
-            <li key={item.id} role="presentation" className="border-b border-border-light-subtle last:border-b-0">
+            <li key={`${item.kind}-${item.id}`} role="presentation" className="border-b border-border-light-subtle last:border-b-0">
               <button
                 type="button"
                 role="option"
@@ -144,7 +162,7 @@ export function ProductSearchField({
                 id={`${listId}-${index}`}
                 aria-selected={index === activeIndex}
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => choose(item.canonical_name)}
+                onClick={() => choose(item)}
                 className={cn(
                   'block w-full whitespace-normal break-words rounded-lg border-l-2 px-3 py-3.5 text-left text-[14px] leading-5 text-body-subtle transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
                   index === activeIndex
@@ -152,7 +170,12 @@ export function ProductSearchField({
                     : 'border-transparent bg-search-surface',
                 )}
               >
-                <HighlightedName name={item.canonical_name} query={value} />
+                <span className="block">
+                  <HighlightedName name={item.name} query={value} />
+                </span>
+                {item.kind === 'device' && (
+                  <span className="block text-xs text-body-subtle">Все запчасти для устройства</span>
+                )}
               </button>
             </li>
           ))}

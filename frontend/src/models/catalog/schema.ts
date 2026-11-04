@@ -43,6 +43,7 @@ export const clusterRefSchema = z.object({
 });
 
 export const catalogItemResponseSchema = z.object({
+  image_url: z.string().nullable().optional(),
   id: z.number(),
   canonical_key: z.string(),
   canonical_name: z.string(),
@@ -67,7 +68,9 @@ export const catalogListResponseSchema = z.object({
   per_page: z.number(),
 });
 
-const facetOptionSchema = z.object({ id: z.number(), label: z.string() });
+export const facetOptionSchema = z.object({
+  id: z.number(), label: z.string(), count: z.number().int().nonnegative().optional(),
+});
 export const catalogFacetsSchema = z.object({
   devices: z.array(facetOptionSchema),
   part_types: z.array(facetOptionSchema),

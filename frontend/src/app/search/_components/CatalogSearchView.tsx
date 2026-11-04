@@ -85,7 +85,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
   );
 
   const results = useCatalogSearch(params);
-  const facetsQuery = useCatalogFacets(state.q);
+  const facetsQuery = useCatalogFacets(exportParams);
   const exportCatalog = useExportCatalog();
 
   const [offersExpanded, setOffersExpanded] = useState(false);
@@ -93,6 +93,9 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
   const offersParams = useMemo<ProductSearchParams>(
     () => ({
       q: state.q || undefined,
+      device_id: state.device_id,
+      part_type_id: state.part_type_id,
+      quality_tier_id: state.quality_tier_id,
       store: state.store,
       min_price: state.min_price,
       max_price: state.max_price,
@@ -101,7 +104,8 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
       page: 1,
       per_page: OFFERS_PER_PAGE,
     }),
-    [state.q, state.store, state.min_price, state.max_price, state.in_stock],
+    [state.q, state.device_id, state.part_type_id, state.quality_tier_id,
+      state.store, state.min_price, state.max_price, state.in_stock],
   );
   const offersQuery = useProductSearch(offersParams, { enabled: offersExpanded });
 

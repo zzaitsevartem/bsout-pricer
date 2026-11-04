@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.middleware.subscription_guard import is_fuzzy_enabled, require_active_subscription
 from src.modules.products.schema.comparison import (
+    CatalogFacetOption,
     CatalogFacetsResponse,
     CatalogListResponse,
     CatalogSuggestion,
@@ -56,6 +57,9 @@ def _offer_to_response(offer, store_ref, is_cheapest: bool) -> ProductResponse:
 @router.get("", response_model=ProductListResponse)
 async def search_products(
     q: str = Query(default="", max_length=500),
+    device_id: int | None = Query(default=None, ge=1),
+    part_type_id: int | None = Query(default=None, ge=1),
+    quality_tier_id: int | None = Query(default=None, ge=1),
     store: str | None = Query(default=None),
     category: str | None = Query(default=None),
     min_price: float | None = Query(default=None),
@@ -73,6 +77,9 @@ async def search_products(
         query=q,
         store_slug=store,
         category_slug=category,
+        device_id=device_id,
+        part_type_id=part_type_id,
+        quality_tier_id=quality_tier_id,
         min_price=min_price,
         max_price=max_price,
         in_stock=in_stock,
@@ -161,10 +168,33 @@ async def search_catalog(
 @router.get("/catalog/facets", response_model=CatalogFacetsResponse)
 async def catalog_facets(
     q: str = Query(default="", max_length=500),
+    device_id: int | None = Query(default=None, ge=1),
+    part_type_id: int | None = Query(default=None, ge=1),
+    quality_tier_id: int | None = Query(default=None, ge=1),
+    store: str | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    max_price: Decimal | None = Query(default=None, ge=0, allow_inf_nan=False),
+    in_stock: bool | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return await ComparisonService.catalog_facets(db, q, await is_fuzzy_enabled(db, user.id))
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
+    return await ComparisonService.catalog_facets(
+        db, q, await is_fuzzy_enabled(db, user.id),
+        device_id=device_id, part_type_id=part_type_id, quality_tier_id=quality_tier_id,
+        store_slug=store, min_price=min_price, max_price=max_price, in_stock=in_stock,
+    )
+
+
+@router.get("/catalog/devices", response_model=list[CatalogFacetOption])
+async def catalog_devices(
+    q: str = Query(min_length=2, max_length=500),
+    limit: int = Query(default=6, ge=1, le=8),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return await ComparisonService.device_suggestions(db, q, limit)
 
 
 @router.get("/catalog/suggestions", response_model=list[CatalogSuggestion])

@@ -5,7 +5,10 @@ const { suggestions } = vi.hoisted(() => ({
   suggestions: vi.fn(() => ({ data: [] as { id: number; canonical_name: string }[] })),
 }));
 vi.mock('effector-react', () => ({ useUnit: () => true }));
-vi.mock('@/models/catalog', () => ({ useCatalogSuggestions: suggestions }));
+vi.mock('@/models/catalog', () => ({
+  useCatalogSuggestions: suggestions,
+  useCatalogDevices: () => ({ data: [] }),
+}));
 
 afterEach(() => vi.useRealTimers());
 describe('isolated search input', () => {

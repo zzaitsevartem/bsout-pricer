@@ -20,7 +20,7 @@ export type FilterKey =
 export type FilterValue = string | number | boolean | null;
 export type StoreOption = { slug: string; name: string };
 
-export type FilterOption = { id: number; label: string };
+export type FilterOption = { id: number; label: string; count?: number };
 
 export type CatalogFacets = {
   devices: FilterOption[];

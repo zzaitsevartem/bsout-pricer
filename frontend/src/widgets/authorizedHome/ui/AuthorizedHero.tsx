@@ -87,12 +87,16 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
                 id="home-search"
                 value={query}
                 onValueChange={setQuery}
+            onDeviceSelect={(device) => {
+              setQuery('');
+              router.push(`/search?device_id=${device.id}`);
+            }}
                 onSelect={(selected) => {
                   setQuery(selected);
                   search(selected);
                 }}
-                label="Артикул, название или бренд"
-                placeholder="Артикул, название или бренд…"
+            label="Модель устройства, артикул или запчасть"
+            placeholder="Модель устройства, например iPhone 13…"
                 className="flex-1"
                 inputClassName="h-[52px] w-full min-w-0 border-none bg-transparent text-[18px] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
               />

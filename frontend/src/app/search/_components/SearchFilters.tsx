@@ -80,6 +80,9 @@ function FilterGroup({ title, options, selectedId, onSelect }: FilterGroupProps)
                 )}
               </span>
               <span className="min-w-0 truncate">{option.label}</span>
+              {option.count !== undefined && (
+                <span className="ml-auto text-xs tabular-nums text-body-muted">{option.count}</span>
+              )}
             </button>
           );
         })}
@@ -108,10 +111,10 @@ export function SearchFilters({
   return (
     <aside aria-label="Фильтры каталога">
       <FilterGroup
-        title="Класс качества"
-        options={facets.qualityTiers}
-        selectedId={state.quality_tier_id}
-        onSelect={(value) => onFilterChange('quality_tier_id', value)}
+        title="Устройство"
+        options={facets.devices}
+        selectedId={state.device_id}
+        onSelect={(value) => onFilterChange('device_id', value)}
       />
       <FilterGroup
         title="Тип детали"
@@ -120,11 +123,12 @@ export function SearchFilters({
         onSelect={(value) => onFilterChange('part_type_id', value)}
       />
       <FilterGroup
-        title="Устройство"
-        options={facets.devices}
-        selectedId={state.device_id}
-        onSelect={(value) => onFilterChange('device_id', value)}
+        title="Класс качества"
+        options={facets.qualityTiers}
+        selectedId={state.quality_tier_id}
+        onSelect={(value) => onFilterChange('quality_tier_id', value)}
       />
+
 
       <div className="pb-6 mb-6 border-b border-border-light-subtle">
         <label htmlFor="catalog-store" className="block text-[15px] font-semibold text-slate mb-3">

@@ -9,6 +9,7 @@ import type { CatalogSearchParams } from '@/models/catalog';
 type SearchInputProps = {
   query: string;
   onQueryChange: (value: string) => void;
+  onDeviceSelect?: (device: { id: number; label: string }) => void;
   suggestionsEnabled?: boolean;
   filters?: CatalogSearchParams;
 };
@@ -16,6 +17,7 @@ type SearchInputProps = {
 export function SearchInput({
   query,
   onQueryChange,
+  onDeviceSelect,
   suggestionsEnabled = false,
   filters,
 }: SearchInputProps) {
@@ -59,10 +61,15 @@ export function SearchInput({
           value={text}
           onValueChange={setText}
           onSelect={choose}
+          onDeviceSelect={onDeviceSelect ? (device) => {
+            committed.current = '';
+            setText('');
+            onDeviceSelect(device);
+          } : undefined}
           suggestionsEnabled={suggestionsEnabled}
           filters={filters}
-          label="Поиск запчастей"
-          placeholder="Поиск запчастей..."
+          label="Поиск по модели устройства или запчасти"
+          placeholder="Модель устройства, например iPhone 13"
           inputClassName="w-full rounded-full pl-11 pr-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
         />
       </div>

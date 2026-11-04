@@ -1,4 +1,7 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { CatalogItemResponse } from '@/models/catalog';
 import { formatPrice, offersLabel, storesLabel } from '@/app/search/_components/lib';
@@ -22,11 +25,7 @@ export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
   return (
     <div className="flex gap-4 p-4 items-center rounded-2xl border border-border-input bg-ivory-elevated">
       <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-body-muted text-xs flex-shrink-0">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="2" y="2" width="20" height="20" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="M21 15l-5-5L5 21" />
-        </svg>
+        <CatalogImage imageUrl={item.image_url} name={item.canonical_name} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -64,4 +63,27 @@ export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
       </div>
     </div>
   );
+}
+
+function CatalogImage({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  if (imageUrl && imageUrl !== failedUrl) {
+    return (
+      <Image
+        src={imageUrl}
+        alt={name}
+        width={64}
+        height={64}
+        unoptimized
+        loading="lazy"
+        className="h-16 w-16 object-contain"
+        onError={() => setFailedUrl(imageUrl)}
+      />
+    );
+  }
+  return (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="2" y="2" width="20" height="20" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="M21 15l-5-5L5 21" />
+        </svg>);
 }

@@ -54,6 +54,9 @@ class ProductCreateRequest(BaseModel):
 
 class ProductSearchParams(BaseModel):
     q: str = Field(default="", max_length=500)
+    device_id: int | None = Field(default=None, ge=1)
+    part_type_id: int | None = Field(default=None, ge=1)
+    quality_tier_id: int | None = Field(default=None, ge=1)
     store: str | None = None
     category: str | None = None
     min_price: Decimal | None = None

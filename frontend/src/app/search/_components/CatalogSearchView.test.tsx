@@ -13,6 +13,7 @@ vi.mock('@/models/catalog', () => ({
   useCatalogSearch: catalog,
   useCatalogFacets: facets,
   useCatalogSuggestions: () => ({ data: [] }),
+  useCatalogDevices: () => ({ data: [] }),
 }));
 vi.mock('@/models/product', () => ({ useProductSearch: offers }));
 vi.mock('@/models/store', () => ({
@@ -67,7 +68,7 @@ describe('catalog filtered requests', () => {
     );
     const filters = { store: 'liberti', min_price: 0, max_price: 500, in_stock: false };
     expect(catalog).toHaveBeenCalledWith(expect.objectContaining({ ...filters, page: 1 }));
-    expect(facets).toHaveBeenCalledWith('дисплей');
+    expect(facets).toHaveBeenCalledWith(expect.objectContaining({ q: 'дисплей', store: 'liberti', min_price: 0, max_price: 500, in_stock: false }));
     expect(offers).toHaveBeenLastCalledWith(expect.objectContaining(filters), { enabled: false });
     fireEvent.click(screen.getByRole('button', { name: 'Показать предложения магазинов' }));
     expect(offers).toHaveBeenLastCalledWith(expect.objectContaining(filters), { enabled: true });
@@ -98,7 +99,7 @@ describe('catalog filtered requests', () => {
     const state = { q: '', sort_by: 'min_price_asc' as const, page: 1 };
     const { rerender } = render(<CatalogSearchView state={state} controls={controls} />);
     rerender(<CatalogSearchView state={{ ...state, q: 'дисплей' }} controls={controls} />);
-    expect(facets).toHaveBeenLastCalledWith('дисплей');
+    expect(facets).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'дисплей' }));
     expect(screen.getByText('OEM')).toBeInTheDocument();
     expect(screen.getByText('Оригинал')).toBeInTheDocument();
   });

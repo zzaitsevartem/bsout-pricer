@@ -41,6 +41,9 @@ export const productListResponseSchema = z.object({
 });
 
 export const productSearchParamsSchema = z.object({
+  device_id: z.number().int().positive().optional(),
+  part_type_id: z.number().int().positive().optional(),
+  quality_tier_id: z.number().int().positive().optional(),
   q: z.string().max(500).optional(),
   store: z.string().optional(),
   category: z.string().optional(),

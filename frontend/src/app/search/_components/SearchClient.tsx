@@ -72,14 +72,19 @@ export function SearchClient() {
 
   const onQueryChange = useCallback(
     (value: string) => {
-      commit({ q: value || null, page: null });
+      if (value === q) return;
+      commit({
+        q: value || null, device_id: null, part_type_id: null, quality_tier_id: null, page: null,
+      });
     },
-    [commit],
+    [commit, q],
   );
 
   const onFilterChange = useCallback(
     (key: FilterKey, value: FilterValue) => {
-      commit({ [key]: value, page: null });
+      commit(key === 'device_id'
+        ? { device_id: value, q: null, part_type_id: null, quality_tier_id: null, page: null }
+        : { [key]: value, page: null });
     },
     [commit],
   );

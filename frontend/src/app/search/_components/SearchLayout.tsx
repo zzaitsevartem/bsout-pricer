@@ -38,17 +38,17 @@ export function SearchLayout({
 }: SearchLayoutProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const chips: { key: FilterKey; label: string }[] = [];
+  if (state.device_id !== undefined) {
+    chips.push({ key: 'device_id', label: labelFor(facets.devices, state.device_id) });
+  }
+  if (state.part_type_id !== undefined) {
+    chips.push({ key: 'part_type_id', label: labelFor(facets.partTypes, state.part_type_id) });
+  }
   if (state.quality_tier_id !== undefined) {
     chips.push({
       key: 'quality_tier_id',
       label: labelFor(facets.qualityTiers, state.quality_tier_id),
     });
-  }
-  if (state.part_type_id !== undefined) {
-    chips.push({ key: 'part_type_id', label: labelFor(facets.partTypes, state.part_type_id) });
-  }
-  if (state.device_id !== undefined) {
-    chips.push({ key: 'device_id', label: labelFor(facets.devices, state.device_id) });
   }
 
   if (state.store)
@@ -109,6 +109,7 @@ export function SearchLayout({
           <SearchInput
             query={state.q}
             onQueryChange={controls.onQueryChange}
+            onDeviceSelect={(device) => controls.onFilterChange('device_id', device.id)}
             suggestionsEnabled={suggestionsEnabled}
             filters={{
               store: state.store,

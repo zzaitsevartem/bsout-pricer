@@ -1,0 +1,11 @@
+Contract revision 1: preliminary complexity high; staged research before implementation. Runnable oracles will replace implementation placeholders before code changes.
+2026-11-04T18:39:58.761Z dispatch research-1 opened: leaf-1.1.1
+2026-11-04T18:40:23.407Z dispatch research-1 started leaf-1.1.1 as /root/luna_research
+2026-11-04T18:40:23.489Z dispatch research-1 sealed
+Acceptance scenarios proposed before implementation: iphone 13 returns multiple part types; iphone 13 pro and pro max remain distinct; explicit device+part queries remain usable; Russian and compact device aliases considered; category narrowing stays within device query; pagination/filter counts and exports preserve matching offer semantics; empty/no-results/back-navigation behavior reviewed.
+Research milestone: Liberty broad text versus exact model page observed; existing device/category dictionaries adequate. Implementation scope chosen: model suggestions, explicit device lock, contextual categories/counts, stale-query reset.
+2026-11-04T18:44:47.831Z dispatch research-1 returned leaf-1.1.1
+Revision 2: research initial result received and reviewed, leaf manual reverify met; exact research lease released. Luna continues read-only source support. Backend contract fixed before implementation.
+Revision 3: raw offers exact-model compatibility gap discovered and added to backend/frontend ownership. No schema migration required.
+
+2026-11-04 parent independent --reverify: backend80/Ruff and frontend28/tsc four runnable gates PASS; scope status12 met0 unmet0 abandoned; implementation leaves VERIFIED; no implementation leases claimed.

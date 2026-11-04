@@ -2,10 +2,20 @@ import { useQuery } from '@tanstack/react-query';
 import { catalogApi } from './service';
 import type { CatalogSearchParams, CatalogSuggestionParams } from './schema';
 
-export function useCatalogFacets(q: string) {
+export function useCatalogDevices(params: { q: string; limit?: number }, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['catalog', 'facets', q],
-    queryFn: () => catalogApi.facets(q).then((response) => response.data),
+    queryKey: ['catalog', 'devices', params],
+    queryFn: ({ signal }) => catalogApi.devices(params, signal).then((response) => response.data),
+    enabled: (options?.enabled ?? true) && params.q.trim().length >= 2,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useCatalogFacets(params: CatalogSearchParams) {
+  return useQuery({
+    queryKey: ['catalog', 'facets', params],
+    queryFn: () => catalogApi.facets(params).then((response) => response.data),
   });
 }
 
