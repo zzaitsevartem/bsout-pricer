@@ -1,0 +1,22 @@
+STRICT LOCAL EDIT, not a redesign. Input1 is the approved latest BScout composition. Inputs2 and3 are USER-SELECTED ICONS for display and battery, and input4 is a flex assembly PHOTO to simplify into the matching icon.
+
+KEEP the whole input1 image unchanged:16:9 wide ivory canvas, blank left half, right compact dropdown position and scale, green folded ribbon, all colors, all exact words, white ribbon type with extremely fine graphite edging. No extra props, no background devices, no circle. Only edit the three icons and the sizes of the3bestprice pills.
+
+MANDATORY DRASTIC BADGE SHRINKING: The current green "Лучшая цена" badges are MUCH TOO LARGE and have been rejected repeatedly. Replace all3 with TINY DISCRETE STATUS CHIPS, visibly roughly HALF their current width and HALF their current height. At the supplied1672px-wide canvas, each target badge approximately80–90px wide and20–22px high, rather than the old150×45px. Product-row font stays approximately24px; label font is ONLY10–11px, less than half the product-name type size. A tiny label, NOT a button. All badges aligned at the existing right edge, vertically centered per row, white text EXACT "Лучшая цена", same existing saturated fresh green, fully rounded ends, minimal4px vertical /7px horizontal padding. Do not enlarge to fill the leftover row space. Small lettering is intentional. Do not sacrifice this size instruction for generic “readability”: it is a tiny status label, not a second headline. This dramatic shrink is the main requested change.
+
+PRODUCT TEXT must stay EXACTLY:
+"iPhone 13 Дисплей"
+"iPhone 13 Шлейф"
+"iPhone 13 Аккумулятор"
+Search stays "iPhone 13".
+Ribbon EXACT "Сравни цены на запчасти" / "в магазинах Ставрополя".
+
+ICON1 / DISPLAY: faithfully reproduce input2's chosen silhouette, scaled into a clean small UI icon: portrait rounded rectangular screen and TWO diagonal arrows pointing apart inside, lower-left and upper-right. No monitor stand or landscape rectangle. Match the USER'S image, not your last invented display icon. Crisp uniform graphite outlines, rounded joins. Optical weight appropriate for adjacent product text.
+
+ICON3 / BATTERY: faithfully reproduce input3's chosen icon: partial upright phone outline open at lower-right, short rounded speaker slot near top, and horizontal battery overlapping its lower-right corner with five clean short vertical charge bars inside and small positive terminal at right. Keep the exact visual concept and smooth rounded geometry, simplify only to remain clear at small size. Do not substitute a plain battery or lightning bolt.
+
+ICON2 / FLEX: create a NEW MINIMALIST icon FROM input4 PHOTO. Preserve the distinctive overall charging-flex assembly silhouette: one long upright neck with a gentle side offset, right-facing rectangular terminal at its upper end, and a short horizontal base below with one small central charging socket. Draw only that large silhouette plus central socket opening. Remove tiny pins, circuit tracks, screws, microphones, colored tabs, all photographic texture and watermarks. It should be a simple tidy asymmetric L-shape / charging-flex glyph, NOT a generic cable squiggle, S coil, network diagram, tangled chain or stethoscope. Keep detail count and stroke weight comparable to selected display/battery icons, no more than3main masses. Uniform charcoal #182528, crisp vector-like edges.
+
+Make all3icons optically consistent in size (approximately32–38px icon box in this1672px artwork), stroke weight, baseline and padding. The selected reference icons are black on gray but reproduce glyphs ONLY, no square gray backgrounds. Icons should look part of one polished coherent family. Do not enlarge icons compared to old row-height. Maintain the exact horizontal rhythm: first name midlength, second shortest, third longest.
+
+Other than these4local changes (3icons and3pills), preserve the entire source image. Output one corrected final hero image.

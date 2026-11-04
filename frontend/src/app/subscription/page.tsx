@@ -12,7 +12,7 @@ import { usePaymentHistory, usePlans, useSubscribe, useCancelSubscription } from
 import { useTrackingUsage } from '@/models/tracking';
 import type { PaymentResponse } from '@/models/payment';
 import type { Plan } from '@/models/user';
-import { formatDate, planLabel } from '@/shared/lib/format';
+import { formatDate, formatTariffAmount, planLabel } from '@/shared/lib/format';
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Ожидает подтверждения',
@@ -50,7 +50,7 @@ function statusLabel(status: string): string {
 function PendingPaymentNotice({ payment }: { payment: PaymentResponse }) {
   return (
     <div className="rounded-[24px] p-[31px] bg-ivory-warm mb-8">
-      <h4 className="text-xl font-semibold text-[#C6613F] mb-2">Платёж ожидает подтверждения</h4>
+      <h4 className="text-xl font-semibold text-clay-ember mb-2">Платёж ожидает подтверждения</h4>
       <p className="text-[15px] text-body mb-2">
         Счёт №{payment.id} на {formatAmount(payment.amount)} ₽ создан. Подписка станет активной только
         после подтверждения оплаты — прямо сейчас тариф ещё не подключён.
@@ -128,7 +128,7 @@ function SubscriptionContent() {
                           <span className="text-[14px] text-body-subtle">
                             {currentPlanDefinition.price === 0
                               ? 'Бесплатно'
-                              : `${formatAmount(currentPlanDefinition.price)} ₽ / ${formatDays(currentPlanDefinition.durationDays)}`}
+                              : `${formatTariffAmount(currentPlanDefinition.price)} ₽ / ${formatDays(currentPlanDefinition.durationDays)}`}
                           </span>
                         )}
                       </div>
@@ -228,7 +228,7 @@ function SubscriptionContent() {
 
               {subscription.data && (
                 <div className="rounded-[24px] p-[31px] bg-ivory-warm mt-12">
-                  <h4 className="text-xl font-semibold text-[#C6613F] mb-2">Отмена подписки</h4>
+                  <h4 className="text-xl font-semibold text-clay-ember mb-2">Отмена подписки</h4>
                   <p className="text-[15px] text-body-subtle">
                     Отмена отключает автопродление. Доступ к тарифу сохраняется до конца уже оплаченного
                     периода — до {formatDate(subscription.data.end_date)}.

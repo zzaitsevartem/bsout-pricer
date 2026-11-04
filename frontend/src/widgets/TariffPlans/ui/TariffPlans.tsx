@@ -6,13 +6,7 @@ import { CircleQuestionMark } from '@/shared/ui/IconSVG';
 import { usePlans } from '@/models/payment';
 import type { PlanResponse } from '@/models/payment';
 import type { Plan } from '@/models/user';
-
-function formatAmount(value: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+import { formatTariffAmount } from '@/shared/lib/format';
 
 function formatDays(days: number): string {
   const tail = days % 10;
@@ -123,7 +117,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                 }`}
               >
                 {isAdvanced && (
-                  <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 bg-green-discount text-white text-[13px] font-semibold px-4 py-[6px] rounded-full whitespace-nowrap shadow-md max-lg:static max-lg:translate-x-0 max-lg:mb-4 max-lg:rounded-full max-lg:text-center">
+                  <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 bg-green-discount !text-white text-[13px] font-semibold px-4 py-[6px] rounded-full whitespace-nowrap shadow-md max-lg:static max-lg:translate-x-0 max-lg:mb-4 max-lg:rounded-full max-lg:text-center">
                     Выбирают чаще
                   </div>
                 )}
@@ -171,7 +165,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                     isAdvanced ? 'text-ivory' : 'text-slate'
                   }`}
                 >
-                  {formatAmount(plan.price)} ₽{' '}
+                  {formatTariffAmount(plan.price)} ₽{' '}
                   <span className="text-base font-normal text-body-subtle">
                     / {formatDays(plan.durationDays)}
                   </span>
@@ -181,7 +175,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                   {isFree
                     ? 'Бесплатно'
                     : plan.firstPaymentPrice < plan.price
-                      ? `Первый платёж — ${formatAmount(plan.firstPaymentPrice)} ₽ (−20%)`
+                      ? `Первый платёж — ${formatTariffAmount(plan.firstPaymentPrice)} ₽ (−20%)`
                       : ''}
                 </span>
 
@@ -190,7 +184,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                     <li
                       key={feature}
                       className={`flex items-start gap-3 py-[6px] text-[15px] ${
-                        isAdvanced ? 'text-[#D1CFC5]' : 'text-body'
+                        isAdvanced ? 'text-featured-copy' : 'text-body'
                       }`}
                     >
                       <svg
@@ -202,7 +196,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                       >
                         <path
                           d="M13.5 4.5L6 12L2.5 8.5"
-                          stroke="#788C5D"
+                          stroke="currentColor" className="text-olive"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -218,7 +212,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                     type="button"
                     onClick={() => onSelect(plan.plan)}
                     disabled={subscribing && selectedPlan === plan.plan}
-                    className={`block w-full text-center rounded-full py-3 text-[15px] font-medium transition-colors cursor-pointer disabled:opacity-60 ${
+                    className={`tariff-action block w-full text-center rounded-full py-3 text-[15px] font-medium transition-colors cursor-pointer disabled:opacity-60 ${
                       isAdvanced
                         ? 'bg-ivory text-slate border border-ivory hover:bg-ivory-elevated'
                         : 'bg-transparent text-slate border border-slate hover:bg-ivory-elevated'
@@ -233,7 +227,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                 ) : (
                   <Link
                     href={href}
-                    className={`block w-full text-center rounded-full py-3 text-[15px] font-medium no-underline transition-colors ${
+                    className={`tariff-action block w-full text-center rounded-full py-3 text-[15px] font-medium no-underline transition-colors ${
                       isAdvanced
                         ? 'bg-ivory text-slate border border-ivory hover:bg-ivory-elevated'
                         : 'bg-transparent text-slate border border-slate hover:bg-ivory-elevated'

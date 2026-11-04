@@ -71,7 +71,7 @@ const TariffStrip: React.FC = () => {
         </span>
         <span className="min-w-[200px] flex-1 text-[15px] text-body-subtle">{description}</span>
         <Link href="/tariffs" className="btn-arrow">
-          Управление тарифом →
+          Управление тарифом
         </Link>
       </div>
     </div>

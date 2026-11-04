@@ -46,7 +46,7 @@ function UsageBar() {
         )}
       </div>
       <div className="h-2 w-full bg-ivory border border-border-light-subtle">
-        <div className="h-full bg-slate" style={{ width: `${share}%` }} />
+        <div className="h-full bg-accent dark:bg-slate" style={{ width: `${share}%` }} />
       </div>
     </div>
   );
@@ -64,7 +64,7 @@ function DeltaCell({ item }: { item: TrackedProductResponse }) {
 
   const dropped = delta < 0;
   return (
-    <span className={dropped ? 'text-[#4F5C36] font-medium' : 'text-clay'}>
+    <span className={dropped ? 'text-status-success-text font-medium' : 'text-clay'}>
       {dropped ? '↓' : '↑'} {formatMoney(String(Math.abs(delta)))} (
       {formatPercent(Math.abs(item.price_delta_pct))})
     </span>
@@ -146,7 +146,7 @@ function TrackedRow({ item }: { item: TrackedProductResponse }) {
               {item.stores_count} {plural(item.stores_count, 'магазин', 'магазина', 'магазинов')}
             </span>
             {item.target_reached && (
-              <span className="inline-flex items-center rounded-full text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-[#EDF1E5] border border-[#C7D2B0] text-[#4F5C36]">
+              <span className="inline-flex items-center rounded-full text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-status-success border border-status-success-border text-status-success-text">
                 Цель достигнута
               </span>
             )}

@@ -66,7 +66,7 @@ const UserMenu: React.FC = () => {
         aria-label={unreadCount > 0 ? `Меню профиля, непрочитанных уведомлений: ${unreadCount}` : 'Меню профиля'}
       >
         <PersonIcon />
-        {unreadCount > 0 && <span className="absolute top-[7px] right-[7px] w-2 h-2 rounded-full bg-clay" />}
+        {unreadCount > 0 && <span className="absolute top-[7px] right-[7px] w-2 h-2 rounded-full bg-accent" />}
       </button>
 
       {isOpen && (
@@ -90,7 +90,7 @@ const UserMenu: React.FC = () => {
               <BellIcon className={itemIconClass} />
               Уведомления
               {unreadCount > 0 && (
-                <span className="ml-auto flex min-w-[20px] h-5 items-center justify-center rounded-full px-1 text-[12px] font-medium bg-clay text-ivory">
+                <span className="ml-auto flex min-w-[20px] h-5 items-center justify-center rounded-full px-1 text-[12px] font-medium bg-accent text-ivory">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}

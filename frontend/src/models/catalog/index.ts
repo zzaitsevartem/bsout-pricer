@@ -40,6 +40,7 @@ export type {
 } from './schema';
 export { catalogApi } from './service';
 export {
+  useCatalogFacets,
   useCatalogSuggestions,
   useCatalogSearch,
   useCatalogProduct,

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.middleware.subscription_guard import is_fuzzy_enabled, require_active_subscription
 from src.modules.products.schema.comparison import (
+    CatalogFacetsResponse,
     CatalogListResponse,
     CatalogSuggestion,
     ComparisonDetailResponse,
@@ -155,6 +156,15 @@ async def search_catalog(
         per_page=per_page,
     )
     return CatalogListResponse(results=results, total=total, page=page, per_page=per_page)
+
+
+@router.get("/catalog/facets", response_model=CatalogFacetsResponse)
+async def catalog_facets(
+    q: str = Query(default="", max_length=500),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return await ComparisonService.catalog_facets(db, q, await is_fuzzy_enabled(db, user.id))
 
 
 @router.get("/catalog/suggestions", response_model=list[CatalogSuggestion])

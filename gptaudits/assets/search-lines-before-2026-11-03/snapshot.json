@@ -1,0 +1,7 @@
+{
+  "purpose": "Search lines before softening; restore only these files to undo this experiment",
+  "files": [
+    "frontend/src/app/globals.css",
+    "frontend/src/app/search/_components/SearchLayout.tsx"
+  ]
+}

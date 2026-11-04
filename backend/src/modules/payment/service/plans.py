@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from src.modules.auth.model.user import PlanEnum
 
@@ -75,7 +75,9 @@ def get_plan(plan: PlanEnum) -> PlanDefinition:
 def price_for(plan: PlanEnum, first_payment: bool = False) -> Decimal:
     base = PLANS[plan].price
     if first_payment and base > 0:
-        return (base * (Decimal("1") - FIRST_PAYMENT_DISCOUNT)).quantize(Decimal("0.01"))
+        return (base * (Decimal("1") - FIRST_PAYMENT_DISCOUNT)).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
     return base
 
 

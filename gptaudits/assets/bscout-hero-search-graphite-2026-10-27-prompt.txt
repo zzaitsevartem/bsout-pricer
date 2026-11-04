@@ -1,0 +1,27 @@
+Edit the supplied BScout desktop hero artwork with the following targeted revision. Preserve wide 16:9 canvas, warm ivory #FAF9F5, completely empty LEFT44% reserved for HTML, and the clean autocomplete UI / folded ribbon concept on the RIGHT. Highest native quality, razor-sharp exact typography. Whole composition inside frame.
+
+REMOVE COMPLETELY: blue iPhone, detached display, flex hardware behind the card, large terracotta circular backdrop, freestanding magnifying glass / phone emblem next to the ribbon, all physical props and all other decorative backgrounds. Do not replace them with anything. No illustrated device, no medal, no ornamental magnifier, no badge emblems. The small standard search glyph INSIDE the input is okay; no additional magnifiers outside the input. The finished image contains ONLY a beautifully crafted autocomplete panel and a folded ribbon, resting naturally on a seamless ivory field, soft restrained shadows.
+
+LAYOUT: The search panel is the primary focal point, positioned on the right half in upper-middle, with ribbon immediately below as one compact balanced group, vertically centered. Increase panel breathing room since devices are gone. All left space remains blank, no lines, lettering, props or shadows crossing left44%. Safe padding right5%, top15%, bottom12%. No clipping.
+
+SEARCH UI: one rounded warm-white panel, fine neutral border, crisp front-facing text, no perspective distortion on card.
+Search input exact text "iPhone 13" with a small typing caret.
+Exactly3 suggestion rows with small restrained graphite outlined part icons at left and text:
+"iPhone 13 Дисплей"
+"iPhone 13 Шлейф"
+"iPhone 13 Аккумулятор"
+To the RIGHT OF EACH OF THESE THREE ROWS, aligned in one column, place a small identical interface badge reading EXACTLY "Лучшая цена". THREE badges total, one on each row. Keep the product text and badge on one line with sufficient gap. Wider panel or slightly smaller product type if necessary; no overlapping, no wrapping within badge.
+CRITICAL BADGE COLORS — match the real BScout interface success badge, NOT bright emerald green:
+background #EDF1E5 (very pale muted olive);
+thin 1px outline #C7D2B0;
+text #4F5C36 (dark olive green).
+Small rounded pill / softly rounded rectangle, medium weight UI typography, understated rather than neon. These exact muted colors apply to all three badges. Avoid bright green fills, white text on green, any checkmark or large green CTA.
+Rows warm white, fine neutral separators; first row may have a very subtle ivory hover, no bright green strips.
+REMOVE the old standalone footer "Лучшая цена во всех магазинах" and its check icon entirely. No footer below rows. No prices, currencies, store names or availability. Only the input and the three suggestions with their three badges.
+
+RIBBON: preserve the elegant dimensional folded zigzag structure with two clear front-facing bands and folded ends, but REPLACE ALL ORANGE/TERRACOTTA with sophisticated GRAPHITE #282825. Folded backs slightly darker #141413, subtle material highlights #3D3D3A. Ivory #FAF9F5 lettering. Restrained satin paper, no heavy metallic shine. Absolutely NO orange, terracotta, red or pink anywhere in finished image.
+Exact ribbon text on2bands:
+"Сравни предложения"
+"магазинов города"
+Large readable semibold contemporary sans-serif, no sale/clearance styling. Maintain tasteful air between panel and ribbon; no overlap over any lettering. Ribbon fits inside right half, completely visible; no speed lines or ornamental tails reaching left.
+Overall premium warm ivory / graphite interface aesthetic with ONLY the THREE pale olive badges as muted green accents. Minimal, clean, purposeful, high-end software hero illustration. No extra copy, no slogans duplicated, no phones in background, no magnifying glass prop, no circle, no watermark. Output ONE complete revised desktop illustration.

@@ -1,0 +1,13 @@
+--- a/frontend/src/widgets/Header/ui/Header.tsx
++++ b/frontend/src/widgets/Header/ui/Header.tsx
+@@ -67,8 +67,8 @@
+               className={cn(
+                 'rounded-full px-4 py-2 text-[15px] font-medium no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate',
+                 pathname === item.href
+-                  ? 'bg-brand-green/10 text-slate'
+-                  : 'text-body hover:bg-brand-green/10 hover:text-slate',
++                  ? 'bg-ivory text-slate shadow-sm'
++                  : 'text-body hover:bg-ivory-warm hover:text-slate',
+               )}
+             >
+               {item.label}

@@ -1,8 +1,7 @@
 import axios from 'axios';
-import type { CatalogItemResponse, CatalogSortOption } from '@/models/catalog';
+import type { CatalogSortOption } from '@/models/catalog';
 
 export const PER_PAGE = 20;
-export const FACETS_SAMPLE_SIZE = 100;
 export const OFFERS_PER_PAGE = 20;
 
 export const SORT_OPTIONS: { value: CatalogSortOption; label: string }[] = [
@@ -120,37 +119,6 @@ export function offersLabel(count: number): string {
 
 export function foundLabel(total: number): string {
   return `Найдено: ${total} ${pluralRu(total, 'товар', 'товара', 'товаров')}`;
-}
-
-export function collectFacets(items: CatalogItemResponse[]): CatalogFacets {
-  const devices = new Map<number, string>();
-  const partTypes = new Map<number, string>();
-  const qualityTiers = new Map<number, { label: string; rank: number }>();
-
-  for (const item of items) {
-    if (item.device) {
-      devices.set(item.device.id, item.device.name);
-    }
-    if (item.part_type) {
-      partTypes.set(item.part_type.id, item.part_type.name_ru);
-    }
-    if (item.quality_tier) {
-      qualityTiers.set(item.quality_tier.id, {
-        label: item.quality_tier.name_ru,
-        rank: item.quality_tier.rank,
-      });
-    }
-  }
-
-  const byLabel = (a: FilterOption, b: FilterOption) => a.label.localeCompare(b.label, 'ru');
-
-  return {
-    devices: Array.from(devices, ([id, label]) => ({ id, label })).sort(byLabel),
-    partTypes: Array.from(partTypes, ([id, label]) => ({ id, label })).sort(byLabel),
-    qualityTiers: Array.from(qualityTiers, ([id, value]) => ({ id, ...value }))
-      .sort((a, b) => a.rank - b.rank)
-      .map(({ id, label }) => ({ id, label })),
-  };
 }
 
 export function withSelected(

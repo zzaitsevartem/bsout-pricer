@@ -231,7 +231,7 @@ export default function RegisterPage() {
               <div className="mb-6">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" {...register('terms')} className="hidden peer" />
-                  <span className="w-[18px] h-[18px] rounded-full border border-[#87867F] bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-slate peer-checked:border-slate transition-colors">
+                  <span className="w-[18px] h-[18px] rounded-full border border-body-muted bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-accent peer-checked:border-accent dark:peer-checked:bg-slate dark:peer-checked:border-slate transition-colors">
                     <svg
                       width="12"
                       height="6"

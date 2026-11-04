@@ -20,6 +20,11 @@ export function planPrice(plan: Plan): string {
   return PLAN_PRICES[plan] ?? '';
 }
 
+export function formatTariffAmount(value: number): string {
+  const amount = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
+  return Number.isInteger(value) ? amount : `≈${amount}`;
+}
+
 export function formatDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {

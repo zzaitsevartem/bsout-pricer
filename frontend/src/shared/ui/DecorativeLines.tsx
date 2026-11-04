@@ -11,31 +11,31 @@ const DecorativeLines: React.FC = () => (
     >
       <path
         d="M-20 720 C60 580, 100 480, 140 380 S200 200, 260 100 S340 -20, 400 -40"
-        stroke="#D97757"
+        stroke="var(--color-decorative-line)"
         strokeWidth="2"
         fill="none"
       />
       <path
         d="M-20 650 C40 540, 80 440, 130 340 S190 180, 240 80 S300 -20, 350 -40"
-        stroke="#141413"
+        stroke="var(--color-decorative-ink)"
         strokeWidth="1.2"
         fill="none"
       />
       <path
         d="M-20 580 C30 490, 70 400, 110 300 S170 160, 220 60 S280 -10, 320 -30"
-        stroke="#D97757"
+        stroke="var(--color-decorative-line)"
         strokeWidth="0.8"
         fill="none"
       />
       <path
         d="M-20 500 C25 430, 55 360, 90 270 S145 140, 190 50 S240 -10, 280 -20"
-        stroke="#141413"
+        stroke="var(--color-decorative-ink)"
         strokeWidth="0.6"
         fill="none"
       />
-      <circle cx="400" cy="-40" r="3" fill="#D97757" opacity="0.5" />
-      <circle cx="350" cy="-40" r="2" fill="#141413" opacity="0.4" />
-      <circle cx="320" cy="-30" r="1.5" fill="#D97757" opacity="0.3" />
+      <circle cx="400" cy="-40" r="3" fill="var(--color-decorative-line)" opacity="0.5" />
+      <circle cx="350" cy="-40" r="2" fill="var(--color-decorative-ink)" opacity="0.4" />
+      <circle cx="320" cy="-30" r="1.5" fill="var(--color-decorative-line)" opacity="0.3" />
     </svg>
   </div>
 );

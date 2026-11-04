@@ -66,6 +66,7 @@ class CatalogItemResponse(BaseModel):
     offers_count: int = 0
     stores_count: int = 0
     store_slugs: list[str] = []
+    stock_status: str = "unknown"
 
 
 class CatalogListResponse(BaseModel):
@@ -73,6 +74,17 @@ class CatalogListResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class CatalogFacetOption(BaseModel):
+    id: int
+    label: str
+
+
+class CatalogFacetsResponse(BaseModel):
+    devices: list[CatalogFacetOption]
+    part_types: list[CatalogFacetOption]
+    quality_tiers: list[CatalogFacetOption]
 
 
 class ComparisonOfferResponse(BaseModel):

@@ -34,7 +34,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
       <label htmlFor={inputId} className="sr-only">
         Поиск запчастей
       </label>
-      <div className="relative flex h-11 items-center rounded-full border border-border-input bg-ivory-elevated transition-colors focus-within:border-border-default focus-within:bg-ivory focus-within:shadow-sm">
+      <div className="header-soft-outline field-shell relative flex h-11 items-center rounded-full border border-border-input bg-ivory-elevated transition-colors focus-within:border-border-default focus-within:bg-ivory focus-within:shadow-sm">
         <ProductSearchField
           id={inputId}
           value={value}
@@ -60,7 +60,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
         )}
         <button
           type="submit"
-          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border-none bg-transparent p-0 text-body-subtle transition-colors hover:bg-ivory-warm hover:text-slate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate"
+          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border-none bg-transparent p-0 text-body-subtle transition-colors hover:text-slate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate"
           aria-label="Найти"
         >
           <SearchIcon />

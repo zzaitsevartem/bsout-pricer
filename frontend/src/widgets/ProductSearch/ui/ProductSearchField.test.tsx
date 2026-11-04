@@ -30,6 +30,7 @@ describe('shared product search entry points', () => {
     fireEvent.change(input, { target: { value: 'Nokia' } });
     act(() => vi.advanceTimersByTime(200));
     expect(screen.getByRole('option', { name: 'Дисплей Nokia 5700' })).toBeInTheDocument();
+    expect(screen.getByText('Nokia', { selector: 'strong' })).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });

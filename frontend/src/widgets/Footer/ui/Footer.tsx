@@ -1,6 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import tgStatic from '@/shared/assets/images/icons/logo-tg-static.svg';
+import tgHover from '@/shared/assets/images/icons/logo-tg-hover.webp';
+import vkStatic from '@/shared/assets/images/icons/logo-vk-static.svg';
+import vkHover from '@/shared/assets/images/icons/logo-vk-hover.webp';
+import { HoverIcon } from '@/shared/ui/HoverIcon';
 
 const Footer: React.FC = () => {
   return (
@@ -50,11 +55,11 @@ const Footer: React.FC = () => {
         <div className="mt-12 pt-6 border-t border-border-light-subtle flex justify-between items-center text-[15px] text-body-muted max-md:flex-col max-md:gap-4 max-md:text-center">
           <span>&copy; 2026 BScout. Все права защищены.</span>
           <div className="flex gap-3">
-            <a href="#" aria-label="Telegram" className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
-              TG
+            <a href="#" aria-label="Telegram" className="w-14 h-14 flex items-center justify-center no-underline">
+              <HoverIcon staticIcon={tgStatic} hoverIcon={tgHover} replayIntervalMs={3000} width={40} height={40} />
             </a>
-            <a href="#" aria-label="VK" className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-body-subtle no-underline text-sm transition-colors hover:border-slate hover:text-slate">
-              VK
+            <a href="#" aria-label="VK" className="w-14 h-14 flex items-center justify-center no-underline">
+              <HoverIcon staticIcon={vkStatic} hoverIcon={vkHover} replayIntervalMs={3000} width={40} height={40} />
             </a>
           </div>
         </div>

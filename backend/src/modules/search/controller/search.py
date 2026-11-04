@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
@@ -16,3 +16,12 @@ async def get_search_history(
     current_user: User = Depends(get_current_user),
 ):
     return await SearchHistoryService.get_by_user(db, current_user.id)
+
+
+@router.delete("/history", status_code=204)
+async def clear_search_history(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await SearchHistoryService.clear_by_user(db, current_user.id)
+    return Response(status_code=204)

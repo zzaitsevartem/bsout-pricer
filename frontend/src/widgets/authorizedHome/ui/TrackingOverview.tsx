@@ -128,7 +128,7 @@ const TrackingOverview: React.FC = () => {
             цены приходит уведомление.
           </p>
           <Link href="/account/tracking" className="btn-arrow">
-            Управлять отслеживанием →
+            Управлять отслеживанием
           </Link>
         </div>
 

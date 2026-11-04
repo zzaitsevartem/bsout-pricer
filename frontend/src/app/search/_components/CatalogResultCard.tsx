@@ -11,9 +11,16 @@ function deviceLabel(item: CatalogItemResponse): string | null {
 
 export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
   const device = deviceLabel(item);
+  const stock = item.stock_status === 'in_stock'
+    ? { label: 'В наличии', color: 'text-brand-green' }
+    : item.stock_status === 'out'
+      ? { label: 'Нет в наличии', color: 'text-stock-unavailable' }
+      : item.stock_status === 'preorder'
+        ? { label: 'Предзаказ', color: 'text-body-subtle' }
+        : null;
 
   return (
-    <div className="flex gap-4 p-4 items-center border-b border-border-light-subtle last:border-b-0">
+    <div className="flex gap-4 p-4 items-center rounded-2xl border border-border-input bg-ivory-elevated">
       <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-body-muted text-xs flex-shrink-0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <rect x="2" y="2" width="20" height="20" rx="2" />
@@ -25,18 +32,19 @@ export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
       <div className="flex-1 min-w-0">
         <Link
           href={`/product/${item.id}`}
-          className="text-base font-semibold text-slate no-underline block mb-1 hover:underline"
+          className="text-base font-semibold text-slate no-underline block mb-1 hover:underline decoration-brand-green underline-offset-[6px] dark:decoration-current dark:underline-offset-auto"
         >
           {item.canonical_name}
         </Link>
         <div className="text-[14px] text-body-subtle flex gap-3 flex-wrap items-center">
           {device && <span>{device}</span>}
           {item.part_type && <span>{item.part_type.name_ru}</span>}
-          {item.quality_tier && (
-            <span className="inline-flex items-center text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 bg-ivory border border-border-default text-body-subtle">
+          {item.quality_tier && item.quality_tier.code !== 'unknown' && (
+            <span className={item.quality_tier.code === 'original' ? 'text-brand-green font-medium' : ''}>
               {item.quality_tier.name_ru}
             </span>
           )}
+          {stock && <span className={`text-xs font-medium ${stock.color}`}>{stock.label}</span>}
         </div>
       </div>
 

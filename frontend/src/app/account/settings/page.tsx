@@ -126,12 +126,12 @@ function EmailSection({ me }: { me: NonNullable<ReturnType<typeof useMe>['data']
 
       <div className="mb-4">
         {isVerified ? (
-          <span className="inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold bg-[#EDF1E5] border border-[#C7D2B0] text-[#4F5C36]">
+          <span className="inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold bg-status-success border border-status-success-border text-status-success-text">
             Подтверждён
           </span>
         ) : (
           <>
-            <span className="inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold bg-[#F4EBD7] border border-[#E5D29B] text-[#4A3A12] mb-2">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold bg-status-warning border border-status-warning-border text-status-warning-text mb-2">
               Не подтверждён
             </span>
             <div>

@@ -57,6 +57,7 @@ export const catalogItemResponseSchema = z.object({
   offers_count: z.number(),
   stores_count: z.number(),
   store_slugs: z.array(z.string()),
+  stock_status: z.enum(['in_stock', 'out', 'preorder', 'unknown']).optional(),
 });
 
 export const catalogListResponseSchema = z.object({
@@ -65,6 +66,14 @@ export const catalogListResponseSchema = z.object({
   page: z.number(),
   per_page: z.number(),
 });
+
+const facetOptionSchema = z.object({ id: z.number(), label: z.string() });
+export const catalogFacetsSchema = z.object({
+  devices: z.array(facetOptionSchema),
+  part_types: z.array(facetOptionSchema),
+  quality_tiers: z.array(facetOptionSchema),
+});
+export type CatalogFacetsResponse = z.infer<typeof catalogFacetsSchema>;
 
 export const catalogSearchParamsSchema = z.object({
   q: z.string().max(500).optional(),

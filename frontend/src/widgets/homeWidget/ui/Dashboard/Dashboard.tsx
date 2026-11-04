@@ -16,7 +16,7 @@ const Dashboard: React.FC = () => {
             </p>
             <Link href="/register" className="btn-arrow">Посмотреть в деле</Link>
           </div>
-          <div className="bg-ivory-warm rounded-[24px] p-6 min-h-[340px] border border-[#E3DACC] flex flex-col gap-4">
+          <div className="bg-ivory-warm rounded-[24px] p-6 min-h-[340px] border border-border-light dark:border-[#E3DACC] flex flex-col gap-4">
             <div className="flex gap-3 items-center p-3 bg-slate text-ivory">
               <span className="text-[13px] font-semibold flex-1">Товар</span>
               <span className="flex-[0_0_60px] h-2 bg-slate" />
@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
               <div key={row.name} className="flex gap-3 items-center p-3 bg-ivory">
                 <span className="text-[14px] flex-1 text-slate">{row.name}</span>
                 <div className="flex gap-1 flex-1">
-                  <span className={`h-2 flex-1 ${row.bar === 'fill-slate' ? 'bg-slate' : 'bg-clay'}`} />
+                  <span className={`h-2 flex-1 ${row.bar === 'fill-slate' ? 'bg-slate' : 'bg-accent'}`} />
                 </div>
                 <span className={`font-montserrat text-[14px] font-medium w-20 text-right ${row.cheap ? 'text-olive font-bold' : 'text-slate'}`}>
                   {row.price}

@@ -1,10 +1,15 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.search.model.search_history import SearchHistory
 
 
 class SearchHistoryService:
+    @staticmethod
+    async def clear_by_user(db: AsyncSession, user_id: int) -> None:
+        await db.execute(delete(SearchHistory).where(SearchHistory.user_id == user_id))
+        await db.flush()
+
     @staticmethod
     async def get_by_user(db: AsyncSession, user_id: int, limit: int = 20) -> list[SearchHistory]:
         result = await db.execute(

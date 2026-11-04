@@ -11,7 +11,7 @@ export default function Home() {
   const isAuth = useUnit($isAuth);
 
   return (
-    <div className="relative z-10">
+    <div className="home-palette relative z-10">
       <Header />
       {isAuth ? <AuthorizedHome /> : <HomeWidget />}
       <Footer />

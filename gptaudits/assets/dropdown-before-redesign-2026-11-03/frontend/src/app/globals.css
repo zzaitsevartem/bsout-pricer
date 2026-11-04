@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,100..1000;1,100..1000&family=Lexend:wght@100..900&family=Montserrat:wght@100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ivory: #FAF9F5;
+    --color-ivory-elevated: #F0EEE6;
+    --color-ivory-warm: #E3DACC;
+    --color-slate: #141413;
+    --color-slate-soft: #1F1F1D;
+    --color-slate-medium: #282825;
+    --color-body: #3D3D3A;
+    --color-body-subtle: #5E5D59;
+    --color-body-muted: #706F67;
+    --color-border-default: #8A8880;
+    --color-border-input: #CFCCC1;
+    --color-border-light: #E3DACC;
+    --color-border-subtle: #D1CFC5;
+    --color-border-light-subtle: #E8E6DC;
+    --color-stock-unavailable: #b42318;
+    --color-search-surface: #ffffff;
+    --color-search-row: #f7f7f7;
+  }
+
+  .dark {
+    --color-ivory: #1A1A18;
+    --color-ivory-elevated: #242422;
+    --color-ivory-warm: #2E2E2B;
+    --color-slate: #E8E6DC;
+    --color-slate-soft: #D1CFC5;
+    --color-slate-medium: #B0AEA5;
+    --color-body: #D1CFC5;
+    --color-body-subtle: #B0AEA5;
+    --color-body-muted: #87867F;
+    --color-border-default: #75746C;
+    --color-border-input: #4A4A47;
+    --color-border-light: #3D3D3A;
+    --color-border-subtle: #3D3D3A;
+    --color-border-light-subtle: #282825;
+    --color-stock-unavailable: #ff8a80;
+    --color-search-surface: var(--color-ivory-elevated);
+    --color-search-row: var(--color-ivory-warm);
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease;
+  }
+
+  body {
+    font-family: 'Raleway', 'DM Sans', system-ui, sans-serif;
+    color: var(--color-body);
+    background: var(--color-ivory);
+    line-height: 1.5;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full text-[15px] font-medium tracking-[-0.002em] px-[31px] py-3 border transition-colors leading-none no-underline cursor-pointer whitespace-nowrap;
+  }
+
+  .btn:hover {
+    @apply no-underline;
+  }
+
+  .btn:focus-visible {
+    @apply outline-2 outline-offset-2 outline-slate;
+  }
+
+  .btn-primary {
+    @apply btn bg-slate text-ivory border-slate;
+  }
+
+  .btn-primary:hover {
+    @apply text-ivory;
+    filter: brightness(0.92);
+  }
+
+  .btn-secondary {
+    @apply btn bg-transparent text-slate border-slate;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-ivory-warm text-slate;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-slate border-transparent;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-ivory-elevated;
+  }
+
+  .btn-danger {
+    @apply btn bg-clay text-ivory border-clay;
+  }
+
+  .btn-danger:hover {
+    @apply bg-clay-ember border-clay-ember text-ivory;
+  }
+
+  .btn-sm {
+    @apply text-[14px] px-4 py-2;
+  }
+
+  .btn-lg {
+    @apply text-base px-[31px] py-[14px];
+  }
+
+  .btn-icon {
+    @apply relative inline-flex items-center justify-center w-11 h-11 rounded-full shrink-0 bg-transparent text-slate border border-border-default transition-colors cursor-pointer no-underline;
+  }
+
+  .btn-icon:hover {
+    @apply bg-ivory-elevated text-slate;
+  }
+
+  .btn-icon:focus-visible {
+    @apply outline-2 outline-offset-2 outline-slate;
+  }
+
+  .btn-arrow {
+    @apply inline-flex items-center gap-1 text-[15px] font-normal text-slate bg-none border-none p-0 no-underline;
+  }
+
+  .btn-arrow:hover {
+    @apply underline underline-offset-[3px] text-slate;
+  }
+
+  .btn-arrow::after {
+    content: '→';
+    @apply ml-0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Homepage palette experiment. Keep the shared palette and dark theme intact. */
+@layer components {
+  :root:not(.dark) .home-palette {
+    --color-ivory: #ffffff;
+    --color-ivory-elevated: #ffffff;
+    --color-ivory-warm: #ffffff;
+    --color-slate: #000000;
+    --color-slate-soft: #171717;
+    --color-slate-medium: #262626;
+    --color-body: #262626;
+    --color-body-subtle: #525252;
+    --color-body-muted: #666666;
+    --color-border-default: #737373;
+    --color-border-input: #b3b3b3;
+    --color-border-light: #d9d9d9;
+    --color-border-subtle: #d9d9d9;
+    --color-border-light-subtle: #e5e5e5;
+    /* Dominant saturated green sampled from heroSearchLens-light.png. */
+    --home-accent: #00c078;
+    background: var(--color-ivory);
+    color: var(--color-body);
+    min-height: 100vh;
+  }
+
+  :root:not(.dark) .home-palette .bg-clay,
+  :root:not(.dark) .home-palette .bg-green-discount {
+    background-color: var(--home-accent);
+    color: var(--color-slate);
+  }
+
+  :root:not(.dark) .home-palette .underline {
+    text-decoration-color: var(--home-accent);
+  }
+
+  :root:not(.dark) .home-palette .bg-ivory-elevated,
+  :root:not(.dark) .home-palette .bg-ivory-warm {
+    box-shadow: inset 0 0 0 1px var(--color-border-light-subtle);
+  }
+
+  :root:not(.dark) .home-palette .btn-secondary:hover,
+  :root:not(.dark) .home-palette .btn-icon:hover {
+    border-color: var(--home-accent);
+  }
+}
+
+@layer components {
+  :root:not(.dark) .home-palette form:not([role="search"]) button[type="submit"],
+  :root:not(.dark) .home-palette .home-search-submit,
+  :root:not(.dark) .home-palette a[href="/register"].btn-primary,
+  :root:not(.dark) .home-palette a[href="/tariffs"].btn-primary,
+  :root:not(.dark) .home-palette a[href="/tariffs"].btn-secondary {
+    background-color: var(--home-accent);
+    border-color: var(--home-accent);
+    color: #ffffff;
+  }
+}

@@ -59,20 +59,22 @@ const Header: React.FC = () => {
           />
         </Link>
 
-        <nav className="hidden shrink-0 items-center gap-1 rounded-full border border-border-light-subtle bg-ivory-elevated p-1 lg:flex">
-          {navItems.map((item) => (
+        <nav className="header-soft-outline hidden shrink-0 items-center gap-1 rounded-full border border-border-light-subtle bg-ivory-elevated p-1 lg:flex">
+          {navItems.map((item, index) => (
+            <React.Fragment key={item.href}>
+              {index > 0 && <span aria-hidden="true" className="h-5 w-px shrink-0 bg-brand-green dark:hidden" />}
             <Link
-              key={item.href}
               href={item.href}
               className={cn(
-                'rounded-full px-4 py-2 text-[15px] font-medium no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate',
+                'px-4 py-2 text-[15px] font-medium decoration-brand-green decoration-2 underline-offset-[6px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate',
                 pathname === item.href
-                  ? 'bg-ivory text-slate shadow-sm'
-                  : 'text-body hover:bg-ivory-warm hover:text-slate',
+                  ? 'text-slate underline'
+                  : 'text-body no-underline hover:underline',
               )}
             >
               {item.label}
             </Link>
+            </React.Fragment>
           ))}
         </nav>
 
@@ -94,7 +96,7 @@ const Header: React.FC = () => {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1 lg:hidden">
-          <Link href="/search" className="btn-icon rounded-full" aria-label="Поиск запчастей" title="Поиск запчастей">
+          <Link href="/search" className="btn-icon rounded-full hover:bg-transparent" aria-label="Поиск запчастей" title="Поиск запчастей">
             <SearchIcon width={20} height={20} />
           </Link>
           <Link href="/faq" className="btn-icon rounded-full" aria-label="Частые вопросы" title="Частые вопросы">

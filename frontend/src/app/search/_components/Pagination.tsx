@@ -55,7 +55,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
                 CELL,
                 '-ml-px',
                 item === page
-                  ? 'text-ivory bg-slate border border-slate z-10'
+                  ? 'text-white bg-accent border border-accent dark:text-ivory dark:bg-slate dark:border-slate z-10'
                   : 'text-body bg-ivory border border-border-default hover:bg-ivory-elevated',
               )}
             >

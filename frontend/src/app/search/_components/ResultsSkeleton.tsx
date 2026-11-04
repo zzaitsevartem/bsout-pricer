@@ -2,11 +2,11 @@ import React from 'react';
 
 export function ResultsSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="rounded-[24px] overflow-hidden bg-ivory-elevated" aria-hidden="true">
+    <div className="flex flex-col gap-3" aria-hidden="true">
       {Array.from({ length: rows }, (_, index) => (
         <div
           key={index}
-          className="flex gap-4 p-4 items-center border-b border-border-light-subtle last:border-b-0"
+          className="flex gap-4 p-4 items-center rounded-2xl border border-border-input bg-ivory-elevated"
         >
           <div className="w-16 h-16 bg-ivory-warm flex-shrink-0 animate-pulse" />
           <div className="flex-1 min-w-0">

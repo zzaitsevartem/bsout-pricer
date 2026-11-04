@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { useCatalogSearch } from '@/models/catalog';
+import { useCatalogFacets, useCatalogSearch } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
 import { useStores } from '@/models/store';
 import { useProductSearch } from '@/models/product';
@@ -18,11 +18,9 @@ import { ResultsSkeleton } from '@/app/search/_components/ResultsSkeleton';
 import { Pagination } from '@/app/search/_components/Pagination';
 import {
   EMPTY_FACETS,
-  FACETS_SAMPLE_SIZE,
   OFFERS_PER_PAGE,
   PER_PAGE,
   apiErrorMessage,
-  collectFacets,
   foundLabel,
 } from '@/app/search/_components/lib';
 import type { SearchControls, SearchUrlState } from '@/app/search/_components/lib';
@@ -61,16 +59,6 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
     ],
   );
 
-  const facetParams = useMemo<CatalogSearchParams>(
-    () => ({
-      q: state.q || undefined,
-      sort_by: 'min_price_asc',
-      page: 1,
-      per_page: FACETS_SAMPLE_SIZE,
-    }),
-    [state.q],
-  );
-
   const exportParams = useMemo<ExportCatalogParams>(
     () => ({
       q: state.q || undefined,
@@ -97,7 +85,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
   );
 
   const results = useCatalogSearch(params);
-  const facetsQuery = useCatalogSearch(facetParams);
+  const facetsQuery = useCatalogFacets(state.q);
   const exportCatalog = useExportCatalog();
 
   const [offersExpanded, setOffersExpanded] = useState(false);
@@ -121,7 +109,13 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
 
   const facets = useMemo(
     () => ({
-      ...(facetsQuery.data ? collectFacets(facetsQuery.data.results) : EMPTY_FACETS),
+      ...(facetsQuery.data
+        ? {
+            devices: [...facetsQuery.data.devices].sort((a, b) => a.label.localeCompare(b.label, 'ru')),
+            partTypes: [...facetsQuery.data.part_types].sort((a, b) => a.label.localeCompare(b.label, 'ru')),
+            qualityTiers: facetsQuery.data.quality_tiers,
+          }
+        : EMPTY_FACETS),
       stores: (storesQuery.data ?? []).filter((store) => store.is_active),
     }),
     [facetsQuery.data, storesQuery.data],
@@ -171,7 +165,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
       <>
         <div
           className={cn(
-            'rounded-[24px] overflow-hidden bg-ivory-elevated transition-opacity',
+            'flex flex-col gap-3 transition-opacity',
             results.isFetching && 'opacity-60',
           )}
         >
@@ -225,7 +219,7 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
               <h2 className="text-xl font-semibold text-slate mb-4">
                 Предложения магазинов: {offersTotal}
               </h2>
-              <div className="rounded-[24px] overflow-hidden bg-ivory-elevated">
+              <div className="flex flex-col gap-3">
                 {shownOffers.map((offer) => (
                   <OfferResultCard key={offer.id} item={offer} />
                 ))}

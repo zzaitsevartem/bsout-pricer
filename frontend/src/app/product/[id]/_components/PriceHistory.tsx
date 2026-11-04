@@ -173,12 +173,12 @@ export function PriceHistory({ productId }: PriceHistoryProps) {
             );
           })}
 
-          {chart.areaPath && <path d={chart.areaPath} className="fill-slate" opacity="0.08" />}
+          {chart.areaPath && <path d={chart.areaPath} className="fill-accent dark:fill-slate" opacity="0.08" />}
 
           <path
             d={chart.linePath}
             fill="none"
-            className="stroke-slate"
+            className="stroke-accent dark:stroke-slate"
             strokeWidth="2"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -186,7 +186,7 @@ export function PriceHistory({ productId }: PriceHistoryProps) {
 
           {chart.coords.length <= 60 &&
             chart.coords.map((point) => (
-              <circle key={point.day} cx={point.x} cy={point.y} r="3" className="fill-slate">
+              <circle key={point.day} cx={point.x} cy={point.y} r="3" className="fill-accent dark:fill-slate">
                 <title>
                   {`${formatDayShort(point.day)} — ${formatMoneyValue(point.value)} · ${formatNumber(
                     point.stores,

@@ -1,0 +1,8 @@
+{
+  "files": [
+    "frontend/src/app/globals.css",
+    "frontend/src/app/search/_components/CatalogResultCard.tsx",
+    "frontend/src/app/search/_components/OfferResultCard.tsx"
+  ],
+  "reason": "Exact pre-change snapshot for product and arrow link underline rollback"
+}

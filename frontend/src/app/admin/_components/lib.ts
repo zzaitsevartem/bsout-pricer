@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 export const BADGE_BASE = 'inline-flex items-center rounded-full text-xs px-2 py-0.5 border';
-export const BADGE_SUCCESS = 'bg-[#EDF1E5] border-[#C7D2B0] text-[#4F5C36]';
-export const BADGE_WARNING = 'bg-[#F4EBD7] border-[#E5D29B] text-[#4A3A12]';
-export const BADGE_DANGER = 'bg-[#F8E5DD] border-[#E8B6A1] text-[#8E3F22]';
+export const BADGE_SUCCESS = 'bg-status-success border-status-success-border text-status-success-text';
+export const BADGE_WARNING = 'bg-status-warning border-status-warning-border text-status-warning-text';
+export const BADGE_DANGER = 'bg-status-danger border-status-danger-border text-status-danger-text';
 export const BADGE_DARK = 'bg-slate text-ivory border-slate';
 export const BADGE_DEFAULT = 'bg-ivory border-border-default text-slate';
 

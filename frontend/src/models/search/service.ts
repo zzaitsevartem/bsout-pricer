@@ -14,6 +14,7 @@ function checkContract(schema: z.ZodType, data: unknown, source: string): void {
 }
 
 export const searchApi = {
+  clearHistory: () => api.delete<void>('/search/history'),
   getHistory: () =>
     api.get<SearchHistoryResponse[]>('/search/history').then((response) => {
       checkContract(searchHistoryListResponseSchema, response.data, 'GET /search/history');

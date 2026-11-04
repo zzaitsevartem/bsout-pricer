@@ -133,6 +133,27 @@ async def test_catalog_requires_auth(client):
     assert resp.status_code == 403, resp.text
 
 
+async def test_catalog_facets_include_qualities_beyond_first_page(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    for index in range(101):
+        await _make_product(
+            db_session, refs, refs["tier_copy"], f"copy-{index}", "Дисплей iPhone 13 копия"
+        )
+    await _make_product(
+        db_session, refs, refs["tier_orig"], "original", "Дисплей iPhone 13 оригинал"
+    )
+
+    for query in ("", "iPhone 13"):
+        response = await client.get(
+            "/api/products/catalog/facets", params={"q": query}, headers=_auth(token)
+        )
+        assert response.status_code == 200, response.text
+        assert {item["label"] for item in response.json()["quality_tiers"]} == {
+            "Копия", "Оригинал"
+        }
+
+
 async def test_catalog_detail_and_history_require_auth(client):
     detail = await client.get("/api/products/catalog/1")
     history = await client.get("/api/products/catalog/1/price-history")
@@ -149,6 +170,26 @@ async def test_catalog_is_empty_when_no_canonical_products(client, db_session):
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body == {"results": [], "total": 0, "page": 1, "per_page": 20}
+
+
+async def test_catalog_stock_status_uses_matching_offers(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    product = await _make_product(db_session, refs, refs["tier_orig"], "original", "Display")
+    store_a = await _make_store(db_session, "stock-a")
+    store_b = await _make_store(db_session, "stock-b")
+    await _make_offer(db_session, store_a, product, "out", "100", stock_status="out")
+    await _make_offer(db_session, store_b, product, "low", "200", stock_status="low")
+
+    response = await client.get("/api/products/catalog", headers=_auth(token))
+    assert response.status_code == 200, response.text
+    assert response.json()["results"][0]["stock_status"] == "in_stock"
+
+    response = await client.get(
+        "/api/products/catalog", params={"store": "stock-a"}, headers=_auth(token)
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["results"][0]["stock_status"] == "out"
 
 
 async def test_catalog_returns_product_without_offers_with_null_prices(client, db_session):

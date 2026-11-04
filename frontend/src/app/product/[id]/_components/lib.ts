@@ -3,10 +3,10 @@ import { DASH } from '@/shared/lib/format';
 
 export const BADGE_BASE =
   'inline-flex items-center text-xs font-montserrat uppercase tracking-[0.04em] px-2 py-0.5 border';
-export const BADGE_SUCCESS = 'bg-[#EDF1E5] border-[#C7D2B0] text-[#4F5C36]';
-export const BADGE_WARNING = 'bg-[#F4EBD7] border-[#E5D29B] text-[#4A3A12]';
-export const BADGE_DANGER = 'bg-[#F8E5DD] border-[#E8B6A1] text-[#8E3F22]';
-export const BADGE_INFO = 'bg-[#E6EEF7] border-[#B4CBE4] text-[#2F4A66]';
+export const BADGE_SUCCESS = 'bg-status-success border-status-success-border text-status-success-text';
+export const BADGE_WARNING = 'bg-status-warning border-status-warning-border text-status-warning-text';
+export const BADGE_DANGER = 'bg-status-danger border-status-danger-border text-status-danger-text';
+export const BADGE_INFO = 'bg-status-info border-status-info-border text-status-info-text';
 export const BADGE_DEFAULT = 'bg-ivory border-border-default text-slate';
 
 export const CHIP =

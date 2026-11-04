@@ -70,7 +70,7 @@ export function OffersTable({ offers }: OffersTableProps) {
             const isCheapest = cheapest !== null && retail !== null && retail === cheapest;
 
             return (
-              <tr key={offer.id} className={cn(isCheapest && 'bg-[#EDF1E5]')}>
+              <tr key={offer.id} className={cn(isCheapest && 'bg-status-success')}>
                 <td className={TABLE_TD}>
                   <div className="font-semibold text-slate">{offer.store?.name ?? DASH}</div>
                   {isCheapest && (

@@ -1,0 +1,30 @@
+VARIANT A
+Edit only the THREE SMALL ICONS in the supplied artwork. Keep every other pixel's design, all text, all positions, the tiny green tags, green ribbon and canvas unchanged.
+
+The old icons are wrong. ERASE THEM COMPLETELY first. Rebuild them as very small, narrow, thin-line geometric glyphs, substantially lighter than reference. At the1672×941 canvas their complete icon boxes should be approximately22px wide ×32px high, NOT40×50px. Use a delicate SINGLE1px charcoal stroke, NOT filled black forms. Match all three icons' optical size and weight.
+
+ROW1 at61.8% x38.5%: a simple upright rounded rectangle18px wide ×30px high, radius4px, with two fine diagonal resize arrows inside. The TOP SIDE MUST BE A SINGLE UNBROKEN SMOOTH LINE. Absolutely no inward dip, black tab, camera hole, speaker bar, pill or notch at the top. It is a GEOMETRIC ROUNDED RECTANGLE, not a drawing of an iPhone.
+
+ROW3 at61.8% x53.5%: EXACT COPY of the SAME18×30px rounded rectangle with IDENTICAL smooth top outline and same dimensions as row1. Small horizontal outlined battery at its lower-right,14×8px with2fine vertical lines. No notch, no camera, no speaker, no upper inset. No dark area at upper middle. Top edge identical to row1.
+
+ROW2 at61.8% x46%: narrow minimalist outlined L-shaped flex strip with ONE gentle bend and two tiny plain terminal rectangles. No black filled regions. No nested connector details or pins. Entire glyph no wider than22px and no taller than30px. Stroke SAME1px as other2icons. Refined, not bold.
+
+Treat these as small precise SVG-style line icons. Enlarge no part of the image. Preserve the rest of the hero exactly. Output the corrected full hero without any decorative magnifying glass; only native tiny search icon remains inside field.
+
+VARIANT B - edit of final A
+Create VARIANT2 from the supplied corrected BScout hero. KEEP THE ENTIRE SOURCE IMAGE IDENTICAL: exact canvas, layout, compact overall scale, positions, every word, all3thin icons and their smooth notch-free rectangle tops, green ribbon, shadows, small status pills, empty left space. Do not redraw icons or change their strokes.
+
+The ONLY addition is ONE modest graphite MAGNIFYING GLASS over the best-price badge of the SECOND/MIDDLE result row, the row that says "iPhone 13 Шлейф".
+
+Precise lens behavior:
+- Place circular lens over the LEFT portion of that row's existing green "Лучшая цена" capsule, centered on the EXISTING WORD "Лучшая".
+- The glass really OPTICALLY ENLARGES the word underneath, to about1.8–2x its original tiny text size.
+- Inside the circular lens there is NOTHING except that SAME enlarged WHITE WORD "Лучшая" on the optically magnified green badge background. No icons, no miniature scene, no phone, no checkmark, no additional words, no "цена" inside lens, no decorative reflections obscuring letters.
+- This is magnification of the existing word, not an extra detached callout or a second best-price badge. The rest of the original badge, including the word "цена" to its right, can remain visible outside the lens.
+- Circular lens approximately65–75px diameter at the1672px-wide canvas, narrow graphite ring (2–3px), transparent/lens-like with very subtle edge. A short slim graphite handle angled down-right into the available right-side margin. Do not create a giant heavy black magnifier.
+- Position it at middle row height only. Do not magnify either first-row or third-row badges, do not add any lens near search input, do not cover the flex part icon or product label.
+- Keep circles and handle entirely inside right group/canvas, no overlap with ribbon or first/third product labels. The effect should clearly say 'look closely at the best offer' while staying restrained.
+
+All original text remains unchanged and spelled correctly:
+search iPhone13, three rows Дисплей / Шлейф / Аккумулятор, ribbon "Сравни цены на запчасти" / "в магазинах Ставрополя".
+DO NOT change composition size or move elements. Output the full second hero image with just this middle-row-word magnification addition.

@@ -39,7 +39,7 @@ export function OfferResultCard({ item }: { item: ProductResponse }) {
   const stock = stockLabel(item.stock_status);
 
   return (
-    <div className="flex gap-4 p-4 items-center border-b border-border-light-subtle last:border-b-0">
+    <div className="flex gap-4 p-4 items-center rounded-2xl border border-border-input bg-ivory-elevated">
       <div className="w-16 h-16 bg-ivory-warm flex items-center justify-center text-body-muted text-xs flex-shrink-0 overflow-hidden">
         {item.image_url ? (
           <Image
@@ -61,13 +61,25 @@ export function OfferResultCard({ item }: { item: ProductResponse }) {
           href={item.url}
           target="_blank"
           rel="noreferrer"
-          className="text-base font-semibold text-slate no-underline block mb-1 hover:underline"
+          className="text-base font-semibold text-slate no-underline block mb-1 hover:underline decoration-brand-green underline-offset-[6px] dark:decoration-current dark:underline-offset-auto"
         >
           {item.title}
         </a>
         <div className="text-[14px] text-body-subtle flex gap-3 flex-wrap items-center">
           {item.store && <span>{item.store.name}</span>}
-          {stock && <span>{stock}</span>}
+          {stock && (
+            <span
+              className={`text-xs font-medium ${
+                item.stock_status === 'in_stock' || item.stock_status === 'low'
+                  ? 'text-brand-green'
+                  : item.stock_status === 'out'
+                    ? 'text-stock-unavailable'
+                    : 'text-body-subtle'
+              }`}
+            >
+              {stock}
+            </span>
+          )}
         </div>
       </div>
 

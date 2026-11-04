@@ -3,13 +3,15 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SearchControls } from './lib';
 import { CatalogSearchView } from './CatalogSearchView';
 
-const { catalog, offers, exportButton } = vi.hoisted(() => ({
+const { catalog, facets, offers, exportButton } = vi.hoisted(() => ({
   catalog: vi.fn(),
+  facets: vi.fn(),
   offers: vi.fn(),
   exportButton: vi.fn(),
 }));
 vi.mock('@/models/catalog', () => ({
   useCatalogSearch: catalog,
+  useCatalogFacets: facets,
   useCatalogSuggestions: () => ({ data: [] }),
 }));
 vi.mock('@/models/product', () => ({ useProductSearch: offers }));
@@ -31,13 +33,13 @@ vi.mock('./CatalogResultCard', () => ({ CatalogResultCard: () => <span>Дисп�
 
 describe('catalog filtered requests', () => {
   it('passes offer filters to results, offers and export and uses filtered total for pagination', () => {
+    facets.mockReturnValue({ data: { devices: [], part_types: [], quality_tiers: [] } });
     catalog.mockReturnValue({
       data: { results: [{ id: 1 }], total: 21, per_page: 20 },
       isLoading: false,
     });
-    // Facet sampling is independent of the selected filters and needs dictionary-shaped rows.
     catalog.mockImplementation((params) => ({
-      data: { results: params.per_page === 100 ? [] : [{ id: 1 }], total: 21, per_page: 20 },
+      data: { results: [{ id: 1 }], total: 21, per_page: 20 },
       isLoading: false,
     }));
     offers.mockReturnValue({ data: { results: [], total: 0 }, isLoading: false });
@@ -65,6 +67,7 @@ describe('catalog filtered requests', () => {
     );
     const filters = { store: 'liberti', min_price: 0, max_price: 500, in_stock: false };
     expect(catalog).toHaveBeenCalledWith(expect.objectContaining({ ...filters, page: 1 }));
+    expect(facets).toHaveBeenCalledWith('дисплей');
     expect(offers).toHaveBeenLastCalledWith(expect.objectContaining(filters), { enabled: false });
     fireEvent.click(screen.getByRole('button', { name: 'Показать предложения магазинов' }));
     expect(offers).toHaveBeenLastCalledWith(expect.objectContaining(filters), { enabled: true });
@@ -76,5 +79,27 @@ describe('catalog filtered requests', () => {
     expect(screen.getByText('Найдено: 21 товар')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
     expect(screen.getByLabelText('Магазин')).toHaveValue('liberti');
+  });
+
+  it('shows all quality options after the query changes', () => {
+    catalog.mockReturnValue({ data: { results: [], total: 0, per_page: 20 }, isLoading: false });
+    offers.mockReturnValue({ data: { results: [], total: 0 }, isLoading: false });
+    facets.mockReturnValue({
+      data: {
+        devices: [],
+        part_types: [],
+        quality_tiers: [{ id: 1, label: 'OEM' }, { id: 2, label: 'Оригинал' }],
+      },
+    });
+    const controls: SearchControls = {
+      onQueryChange: vi.fn(), onFilterChange: vi.fn(), onPriceChange: vi.fn(),
+      onSortChange: vi.fn(), onPageChange: vi.fn(), onReset: vi.fn(),
+    };
+    const state = { q: '', sort_by: 'min_price_asc' as const, page: 1 };
+    const { rerender } = render(<CatalogSearchView state={state} controls={controls} />);
+    rerender(<CatalogSearchView state={{ ...state, q: 'дисплей' }} controls={controls} />);
+    expect(facets).toHaveBeenLastCalledWith('дисплей');
+    expect(screen.getByText('OEM')).toBeInTheDocument();
+    expect(screen.getByText('Оригинал')).toBeInTheDocument();
   });
 });

@@ -20,6 +20,20 @@ type ProductSearchFieldProps = {
   inputClassName?: string;
 };
 
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  const term = query.trim();
+  const start = term ? name.toLocaleLowerCase().indexOf(term.toLocaleLowerCase()) : -1;
+  if (start < 0) return <>{name}</>;
+
+  return (
+    <>
+      {name.slice(0, start)}
+      <strong className="font-semibold text-slate">{name.slice(start, start + term.length)}</strong>
+      {name.slice(start + term.length)}
+    </>
+  );
+}
+
 export function ProductSearchField({
   value,
   onValueChange,
@@ -119,10 +133,10 @@ export function ProductSearchField({
           id={listId}
           role="listbox"
           aria-label="Подсказки поиска"
-          className="absolute top-full left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-border-input bg-ivory-elevated shadow-lg"
+          className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
         >
           {items.map((item, index) => (
-            <li key={item.id} role="presentation">
+            <li key={item.id} role="presentation" className="border-b border-border-light-subtle last:border-b-0">
               <button
                 type="button"
                 role="option"
@@ -132,11 +146,13 @@ export function ProductSearchField({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(item.canonical_name)}
                 className={cn(
-                  'w-full px-4 py-3 text-left text-[14px] text-slate hover:bg-ivory-warm focus-visible:outline-slate',
-                  index === activeIndex && 'bg-ivory-warm',
+                  'block w-full whitespace-normal break-words rounded-lg border-l-2 px-3 py-3.5 text-left text-[14px] leading-5 text-body-subtle transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
+                  index === activeIndex
+                    ? 'border-brand-green bg-brand-green/10'
+                    : 'border-transparent bg-search-surface',
                 )}
               >
-                {item.canonical_name}
+                <HighlightedName name={item.canonical_name} query={value} />
               </button>
             </li>
           ))}

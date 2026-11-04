@@ -1,0 +1,27 @@
+Use case: compositing / ads-marketing.
+Create ONE art-directed desktop website HERO ILLUSTRATION for BScout, helping repair technicians search electronics spare parts and compare local store offers. This is a revision of our prior artwork based on supplied references, NOT a complete website screenshot.
+
+Reference 1: old comparison-card screenshot, use only its crisp rounded ivory software-card style; remove ALL prices, shops, availability labels and old headings. Reference 2: folded zigzag promotional ribbon with an alarm clock, use only the elegant dimensional FOLDED RIBBON concept; completely replace alarm clock, words, and red color. Reference 3: previous BScout phone artwork, use its realistic blue iPhone13 and detached screen-module appearance, NOT its shop table.
+
+CANVAS and safe composition: WIDE LANDSCAPE 16:9, highest native resolution available, target 2560x1440 or higher, sharp typography. Seamless warm ivory #FAF9F5. Entire LEFT 44% genuinely EMPTY for real HTML headline and buttons: absolutely no lettering, shapes, objects, ribbon, shadows or lines crossing into this area. Compact complete composition on RIGHT between x=47% and94%, y=6% and94%. All pictured devices, ribbons, card edges and shadows fully inside the frame. No cropping. Plenty of breathing room. Avoid a wide empty gutter between the right-side elements.
+
+RIGHT upper BACKGROUND: a recognizable realistic blue iPhone13 back with two diagonal cameras and correct proportions, beside a thin separate replacement OLED display with graphite rear backing, small metal brackets and two short black flex cables with fine gold contacts. Modest scale: support the UI, not dominate it. Beautiful three-quarter product studio view. Only one phone and one screen. Every connector is inside frame. No medal.
+
+MAIN foreground: a large polished rounded warm-white SEARCH INPUT AND OPEN AUTOCOMPLETE DROPDOWN, completely frontal, perfectly readable Cyrillic and Latin typography. This must instantly look like someone typed a device model and is choosing a spare part, not a price comparison table.
+Top search field: small graphite search icon, text EXACTLY "iPhone 13", a subtle text insertion caret after13, perhaps small grey clear x at far right.
+Under input, attached dropdown panel with EXACTLY THREE uniformly spaced suggestion rows, thin warm-gray dividers, small restrained outlined part icons on left (screen, flex ribbon, battery). Each row ONE LINE, left aligned:
+"iPhone 13 Дисплей"
+"iPhone 13 Шлейф"
+"iPhone 13 Аккумулятор"
+Highlight the first row very faint pale green with a fine green accent at its left, remaining rows warm white. Generous padding, graphite #141413 modern sans-serif, crisp high-contrast text. Keep recognizable UI proportions; do not turn rows into giant slogan headlines.
+At the bottom of this dropdown, one slim separated footer with a small green check icon and EXACT phrase "Лучшая цена во всех магазинах". White footer with green #22C55E icon / restrained green text, rather than a massive bright banner. The phrase must be easy to read. This is the ONE AND ONLY best-price message anywhere in the image.
+NO store names, no prices, no currency symbols, no availability, no numbers other than device model13, no "10 раз", no table columns, no "Профи", no "Магазин", no fake claims or extra descriptions.
+
+RIBBON under the search dropdown: a beautifully designed dimensional folded zigzag ribbon, inspired by reference2, with TWO clear legible front-facing bands connected by a subtle diagonal fold. Restrained warm terracotta #D97757 front faces, deeper warm clay folded backs, natural fine folded edges, soft controlled shadows. White / warm ivory lettering on the two bands, EXACTLY:
+top ribbon band: "Сравни предложения"
+bottom ribbon band: "магазинов города"
+Use tasteful semibold contemporary type, no extreme condensed sale font. It must feel like a deliberate brand illustration, not a red clearance sticker. Not a button. No urgency marks, no speed lines, no alarm clock or timer, no "offer"/"limited time" words. Keep the ribbon wholly on the right, not stretched across the empty left half. Ribbon and dropdown are related but do not overlap any text.
+
+REPLACE THE ALARM CLOCK with one small crafted graphite magnifying glass emblem near the upper-left end of the ribbon, integrated with the composition: its lens contains a fine outlined miniature smartphone display and a short flex-connector line, small green highlight. The magnifier should symbolise searching repair parts, not an award medal. Keep subtle and uncluttered; no third full-size phone.
+
+Overall: refined commercial product photography with clean tactile UI and ribbon illustration, ivory/graphite/terracotta with modest fresh green #22C55E accents. Optical hierarchy: understandable autocomplete first, local-store comparison slogan second, phone hardware third. Tack-sharp product details, exact legible words, gently rounded corners, realistic materials, cohesive warm light, no visual clutter. No additional text, no duplicated slogan or best-price label, no watermark, no navigation, no full webpage. Output one confidently composed standalone hero image, ENTIRE right composition in frame and empty left 44%.

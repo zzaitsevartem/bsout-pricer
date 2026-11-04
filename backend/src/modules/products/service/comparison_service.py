@@ -65,6 +65,12 @@ def _offer_aggregate_subquery(
             func.count(StoreOffer.id).label("offers_count"),
             func.count(func.distinct(StoreOffer.store_id)).label("stores_count"),
             func.array_agg(func.distinct(Store.slug)).label("store_slugs"),
+            case(
+                (func.bool_or(StoreOffer.stock_status.in_(("in_stock", "low"))), "in_stock"),
+                (func.bool_and(StoreOffer.stock_status == "out"), "out"),
+                (func.bool_and(StoreOffer.stock_status == "preorder"), "preorder"),
+                else_="unknown",
+            ).label("stock_status"),
         )
         .join(Store, Store.id == StoreOffer.store_id)
         .where(*filters)
@@ -125,10 +131,40 @@ def _catalog_item(row) -> dict:
         "offers_count": row.offers_count or 0,
         "stores_count": row.stores_count or 0,
         "store_slugs": sorted(row.store_slugs or []),
+        "stock_status": row.stock_status or "unknown",
     }
 
 
 class ComparisonService:
+    @staticmethod
+    async def catalog_facets(db: AsyncSession, query: str = "", fuzzy: bool = False) -> dict:
+        products = (
+            select(Product.quality_tier_id, Cluster.device_id, Cluster.part_type_id)
+            .select_from(Product)
+            .outerjoin(Cluster, Cluster.id == Product.cluster_id)
+            .where(search_predicate(Product.canonical_name, query, fuzzy))
+            .subquery()
+        )
+        device_rows = await db.execute(
+            select(Device.id, Device.name).join(products, products.c.device_id == Device.id).distinct()
+        )
+        part_rows = await db.execute(
+            select(PartType.id, PartType.name_ru)
+            .join(products, products.c.part_type_id == PartType.id)
+            .distinct()
+        )
+        quality_rows = await db.execute(
+            select(QualityTier.id, QualityTier.name_ru, QualityTier.rank)
+            .join(products, products.c.quality_tier_id == QualityTier.id)
+            .distinct()
+            .order_by(QualityTier.rank, QualityTier.id)
+        )
+        return {
+            "devices": [{"id": row.id, "label": row.name} for row in device_rows],
+            "part_types": [{"id": row.id, "label": row.name_ru} for row in part_rows],
+            "quality_tiers": [{"id": row.id, "label": row.name_ru} for row in quality_rows],
+        }
+
     @staticmethod
     def _apply_filters(
         stmt,
@@ -193,6 +229,7 @@ class ComparisonService:
                 agg.c.offers_count,
                 agg.c.stores_count,
                 agg.c.store_slugs,
+                agg.c.stock_status,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
@@ -276,6 +313,7 @@ class ComparisonService:
                 agg.c.offers_count,
                 agg.c.stores_count,
                 agg.c.store_slugs,
+                agg.c.stock_status,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)

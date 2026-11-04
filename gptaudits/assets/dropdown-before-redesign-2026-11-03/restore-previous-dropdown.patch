@@ -1,0 +1,28 @@
+--- a/frontend/src/widgets/ProductSearch/ui/ProductSearchField.tsx
++++ b/frontend/src/widgets/ProductSearch/ui/ProductSearchField.tsx
+@@ -119,10 +119,10 @@
+           id={listId}
+           role="listbox"
+           aria-label="Подсказки поиска"
+-          className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] space-y-1 overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
++          className="absolute top-full left-0 right-0 z-30 mt-2 divide-y divide-brand-green overflow-hidden rounded-2xl border border-brand-green bg-search-surface shadow-lg"
+         >
+           {items.map((item, index) => (
+-            <li key={item.id} role="presentation">
++            <li key={item.id} role="presentation" className="odd:bg-search-row even:bg-search-surface">
+               <button
+                 type="button"
+                 role="option"
+@@ -132,10 +132,8 @@
+                 onMouseDown={(event) => event.preventDefault()}
+                 onClick={() => choose(item.canonical_name)}
+                 className={cn(
+-                  'block w-full whitespace-normal break-words rounded-xl border-l-2 px-3 py-3 text-left text-[14px] leading-5 text-slate transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
+-                  index === activeIndex
+-                    ? 'border-brand-green bg-brand-green/10'
+-                    : 'border-transparent bg-search-row',
++                  'w-full px-4 py-3 text-left text-[14px] text-slate hover:bg-brand-green/10 focus-visible:outline-slate',
++                  index === activeIndex && 'bg-brand-green/10',
+                 )}
+               >
+                 {item.canonical_name}

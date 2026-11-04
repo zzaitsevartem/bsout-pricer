@@ -2,6 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { SearchIcon } from '@/shared/ui/IconSVG';
+import { HoverIcon } from '@/shared/ui/HoverIcon';
+import eyeStatic from '@/shared/assets/images/icons/eye-static.svg';
+import eyeHover from '@/shared/assets/images/icons/eye-hover.webp';
+import settingsStatic from '@/shared/assets/images/icons/settings-static.svg';
+import settingsHover from '@/shared/assets/images/icons/settings-hover.webp';
 import { plural } from '@/shared/lib/format';
 
 type QuickAccessProps = {
@@ -20,59 +26,19 @@ const QuickAccess: React.FC<QuickAccessProps> = ({ used }) => {
       title: 'Поиск по артикулу',
       description:
         'Точное совпадение, частичное и нечёткий поиск с автодополнением по 5 магазинам города.',
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-      ),
+      icon: <SearchIcon width={24} height={24} />,
     },
     {
       href: '/account/tracking',
       title: 'Мои отслеживаемые',
       description: trackingDescription,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" />
-        </svg>
-      ),
+      icon: <HoverIcon staticIcon={eyeStatic} hoverIcon={eyeHover} replayIntervalMs={3500} />,
     },
     {
       href: '/account/settings',
       title: 'Настройки',
       description: 'Профиль, смена логина и email, тариф и тема оформления — в одном месте.',
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        >
-          <circle cx="12" cy="12" r="3.5" />
-          <path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2L5.1 5.8l-2 3.4 2 1.6A7 7 0 0 0 5 12" />
-        </svg>
-      ),
+      icon: <HoverIcon staticIcon={settingsStatic} hoverIcon={settingsHover} replayIntervalMs={2667} />,
     },
   ];
 
@@ -92,7 +58,7 @@ const QuickAccess: React.FC<QuickAccessProps> = ({ used }) => {
             <Link
               key={card.href}
               href={card.href}
-              className="rounded-[24px] bg-ivory-elevated p-[31px] transition-colors duration-150 hover:bg-ivory-warm"
+              className="quick-access-card rounded-[24px] bg-ivory-elevated p-[31px] transition-colors duration-150 hover:bg-ivory-warm"
             >
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ivory-warm text-slate">
                 {card.icon}

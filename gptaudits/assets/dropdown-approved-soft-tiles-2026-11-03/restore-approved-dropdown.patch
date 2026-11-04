@@ -1,0 +1,63 @@
+--- a/frontend/src/widgets/ProductSearch/ui/ProductSearchField.tsx
++++ b/frontend/src/widgets/ProductSearch/ui/ProductSearchField.tsx
+@@ -19,20 +19,6 @@
+   className?: string;
+   inputClassName?: string;
+ };
+-
+-function HighlightedName({ name, query }: { name: string; query: string }) {
+-  const term = query.trim();
+-  const start = term ? name.toLocaleLowerCase().indexOf(term.toLocaleLowerCase()) : -1;
+-  if (start < 0) return <>{name}</>;
+-
+-  return (
+-    <>
+-      {name.slice(0, start)}
+-      <strong className="font-semibold text-slate">{name.slice(start, start + term.length)}</strong>
+-      {name.slice(start + term.length)}
+-    </>
+-  );
+-}
+ 
+ export function ProductSearchField({
+   value,
+@@ -133,10 +119,10 @@
+           id={listId}
+           role="listbox"
+           aria-label="Подсказки поиска"
+-          className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
++          className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] space-y-1 overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
+         >
+           {items.map((item, index) => (
+-            <li key={item.id} role="presentation" className="border-b border-border-light-subtle last:border-b-0">
++            <li key={item.id} role="presentation">
+               <button
+                 type="button"
+                 role="option"
+@@ -146,13 +132,13 @@
+                 onMouseDown={(event) => event.preventDefault()}
+                 onClick={() => choose(item.canonical_name)}
+                 className={cn(
+-                  'block w-full whitespace-normal break-words rounded-lg border-l-2 px-3 py-3.5 text-left text-[14px] leading-5 text-body-subtle transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
++                  'block w-full whitespace-normal break-words rounded-xl border-l-2 px-3 py-3 text-left text-[14px] leading-5 text-slate transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
+                   index === activeIndex
+                     ? 'border-brand-green bg-brand-green/10'
+-                    : 'border-transparent bg-search-surface',
++                    : 'border-transparent bg-search-row',
+                 )}
+               >
+-                <HighlightedName name={item.canonical_name} query={value} />
++                {item.canonical_name}
+               </button>
+             </li>
+           ))}
+--- a/frontend/src/widgets/ProductSearch/ui/ProductSearchField.test.tsx
++++ b/frontend/src/widgets/ProductSearch/ui/ProductSearchField.test.tsx
+@@ -30,7 +30,6 @@
+     fireEvent.change(input, { target: { value: 'Nokia' } });
+     act(() => vi.advanceTimersByTime(200));
+     expect(screen.getByRole('option', { name: 'Дисплей Nokia 5700' })).toBeInTheDocument();
+-    expect(screen.getByText('Nokia', { selector: 'strong' })).toBeInTheDocument();
+     expect(push).not.toHaveBeenCalled();
+     fireEvent.keyDown(input, { key: 'ArrowDown' });
+     fireEvent.keyDown(input, { key: 'Enter' });

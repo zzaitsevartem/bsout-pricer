@@ -1,0 +1,21 @@
+Precise revision of supplied BScout hero artwork. Input1 is the last full hero draft: preserve its composition and dropdown layout. Input2 is the USER'S EXACT REQUIRED BADGE APPEARANCE: this screenshot overrides all previous color instructions. Match its SATURATED FRESH GREEN full rounded pill, WHITE letters, soft gentle tonal shading. Do not substitute olive, pale green or dark green lettering.
+
+Produce ONE polished wide16:9 desktop hero image at highest native quality, ivory #FAF9F5 background, LEFT44% completely empty for real HTML copy. All artwork in RIGHT half, compact vertically centered, full objects in frame. No actual website heading or navigation. No phones/physical devices, no standalone magnifier, no circles or decorative backgrounds, no medal, no props. Only search dropdown plus folded ribbon.
+
+SEARCH: light warm-white clean UI panel, subtle border, understated shadow, small native magnifier glyph inside input only. Search input EXACT "iPhone 13" with thin typing caret and subtle clear x. Below exactly3 clear result rows:
+"iPhone 13 Дисплей"
+"iPhone 13 Шлейф"
+"iPhone 13 Аккумулятор"
+Small simple line icons for display/flex/battery at left. Fine separators.
+At right of EACH row, align ONE identical badge, all3 perfectly matching reference2: VIVID GREEN capsule with WHITE text EXACT "Лучшая цена". Fully rounded ends, no border needed, gentle realistic reference shading; approximate green #20B76B but prioritize the exact visual reference. No pale olive background, NO dark lettering, NO rectangular success tags. Three badges TOTAL. The green pills should be comfortably small UI labels, no giant marketing buttons. Badge text medium/semibold white, exact Cyrillic. No footer, no shared general bestprice claim. No prices, ruble symbols, store names or extra rows.
+
+TYPOGRAPHY IS CRITICAL: replace heavy chunky font everywhere with graceful soft contemporary Raleway / humanist sans-serif matching the BScout website. UI text weight400-500, badge weight600, ribbon weight500-600. More open graceful letterforms and restrained stroke widths. Avoid square geometric block glyphs, black900 weight, harsh condensed type, grotesquely heavy/bulky lettering, loud sales typography. Align and space everything beautifully.
+
+RIBBON: retain folded two-band dimensional geometry but COMPLETELY REPLACE every BLACK/CHARCOAL SURFACE. Use LIGHT SAGE / CACTUS #BCD1CA front faces, softly deeper sage #91ADA4 folds, delicate ivory highlights, natural soft shadows. Fresh, light, calm premium stationery aesthetic. Ribbon should never look black, funereal, dark, red, orange or terracotta. Keep a thin lightweight elegant paper feel, not thick slabs. Dark graphite #141413 text with generous tracking and medium-weight Raleway-like letterforms.
+Replace old vague slogan with EXACT concrete2-band Russian text:
+upper band: "Сравни цены на запчасти"
+lower band: "в магазинах Ставрополя"
+Ensure all words fit on their bands with comfortable padding, legible at hero scale. NO "Сравни предложения", NO "магазинов города". No other slogan. This communicates exactly that service compares spare-part prices across local Stavropol stores. Keep long band text in one line each, widening band within right-side safe area rather than using condensed or tiny font.
+Do not repeat bestprice claim on ribbon. No decorative large price or sale graphics.
+
+Final: elegant soft ivory, pale sage ribbon, graphite understated type, exactly THREE bright-green white-text bestprice pills matching screenshot2. Preserve empty left area, all composition safe within canvas, no cropping or text errors. Strong sharpness without harsh artificial boldness. Return actual finished artwork, not a mockup board.

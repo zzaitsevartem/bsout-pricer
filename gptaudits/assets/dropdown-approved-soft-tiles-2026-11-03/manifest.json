@@ -1,0 +1,6 @@
+{
+  "approved": true,
+  "description": "Approved soft rounded tiles with gaps; default rollback target from now on",
+  "file": "frontend/src/widgets/ProductSearch/ui/ProductSearchField.tsx",
+  "sha256": "3276d51507fb2e2bf4a210059301b367158374dbe0faa64de45b2f5663e0ab54"
+}

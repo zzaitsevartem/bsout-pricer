@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, initials, planLabel, planPrice } from './format';
+import { formatDate, formatTariffAmount, initials, planLabel, planPrice } from './format';
+
+describe('formatTariffAmount', () => {
+  it('rounds fractional tariff prices and marks them as approximate', () => {
+    expect(formatTariffAmount(319.2)).toBe('≈319');
+    expect(formatTariffAmount(399.8)).toBe('≈400');
+    expect(formatTariffAmount(399)).toBe('399');
+    expect(formatTariffAmount(0)).toBe('0');
+  });
+});
 
 describe('planLabel / planPrice', () => {
   it('maps known plans to Russian labels', () => {

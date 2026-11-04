@@ -1,0 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,100..1000;1,100..1000&family=Lexend:wght@100..900&family=Montserrat:wght@100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ivory: #ffffff;
+    --color-ivory-elevated: #ffffff;
+    --color-ivory-warm: #ffffff;
+    --color-slate: #000000;
+    --color-slate-soft: #171717;
+    --color-slate-medium: #262626;
+    --color-body: #262626;
+    --color-body-subtle: #525252;
+    --color-body-muted: #666666;
+    --color-border-default: #737373;
+    --color-border-input: #b3b3b3;
+    --color-border-light: #d9d9d9;
+    --color-border-subtle: #d9d9d9;
+    --color-border-light-subtle: #e5e5e5;
+    --color-stock-unavailable: #b42318;
+    --color-search-surface: #ffffff;
+    --color-search-row: #f7f7f7;
+    --color-discount: #00c078;
+    --color-accent: #00c078;
+    --color-accent-hover: #00a868;
+    --color-positive: #008553;
+    --color-danger: #b42318;
+    --color-danger-hover: #912018;
+    --color-decorative-line: #00c078;
+    --color-decorative-ink: #000000;
+    --color-featured-copy: #d9d9d9;
+    --color-success-surface: #e6f8f0;
+    --color-success-border: #a3e4c9;
+    --color-success-text: #006b43;
+    --color-warning-surface: #fff8e6;
+    --color-warning-border: #f0d58c;
+    --color-warning-text: #795500;
+    --color-danger-badge-text: #b42318;
+    --color-danger-surface: #fff0ee;
+    --color-danger-border: #f0b8b2;
+    --color-info-surface: #f5f5f5;
+    --color-info-border: #d9d9d9;
+    --color-info-text: #525252;
+  }
+
+  .dark {
+    --color-ivory: #1A1A18;
+    --color-ivory-elevated: #242422;
+    --color-ivory-warm: #2E2E2B;
+    --color-slate: #E8E6DC;
+    --color-slate-soft: #D1CFC5;
+    --color-slate-medium: #B0AEA5;
+    --color-body: #D1CFC5;
+    --color-body-subtle: #B0AEA5;
+    --color-body-muted: #87867F;
+    --color-border-default: #75746C;
+    --color-border-input: #4A4A47;
+    --color-border-light: #3D3D3A;
+    --color-border-subtle: #3D3D3A;
+    --color-border-light-subtle: #282825;
+    --color-stock-unavailable: #ff8a80;
+    --color-search-surface: var(--color-ivory-elevated);
+    --color-search-row: var(--color-ivory-warm);
+    --color-discount: #22c55e;
+    --color-accent: #D97757;
+    --color-accent-hover: #C6613F;
+    --color-positive: #788C5D;
+    --color-danger: #D97757;
+    --color-danger-hover: #C6613F;
+    --color-decorative-line: #D97757;
+    --color-decorative-ink: #141413;
+    --color-featured-copy: #D1CFC5;
+    --color-success-surface: #EDF1E5;
+    --color-success-border: #C7D2B0;
+    --color-success-text: #4F5C36;
+    --color-warning-surface: #F4EBD7;
+    --color-warning-border: #E5D29B;
+    --color-warning-text: #4A3A12;
+    --color-danger-badge-text: #8E3F22;
+    --color-danger-surface: #F8E5DD;
+    --color-danger-border: #E8B6A1;
+    --color-info-surface: #E6EEF7;
+    --color-info-border: #B4CBE4;
+    --color-info-text: #2F4A66;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease;
+  }
+
+  body {
+    font-family: 'Raleway', 'DM Sans', system-ui, sans-serif;
+    color: var(--color-body);
+    background: var(--color-ivory);
+    line-height: 1.5;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full text-[15px] font-medium tracking-[-0.002em] px-[31px] py-3 border transition-colors leading-none no-underline cursor-pointer whitespace-nowrap;
+  }
+
+  .btn:hover {
+    @apply no-underline;
+  }
+
+  .btn:focus-visible {
+    @apply outline-2 outline-offset-2 outline-slate;
+  }
+
+  .btn-primary {
+    @apply btn bg-slate text-ivory border-slate;
+  }
+
+  .btn-primary:hover {
+    @apply text-ivory;
+    filter: brightness(0.92);
+  }
+
+  .btn-secondary {
+    @apply btn bg-transparent text-slate border-slate;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-ivory-warm text-slate;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-slate border-transparent;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-ivory-elevated;
+  }
+
+  .btn-danger {
+    @apply btn bg-clay text-ivory border-clay;
+  }
+
+  .btn-danger:hover {
+    @apply bg-clay-ember border-clay-ember text-ivory;
+  }
+
+  .btn-sm {
+    @apply text-[14px] px-4 py-2;
+  }
+
+  .btn-lg {
+    @apply text-base px-[31px] py-[14px];
+  }
+
+  .btn-icon {
+    @apply relative inline-flex items-center justify-center w-11 h-11 rounded-full shrink-0 bg-transparent text-slate border border-border-default transition-colors cursor-pointer no-underline;
+  }
+
+  .btn-icon:hover {
+    @apply bg-ivory-elevated text-slate;
+  }
+
+  .btn-icon:focus-visible {
+    @apply outline-2 outline-offset-2 outline-slate;
+  }
+
+  .btn-arrow {
+    @apply inline-block text-[15px] font-normal text-slate bg-none border-none p-0 no-underline;
+  }
+
+  .btn-arrow:hover {
+    @apply underline underline-offset-[3px] text-slate;
+  }
+
+  .btn-arrow::after {
+    content: '\00a0→';
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* White surfaces and green actions are shared by every light-theme route. */
+@layer components {
+  :root:not(.dark) .bg-ivory-elevated,
+  :root:not(.dark) .bg-ivory-warm {
+    box-shadow: inset 0 0 0 1px var(--color-border-light-subtle);
+  }
+
+  :root:not(.dark) .btn-primary,
+  :root:not(.dark) .home-search-submit,
+  :root:not(.dark) .tariff-action {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #ffffff;
+  }
+
+  :root:not(.dark) .btn-primary:hover,
+  :root:not(.dark) .home-search-submit:hover,
+  :root:not(.dark) .tariff-action:hover {
+    background-color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+    filter: none;
+  }
+
+  :root:not(.dark) .btn-secondary:hover,
+  :root:not(.dark) .btn-icon:hover {
+    border-color: var(--color-accent);
+  }
+
+  :root:not(.dark) .home-palette .underline {
+    text-decoration-color: var(--color-accent);
+  }
+
+  :root:not(.dark) .home-palette a[href="/tariffs"].btn-secondary {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #ffffff;
+  }
+}
+
+/* Search-only line experiment; the homepage and dark palette are unchanged. */
+@layer components {
+  :root:not(.dark) .search-palette {
+    --color-border-default: #cdd6d1;
+    --color-border-input: #dfe5e1;
+    --color-border-light: #e9eeeb;
+    --color-border-subtle: #e5ebe7;
+    --color-border-light-subtle: #f0f3f1;
+  }
+
+  :root:not(.dark) .search-palette .border-body-muted,
+  :root:not(.dark) .search-palette .btn-secondary,
+  :root:not(.dark) .search-palette .btn-icon {
+    border-color: var(--color-border-default);
+  }
+}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ProductSearchField } from '@/widgets/ProductSearch/ui/ProductSearchField';
 import { plural } from '@/shared/lib/format';
 import type { UserResponse } from '@/models/user';
+import { HeroArtwork } from '@/shared/ui/HeroArtwork';
 
 type AuthorizedHeroProps = {
   me?: UserResponse;
@@ -55,67 +56,62 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
   const name = firstNameOf(me);
 
   return (
-    <section className="relative z-10 isolate min-h-[656px]">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 z-0 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat dark:brightness-[0.35]"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 z-[1] bg-gradient-to-r from-ivory via-ivory/80 to-ivory/25"
-      />
-      <div className="relative z-[2] mx-auto flex min-h-[656px] w-full max-w-[1200px] flex-col justify-center px-6 py-16 max-md:min-h-0">
-        <p className="font-montserrat text-xs uppercase tracking-[0.04em] text-body-muted mb-2">
-          Личный кабинет
-        </p>
-        <h1 className="mb-6 text-[61px] font-bold leading-[1.1] tracking-[-0.02em] text-slate max-md:text-[44px] max-[480px]:text-[36px]">
-          С возвращением,
-          <br />
-          <span className="underline decoration-[3px] underline-offset-[6px]">
-            {name || 'добро пожаловать'}
-          </span>
-        </h1>
-        <p className="mb-8 max-w-[50ch] text-lg leading-[1.4] text-body">{lead}</p>
+    <section className="relative z-10 isolate bg-ivory">
+      <div className="mx-auto flex min-h-[656px] w-full max-w-[1280px] flex-col justify-center px-6 py-12 lg:py-14">
+        <div className="relative z-[1] min-w-0 lg:max-w-[54%]">
+          <p className="font-montserrat text-xs uppercase tracking-[0.04em] text-body-muted mb-2">
+            Личный кабинет
+          </p>
+          <h1 className="mb-6 text-[44px] font-bold leading-[1.1] tracking-[-0.02em] text-slate max-[480px]:text-[36px] lg:text-[48px] xl:text-[54px]">
+            С возвращением,
+            <br />
+            <span className="underline decoration-[3px] underline-offset-[6px]">
+              {name || 'добро пожаловать'}
+            </span>
+          </h1>
+          <p className="mb-8 max-w-[50ch] text-lg leading-[1.4] text-body">{lead}</p>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            search(query);
-          }}
-          role="search"
-          className="max-w-[620px]"
-        >
-          <label htmlFor="home-search" className="sr-only">
-            Артикул, название или бренд
-          </label>
-          <div className="flex items-center rounded-full border border-border-input bg-ivory p-[6px] pl-7 transition-colors focus-within:border-border-default">
-            <ProductSearchField
-              id="home-search"
-              value={query}
-              onValueChange={setQuery}
-              onSelect={(selected) => {
-                setQuery(selected);
-                search(selected);
-              }}
-              label="Артикул, название или бренд"
-              placeholder="Артикул, название или бренд…"
-              className="flex-1"
-              inputClassName="h-[52px] w-full min-w-0 border-none bg-transparent text-[18px] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
-            />
-            <button type="submit" className="btn-primary btn-lg shrink-0">
-              Найти
-            </button>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              search(query);
+            }}
+            role="search"
+            className="max-w-[620px]"
+          >
+            <label htmlFor="home-search" className="sr-only">
+              Артикул, название или бренд
+            </label>
+            <div className="field-shell flex items-center rounded-full border border-border-input bg-ivory p-[6px] pl-7 transition-colors focus-within:border-border-default">
+              <ProductSearchField
+                id="home-search"
+                value={query}
+                onValueChange={setQuery}
+                onSelect={(selected) => {
+                  setQuery(selected);
+                  search(selected);
+                }}
+                label="Артикул, название или бренд"
+                placeholder="Артикул, название или бренд…"
+                className="flex-1"
+                inputClassName="h-[52px] w-full min-w-0 border-none bg-transparent text-[18px] text-slate placeholder:text-body-muted focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+              />
+              <button type="submit" className="btn-primary btn-lg home-search-submit shrink-0">
+                Найти
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-7 flex flex-wrap gap-8">
+            <Link href="/account/tracking" className="btn-arrow">
+              Мои отслеживаемые{typeof used === 'number' ? ` (${used})` : ''}
+            </Link>
+            <Link href="/account/notifications" className="btn-arrow">
+              Уведомления{typeof unread === 'number' ? ` (${unread})` : ''}
+            </Link>
           </div>
-        </form>
-
-        <div className="mt-7 flex flex-wrap gap-8">
-          <Link href="/account/tracking" className="btn-arrow">
-            Мои отслеживаемые{typeof used === 'number' ? ` (${used})` : ''} →
-          </Link>
-          <Link href="/account/notifications" className="btn-arrow">
-            Уведомления{typeof unread === 'number' ? ` (${unread})` : ''} →
-          </Link>
         </div>
+        <HeroArtwork />
       </div>
     </section>
   );

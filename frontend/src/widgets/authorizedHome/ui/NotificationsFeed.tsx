@@ -17,7 +17,7 @@ function NotificationItem({ notification }: { notification: NotificationResponse
       <span
         className={cn(
           'mt-2 h-[10px] w-[10px] flex-none rounded-full',
-          notification.is_read ? 'bg-border-subtle' : 'bg-clay',
+          notification.is_read ? 'bg-border-subtle' : 'bg-accent',
         )}
         aria-hidden="true"
       />
@@ -58,7 +58,7 @@ const NotificationsFeed: React.FC = () => {
             </h2>
           </div>
           <Link href="/account/notifications" className="btn-arrow">
-            Все уведомления ({feed.total}) →
+            Все уведомления ({feed.total})
           </Link>
         </div>
         <div className="rounded-[24px] bg-ivory-elevated px-[31px] py-2 max-sm:px-6">

@@ -2,6 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { catalogApi } from './service';
 import type { CatalogSearchParams, CatalogSuggestionParams } from './schema';
 
+export function useCatalogFacets(q: string) {
+  return useQuery({
+    queryKey: ['catalog', 'facets', q],
+    queryFn: () => catalogApi.facets(q).then((response) => response.data),
+  });
+}
+
 export function useCatalogSearch(params: CatalogSearchParams) {
   return useQuery({
     queryKey: ['catalog', 'search', params],

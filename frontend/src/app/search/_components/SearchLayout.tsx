@@ -64,7 +64,7 @@ export function SearchLayout({
     chips.push({ key: 'in_stock', label: state.in_stock ? 'В наличии' : 'Нет в наличии' });
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6">
+    <div className="search-palette max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-[264px_1fr] gap-8 py-8 min-h-[calc(100vh-64px)] max-lg:grid-cols-1">
         <div className="self-start lg:sticky lg:top-20">
           <div className="rounded-2xl border border-border-light-subtle p-4 lg:border-0 lg:p-0">

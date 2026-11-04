@@ -34,7 +34,14 @@ describe('OfferResultCard', () => {
     expect(screen.getByText('Либерти')).toBeInTheDocument();
     expect(screen.getByText('1 560 ₽')).toBeInTheDocument();
     expect(screen.getByText('опт 1 460 ₽')).toBeInTheDocument();
-    expect(screen.getByText('В наличии')).toBeInTheDocument();
+    expect(screen.getByText('В наличии')).toHaveClass('text-brand-green');
+    expect(screen.getByText('В наличии')).not.toHaveClass('border');
+  });
+
+  it('marks an unavailable offer in red', () => {
+    render(<OfferResultCard item={{ ...offer, stock_status: 'out' }} />);
+    expect(screen.getByText('Нет в наличии')).toHaveClass('text-stock-unavailable');
+    expect(screen.getByText('Нет в наличии')).not.toHaveClass('border');
   });
 
   it('renders without optional fields', () => {

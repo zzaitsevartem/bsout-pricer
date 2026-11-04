@@ -8,13 +8,7 @@ import { Footer } from '@/widgets/Footer/ui/Footer';
 import { $isAuth } from '@/shared/config/store';
 import { usePlans } from '@/models/payment';
 import type { PlanResponse } from '@/models/payment';
-
-function formatAmount(value: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+import { formatTariffAmount } from '@/shared/lib/format';
 
 function formatDays(days: number): string {
   const tail = days % 10;
@@ -39,7 +33,7 @@ const ROWS: { label: string; value: (plan: PlanResponse) => string; bold?: boole
   {
     label: 'Цена',
     value: (plan) =>
-      plan.price === 0 ? 'Бесплатно' : `${formatAmount(plan.price)} ₽ / ${formatDays(plan.durationDays)}`,
+      plan.price === 0 ? 'Бесплатно' : `${formatTariffAmount(plan.price)} ₽ / ${formatDays(plan.durationDays)}`,
     bold: true,
   },
   {
@@ -48,8 +42,8 @@ const ROWS: { label: string; value: (plan: PlanResponse) => string; bold?: boole
       plan.price === 0
         ? '—'
         : plan.firstPaymentPrice < plan.price
-          ? `${formatAmount(plan.firstPaymentPrice)} ₽ (−20%)`
-          : `${formatAmount(plan.firstPaymentPrice)} ₽`,
+          ? `${formatTariffAmount(plan.firstPaymentPrice)} ₽ (−20%)`
+          : `${formatTariffAmount(plan.firstPaymentPrice)} ₽`,
   },
   { label: 'Длительность периода', value: (plan) => formatDays(plan.durationDays) },
   { label: 'Отслеживаемые товары', value: (plan) => `до ${plan.trackedProducts}` },

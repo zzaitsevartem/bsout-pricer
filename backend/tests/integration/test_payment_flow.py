@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -22,7 +23,7 @@ def _provider_env(monkeypatch):
     monkeypatch.setenv("YOOKASSA_SECRET_KEY", PROVIDER_SECRET_KEY)
 
 
-def _remote_object(status: str, paid: bool, value: str = "319.20") -> dict:
+def _remote_object(status: str, paid: bool, value: str = "319.00") -> dict:
     return {
         "id": "yk-test-1",
         "status": status,
@@ -111,9 +112,9 @@ async def test_plans_expose_prices_limits_and_features(client):
     by_plan = {item["plan"]: item for item in body}
 
     assert Decimal(by_plan["basic"]["price"]) == Decimal("399")
-    assert Decimal(by_plan["basic"]["first_payment_price"]) == Decimal("319.20")
+    assert Decimal(by_plan["basic"]["first_payment_price"]) == Decimal("319")
     assert Decimal(by_plan["advanced"]["price"]) == Decimal("499")
-    assert Decimal(by_plan["advanced"]["first_payment_price"]) == Decimal("399.20")
+    assert Decimal(by_plan["advanced"]["first_payment_price"]) == Decimal("399")
     assert Decimal(by_plan["trial"]["price"]) == Decimal("0")
     assert Decimal(by_plan["trial"]["first_payment_price"]) == Decimal("0")
 
@@ -155,7 +156,7 @@ async def test_subscribe_applies_first_payment_discount(client, db_session):
         "/api/payment/subscribe", json={"plan": "advanced"}, headers=_auth(user)
     )
 
-    assert Decimal(resp.json()["amount"]) == Decimal("399.20")
+    assert Decimal(resp.json()["amount"]) == Decimal("399")
 
 
 async def test_second_payment_is_full_price_after_first_succeeds(client, db_session):
@@ -167,7 +168,7 @@ async def test_second_payment_is_full_price_after_first_succeeds(client, db_sess
         json={"plan": "basic", "idempotence_key": "first"},
         headers=_auth(user),
     )
-    assert Decimal(first.json()["amount"]) == Decimal("319.20")
+    assert Decimal(first.json()["amount"]) == Decimal("319")
 
     confirmed = await client.post(
         f"/api/payment/{first.json()['id']}/confirm", headers=_auth(admin)
@@ -507,7 +508,10 @@ async def test_subscribe_creates_provider_payment_when_configured(client, db_ses
     monkeypatch.setenv("YOOKASSA_SHOP_ID", "shop-1")
     monkeypatch.setenv("YOOKASSA_SECRET_KEY", "secret-1")
 
+    amounts = []
+
     def handler(request: httpx.Request) -> httpx.Response:
+        amounts.append(json.loads(request.content)["amount"])
         return httpx.Response(
             200,
             json={
@@ -528,5 +532,7 @@ async def test_subscribe_creates_provider_payment_when_configured(client, db_ses
     assert resp.status_code == 201, resp.text
     body = resp.json()
     assert body["provider"] == "yookassa"
+    assert Decimal(body["amount"]) == Decimal("319")
+    assert amounts == [{"value": "319.00", "currency": "RUB"}]
     assert body["provider_payment_id"] == "yk-int-1"
     assert body["confirmation_url"] == "https://pay.example/x"
