@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "waves": {
+    "read": {
+      "leaves": [
+        "leaf-1.1"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T20:32:26.696Z",
+      "started": {
+        "leaf-1.1": {
+          "handle": "/root/luna_reader",
+          "at": "2026-11-05T20:32:38.144Z"
+        }
+      },
+      "returned": {
+        "leaf-1.1": {
+          "at": "2026-11-05T20:34:29.006Z"
+        }
+      },
+      "sealedAt": "2026-11-05T20:32:38.186Z",
+      "completedAt": "2026-11-05T20:34:29.006Z"
+    },
+    "tests": {
+      "leaves": [
+        "leaf-1.2"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T20:34:43.647Z",
+      "started": {
+        "leaf-1.2": {
+          "handle": "/root/terra_tests",
+          "at": "2026-11-05T20:34:57.834Z"
+        }
+      },
+      "returned": {
+        "leaf-1.2": {
+          "at": "2026-11-05T20:37:32.402Z"
+        }
+      },
+      "sealedAt": "2026-11-05T20:34:57.879Z",
+      "completedAt": "2026-11-05T20:37:32.402Z"
+    },
+    "report": {
+      "leaves": [
+        "leaf-1.3"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T20:40:14.052Z",
+      "started": {
+        "leaf-1.3": {
+          "handle": "/root/luna_reader",
+          "at": "2026-11-05T20:40:31.138Z"
+        }
+      },
+      "returned": {
+        "leaf-1.3": {
+          "at": "2026-11-05T20:44:22.252Z"
+        }
+      },
+      "sealedAt": "2026-11-05T20:40:31.189Z",
+      "completedAt": "2026-11-05T20:44:22.252Z"
+    },
+    "tests-fix": {
+      "leaves": [
+        "leaf-1.2"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T20:42:02.965Z",
+      "started": {
+        "leaf-1.2": {
+          "handle": "/root/terra_tests",
+          "at": "2026-11-05T20:42:03.013Z"
+        }
+      },
+      "returned": {
+        "leaf-1.2": {
+          "at": "2026-11-05T20:42:42.151Z"
+        }
+      },
+      "sealedAt": "2026-11-05T20:42:03.054Z",
+      "completedAt": "2026-11-05T20:42:42.151Z"
+    }
+  }
+}

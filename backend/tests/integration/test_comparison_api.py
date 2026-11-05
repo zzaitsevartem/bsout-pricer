@@ -775,7 +775,11 @@ async def test_suggestions_filters_require_active_matching_offers_and_bound_limi
     )
     assert response.status_code == 200, response.text
     assert len(response.json()) == 8
-    assert all(set(row) == {"id", "canonical_name"} for row in response.json())
+    assert all(set(row) == {"id", "canonical_name", "display_name"} for row in response.json())
+    assert all(
+        row["display_name"] == f'Apple iPhone 13 {row["canonical_name"]}'
+        for row in response.json()
+    )
     assert not {excluded.id, empty.id, inactive.id} & {row["id"] for row in response.json()}
     for params in [
         {"q": "n"},
@@ -786,6 +790,31 @@ async def test_suggestions_filters_require_active_matching_offers_and_bound_limi
             "/api/products/catalog/suggestions", params=params, headers=_auth(token)
         )
         assert response.status_code == 422
+
+
+async def test_suggestions_display_structured_model_and_unstructured_fallback(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    store = await _make_store(db_session, "display")
+    structured = await _make_product(
+        db_session, refs, refs["tier_copy"], "structured", "Дисплей iPhone 13 OLED"
+    )
+    unstructured = await _make_product(
+        db_session, refs, refs["tier_copy"], "unstructured", "Дисплей универсальный"
+    )
+    unstructured.cluster_id = None
+    await _make_offer(db_session, store, structured, "structured", "100")
+    await _make_offer(db_session, store, unstructured, "unstructured", "100")
+
+    response = await client.get(
+        "/api/products/catalog/suggestions", params={"q": "Дисплей"}, headers=_auth(token)
+    )
+
+    assert response.status_code == 200, response.text
+    by_id = {row["id"]: row for row in response.json()}
+    assert by_id[structured.id]["canonical_name"] == "Дисплей iPhone 13 OLED"
+    assert by_id[structured.id]["display_name"] == "iPhone 13 Дисплей OLED"
+    assert by_id[unstructured.id]["display_name"] == "Дисплей универсальный"
 
 
 async def test_suggestions_reject_expired_subscription_and_anonymous(client, db_session):

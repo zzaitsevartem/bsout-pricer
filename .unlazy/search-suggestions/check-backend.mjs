@@ -1,0 +1,10 @@
+import {spawnSync} from 'node:child_process';
+import {readFileSync,cpSync} from 'node:fs';
+import path from 'node:path';
+const root=process.cwd();
+const target=readFileSync('.unlazy/search-suggestions/backend-path.txt','utf8').trim();
+for(const folder of ['src','tests']) cpSync(path.join(root,'backend',folder),path.join(target,folder),{recursive:true,filter:p=>!p.includes('__pycache__')});
+const result=spawnSync(path.join(root,'backend/venv/bin/python'),['-m','pytest','tests/unit/test_suggestion_display.py','tests/integration/test_comparison_api.py','-k','suggestion','-q'],{cwd:target,encoding:'utf8',env:{...process.env,POSTGRES_HOST:'127.0.0.1',POSTGRES_PORT:'60985',POSTGRES_USER:'bscout',POSTGRES_PASSWORD:'bscout',POSTGRES_DB:'bscout_test',TEST_DATABASE_URL:'postgresql+asyncpg://bscout:bscout@127.0.0.1:60985/bscout_test',REDIS_HOST:'127.0.0.1',REDIS_PORT:'60995',JWT_SECRET_KEY:'test-secret-key-not-for-production',DEBUG:'false'}});
+process.stdout.write(result.stdout??'');process.stderr.write(result.stderr??'');
+if(result.status!==0||/\bskipped\b/.test(result.stdout??''))process.exit(1);
+console.log('BACKEND_SUGGESTIONS_VERIFIED');

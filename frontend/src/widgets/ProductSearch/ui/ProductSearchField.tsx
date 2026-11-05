@@ -7,6 +7,8 @@ import { useCatalogDevices, useCatalogSuggestions } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
 import { cn } from '@/shared/lib/utils';
 
+const FREQUENT_SEARCHES = ['iPhone 15', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11'];
+
 type ProductSearchFieldProps = {
   value: string;
   onValueChange: (value: string) => void;
@@ -73,22 +75,25 @@ export function ProductSearchField({
     { q: suggestionText, limit: 6 },
     { enabled: ready && Boolean(onDeviceSelect) },
   );
-  const items = ready
-    ? [
-        ...(onDeviceSelect
-          ? (devices.data ?? []).map((device) => ({
-              ...device,
-              kind: 'device' as const,
-              name: device.label,
-            }))
-          : []),
-        ...(suggestions.data ?? []).map((product) => ({
-          ...product,
-          kind: 'product' as const,
-          name: product.canonical_name,
-        })),
-      ]
-    : [];
+  const showFrequent = suggestionsEnabled && focused && !dismissed && value.trim().length === 0;
+  const items = showFrequent
+    ? FREQUENT_SEARCHES.map((name) => ({ id: name, kind: 'frequent' as const, name }))
+    : ready
+      ? [
+          ...(onDeviceSelect
+            ? (devices.data ?? []).map((device) => ({
+                ...device,
+                kind: 'device' as const,
+                name: device.label,
+              }))
+            : []),
+          ...(suggestions.data ?? []).map((product) => ({
+            ...product,
+            kind: 'product' as const,
+            name: product.display_name ?? product.canonical_name,
+          })),
+        ]
+      : [];
   const itemKeys = items.map((item) => `${item.kind}-${item.id}`).join(',');
   useEffect(() => setActiveIndex(-1), [itemKeys]);
   const expanded = items.length > 0;
@@ -96,7 +101,7 @@ export function ProductSearchField({
     setDismissed(true);
     setActiveIndex(-1);
     if (item.kind === 'device') onDeviceSelect?.(item);
-    else onSelect(item.name);
+    else onSelect(item.kind === 'product' ? item.canonical_name : item.name);
   };
   return (
     <div className={cn('relative min-w-0', className)}>
@@ -157,7 +162,7 @@ export function ProductSearchField({
           id={listId}
           role="listbox"
           aria-label="Подсказки поиска"
-          className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
+          className="absolute top-full left-0 right-0 z-30 mt-2 max-w-full max-h-[min(60vh,24rem)] overflow-x-hidden overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
         >
           {items.map((item, index) => (
             <li
@@ -167,7 +172,11 @@ export function ProductSearchField({
             >
               {(index === 0 || items[index - 1].kind !== item.kind) && (
                 <span className="block px-3 pt-3 pb-2 text-xs font-semibold text-slate">
-                  {item.kind === 'device' ? 'Поиск по моделям' : 'Поиск по запчастям'}
+                  {item.kind === 'frequent'
+                    ? 'Часто ищут'
+                    : item.kind === 'device'
+                      ? 'Поиск по моделям'
+                      : 'Поиск по запчастям'}
                 </span>
               )}
               <button
@@ -179,7 +188,7 @@ export function ProductSearchField({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(item)}
                 className={cn(
-                  'block w-full whitespace-normal break-words rounded-lg border-l-2 px-3 py-3.5 text-left text-[14px] leading-5 text-body-subtle transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
+                  'block min-w-0 max-w-full w-full whitespace-normal break-words rounded-lg border-l-2 px-3 py-3.5 text-left text-[14px] leading-5 text-body-subtle transition-colors hover:border-brand-green hover:bg-brand-green/10 focus-visible:outline-slate',
                   index === activeIndex
                     ? 'border-brand-green bg-brand-green/10'
                     : 'border-transparent bg-search-surface',

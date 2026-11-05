@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -16,6 +17,30 @@ from src.modules.stores.model.store import Store
 
 CATALOG_SORT_OPTIONS = ("min_price_asc", "min_price_desc")
 CENTS = Decimal("0.01")
+
+
+def _suggestion_display_name(
+    canonical_name: str, device_name: str | None, brand_name: str | None
+) -> str:
+    if not device_name:
+        return canonical_name
+    label = device_name
+    if brand_name and not label.casefold().startswith(brand_name.casefold()):
+        label = f"{brand_name} {label}"
+    for candidate in dict.fromkeys((label, device_name)):
+        match = re.search(rf"(?<!\w){re.escape(candidate)}(?!\w)", canonical_name, re.IGNORECASE)
+        if match is not None:
+            start, end = match.span()
+            remainder = " ".join(
+                part.strip()
+                for part in (canonical_name[:start], canonical_name[end:])
+                if part.strip()
+            )
+            remainder = re.sub(r"\(\s*\)", "", remainder)
+            remainder = re.sub(r"\s+([,;:])", r"\1", remainder)
+            remainder = " ".join(remainder.split())
+            return " ".join(part for part in (canonical_name[start:end], remainder) if part)
+    return f"{label} {canonical_name}"
 
 
 def _money(value) -> Decimal | None:
@@ -67,8 +92,10 @@ def _offer_aggregate_subquery(
             func.array_agg(func.distinct(Store.slug)).label("store_slugs"),
             func.min(
                 case(
-                    (func.trim(StoreOffer.image_url).op("~*")(r"^https?://[^[:space:]]+$"),
-                     func.trim(StoreOffer.image_url)),
+                    (
+                        func.trim(StoreOffer.image_url).op("~*")(r"^https?://[^[:space:]]+$"),
+                        func.trim(StoreOffer.image_url),
+                    ),
                     else_=None,
                 )
             ).label("image_url"),
@@ -169,9 +196,12 @@ class ComparisonService:
             .join(Brand, Brand.id == Device.brand_id)
             .join(Cluster, Cluster.device_id == Device.id)
             .join(Product, Product.cluster_id == Cluster.id)
-            .where(or_(
-                search_predicate(func.concat(Brand.name, " ", Device.name), query), alias_match,
-            ))
+            .where(
+                or_(
+                    search_predicate(func.concat(Brand.name, " ", Device.name), query),
+                    alias_match,
+                )
+            )
             .group_by(Device.id)
             .order_by(
                 case((or_(func.lower(Device.name) == query.lower(), exact_alias), 0), else_=1),
@@ -206,9 +236,7 @@ class ComparisonService:
 
         def matching_products(dimension: str):
             stmt = (
-                select(
-                    Product.id, Product.quality_tier_id, Cluster.device_id, Cluster.part_type_id
-                )
+                select(Product.id, Product.quality_tier_id, Cluster.device_id, Cluster.part_type_id)
                 .select_from(Product)
                 .outerjoin(Cluster, Cluster.id == Product.cluster_id)
             )
@@ -243,7 +271,9 @@ class ComparisonService:
         products = matching_products("quality")
         quality_rows = await db.execute(
             select(
-                QualityTier.id, QualityTier.name_ru, QualityTier.rank,
+                QualityTier.id,
+                QualityTier.name_ru,
+                QualityTier.rank,
                 func.count(products.c.id).label("count"),
             )
             .outerjoin(products, products.c.quality_tier_id == QualityTier.id)
@@ -378,8 +408,15 @@ class ComparisonService:
             .exists()
         )
         stmt = (
-            select(Product.id, Product.canonical_name)
+            select(
+                Product.id,
+                Product.canonical_name,
+                Device.name.label("device_name"),
+                Brand.name.label("brand_name"),
+            )
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
+            .outerjoin(Device, Device.id == Cluster.device_id)
+            .outerjoin(Brand, Brand.id == Device.brand_id)
             .where(offers)
         )
         stmt = ComparisonService._apply_filters(
@@ -395,7 +432,16 @@ class ComparisonService:
                 stmt.order_by(priority, Product.canonical_name, Product.id).limit(limit)
             )
         ).all()
-        return [{"id": row.id, "canonical_name": row.canonical_name} for row in rows]
+        return [
+            {
+                "id": row.id,
+                "canonical_name": row.canonical_name,
+                "display_name": _suggestion_display_name(
+                    row.canonical_name, row.device_name, row.brand_name
+                ),
+            }
+            for row in rows
+        ]
 
     @staticmethod
     async def _load_product_row(db: AsyncSession, product_id: int):

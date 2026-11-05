@@ -2,17 +2,19 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HeaderSearch } from '@/widgets/Header/ui/HeaderSearch';
 import { AuthorizedHero } from '@/widgets/authorizedHome/ui/AuthorizedHero';
+import { ProductSearchField } from '@/widgets/ProductSearch/ui/ProductSearchField';
 
-const { push, query, auth } = vi.hoisted(() => ({
+const { push, query, devices, auth } = vi.hoisted(() => ({
   push: vi.fn(),
   query: vi.fn(),
+  devices: vi.fn(() => ({ data: [] })),
   auth: { value: true },
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('effector-react', () => ({ useUnit: () => auth.value }));
 vi.mock('@/models/catalog', () => ({
   useCatalogSuggestions: query,
-  useCatalogDevices: () => ({ data: [] }),
+  useCatalogDevices: devices,
 }));
 
 afterEach(() => {
@@ -21,6 +23,105 @@ afterEach(() => {
   auth.value = true;
 });
 describe('shared product search entry points', () => {
+  it.each([true, false])('shows local frequent searches on empty focus (auth: %s)', (isAuth) => {
+    auth.value = isAuth;
+    query.mockReturnValue({ data: [] });
+    render(<HeaderSearch />);
+    fireEvent.focus(screen.getByRole('combobox'));
+    expect(screen.getByText('Часто ищут')).toBeInTheDocument();
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'iPhone 15',
+      'iPhone 14',
+      'iPhone 13',
+      'iPhone 12',
+      'iPhone 11',
+    ]);
+    expect(query).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }), { enabled: false });
+    expect(devices).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }), {
+      enabled: false,
+    });
+  });
+
+  it.each(['click', 'keyboard'])('selects a frequent search by %s', (method) => {
+    query.mockReturnValue({ data: [] });
+    render(<HeaderSearch />);
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    if (method === 'click') fireEvent.click(screen.getByRole('option', { name: 'iPhone 15' }));
+    else {
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      expect(screen.getByRole('option', { name: 'iPhone 15' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      fireEvent.keyDown(input, { key: 'Enter' });
+    }
+    expect(push).toHaveBeenCalledWith('/search?q=iPhone%2015');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('dismisses and reopens frequent searches, transitions on typing and clear', () => {
+    vi.useFakeTimers();
+    query.mockReturnValue({ data: [{ id: 1, canonical_name: 'Дисплей Nokia 5700' }] });
+    render(<HeaderSearch />);
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    fireEvent.blur(input);
+    fireEvent.focus(input);
+    expect(screen.getByText('Часто ищут')).toBeInTheDocument();
+    fireEvent.change(input, { target: { value: 'Nokia' } });
+    expect(screen.queryByText('Часто ищут')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByRole('option', { name: 'Дисплей Nokia 5700' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Очистить поиск' }));
+    expect(screen.getByText('Часто ищут')).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Дисплей Nokia 5700' })).not.toBeInTheDocument();
+    fireEvent.blur(input);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('respects disabled suggestions for an empty field', () => {
+    query.mockReturnValue({ data: [] });
+    render(
+      <ProductSearchField
+        value=""
+        onValueChange={vi.fn()}
+        onSelect={vi.fn()}
+        suggestionsEnabled={false}
+        label="Search"
+      />,
+    );
+    fireEvent.focus(screen.getByLabelText('Search'));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }), { enabled: false });
+    expect(devices).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }), {
+      enabled: false,
+    });
+  });
+
+  it('displays a model-first non-Apple name but selects the canonical query', () => {
+    vi.useFakeTimers();
+    query.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          canonical_name: 'Дисплей Samsung Galaxy A53 OLED',
+          display_name: 'Samsung Galaxy A53 Дисплей OLED',
+        },
+      ],
+    });
+    render(<HeaderSearch />);
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'Samsung' } });
+    act(() => vi.advanceTimersByTime(200));
+    fireEvent.click(screen.getByRole('option', { name: 'Samsung Galaxy A53 Дисплей OLED' }));
+    expect(push).toHaveBeenCalledWith(
+      `/search?q=${encodeURIComponent('Дисплей Samsung Galaxy A53 OLED')}`,
+    );
+  });
   it.each([
     ['header', () => <HeaderSearch />, 'Поиск запчастей'],
     ['home', () => <AuthorizedHero />, 'Модель устройства, артикул или запчасть'],

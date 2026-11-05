@@ -163,3 +163,4 @@ class ProductPriceHistoryResponse(BaseModel):
 class CatalogSuggestion(BaseModel):
     id: int
     canonical_name: str
+    display_name: str

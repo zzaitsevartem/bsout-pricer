@@ -177,6 +177,7 @@ export type ProductPriceHistoryResponse = z.infer<typeof productPriceHistoryResp
 export const catalogSuggestionSchema = z.object({
   id: z.number().int(),
   canonical_name: z.string(),
+  display_name: z.string().optional(),
 });
 export const catalogSuggestionsSchema = z.array(catalogSuggestionSchema);
 export type CatalogSuggestion = z.infer<typeof catalogSuggestionSchema>;

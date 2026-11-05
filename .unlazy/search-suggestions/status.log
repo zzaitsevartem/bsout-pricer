@@ -1,0 +1,23 @@
+2026-11-05T20:32:26.701Z dispatch read opened: leaf-1.1
+2026-11-05T20:32:38.155Z dispatch read started leaf-1.1 as /root/luna_reader
+2026-11-05T20:32:38.191Z dispatch read sealed
+Driver added structured backend display_name and optional frontend schema; Terra ownership includes focused backend tests before dispatch.
+2026-11-05T20:34:29.020Z dispatch read returned leaf-1.1
+leaf-1.1 parent reviewed and verified; exact lease released; leaf-1.2 promoted
+2026-11-05T20:34:43.656Z dispatch tests opened: leaf-1.2
+2026-11-05T20:34:57.849Z dispatch tests started leaf-1.2 as /root/terra_tests
+2026-11-05T20:34:57.888Z dispatch tests sealed
+2026-11-05T20:37:32.413Z dispatch tests returned leaf-1.2
+Terra returned, driver reverified leaf tests and reviewed backend/frontend regressions; exact leaf-1.2 lease released.
+2026-11-05T20:40:14.058Z dispatch report opened: leaf-1.3
+2026-11-05T20:40:31.157Z dispatch report started leaf-1.3 as /root/luna_reader
+2026-11-05T20:40:31.194Z dispatch report sealed
+2026-11-05T20:42:02.971Z dispatch tests-fix opened: leaf-1.2
+2026-11-05T20:42:03.026Z dispatch tests-fix started leaf-1.2 as /root/terra_tests
+2026-11-05T20:42:03.060Z dispatch tests-fix sealed
+Luna review found legacy structured fallback C3 gap; driver uses model prefix preserving canonical text; Terra reopens regression coverage before final verification.
+2026-11-05T20:42:42.157Z dispatch tests-fix returned leaf-1.2
+Second Terra pass verified; parent isolated regression run 19 passed no skips; leaf-1.2 exact lease released.
+2026-11-05T20:44:22.263Z dispatch report returned leaf-1.3
+Final Luna report independently reviewed, C1-C5 reconciled, leaf-1.3 verified and exact lease released.
+Final root reverify ALL MET: 10 root +4 child gates. Request C1-C5 reconciled, all dispatch waves complete, no unmet or abandoned outcomes.

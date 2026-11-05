@@ -1,0 +1,14 @@
+import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const files=['src/modules/products/schema/comparison.py','src/modules/products/service/comparison_service.py'];
+const local=files.map(p=>createHash('sha256').update(readFileSync('backend/'+p)).digest('hex'));
+const code="import hashlib,pathlib;print('\\n'.join(hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in "+JSON.stringify(files)+"))";
+const result=spawnSync('docker',['exec','bscout-backend','python','-c',code],{encoding:'utf8'});
+if(result.status!==0)throw Error('Running backend source hash check failed');
+if(JSON.stringify(result.stdout.trim().split('\n'))!==JSON.stringify(local))throw Error('Running backend differs from reviewed source');
+const health=await fetch('http://localhost:8000/api/health').then(r=>r.json());
+if(health.status!=='ok')throw Error('Backend health check failed');
+const api=await fetch('http://localhost:8000/openapi.json').then(r=>r.json());
+if(!api.components.schemas.CatalogSuggestion.properties.display_name)throw Error('Display schema missing');
+console.log('RUNTIME_VERIFIED');
