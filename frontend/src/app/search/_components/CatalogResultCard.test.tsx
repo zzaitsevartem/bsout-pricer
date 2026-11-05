@@ -11,9 +11,24 @@ const item: CatalogItemResponse = {
   quality_tier: { id: 1, code: 'original', name_ru: 'Оригинал', rank: 0 },
   min_price_retail: '100', min_price_opt: null, offers_count: 1, stores_count: 1,
   store_slugs: ['store'], stock_status: 'in_stock',
+  source: { offer_id: 1, store_id: 1, store_name: 'Магазин', store_slug: 'store', url: 'https://store.example/offer' },
 };
 
 describe('CatalogResultCard', () => {
+  it('links the price source to the matching offer in a safe new tab', () => {
+    render(<CatalogResultCard item={item} />);
+    const link = screen.getByRole('link', { name: /Магазин/ });
+    expect(link).toHaveAttribute('href', 'https://store.example/offer');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noreferrer'));
+  });
+
+  it('shows an explicit fallback when the source is unavailable', () => {
+    render(<CatalogResultCard item={{ ...item, source: null }} />);
+    expect(screen.getByText('Источник недоступен')).toBeInTheDocument();
+  });
+
   it('shows original and the available status as green text', () => {
     render(<CatalogResultCard item={item} />);
     expect(screen.getByText('Оригинал')).toHaveClass('text-brand-green');

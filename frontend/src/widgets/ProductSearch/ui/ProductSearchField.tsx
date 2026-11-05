@@ -7,13 +7,20 @@ import { useCatalogDevices, useCatalogSuggestions } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
 import { cn } from '@/shared/lib/utils';
 
-const FREQUENT_SEARCHES = ['iPhone 15', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11'];
+const FREQUENT_SEARCHES = [
+  { name: 'iPhone 15', model_key: 'apple-iphone-15' },
+  { name: 'iPhone 14', model_key: 'apple-iphone-14' },
+  { name: 'iPhone 13', model_key: 'apple-iphone-13' },
+  { name: 'iPhone 12', model_key: 'apple-iphone-12' },
+  { name: 'iPhone 11', model_key: 'apple-iphone-11' },
+];
 
 type ProductSearchFieldProps = {
   value: string;
   onValueChange: (value: string) => void;
   onSelect: (value: string) => void;
   onDeviceSelect?: (device: { id: number; label: string; model_key: string }) => void;
+  onFrequentSelect?: (device: { label: string; model_key: string }) => void;
   suggestionsEnabled?: boolean;
   filters?: CatalogSearchParams;
   id?: string;
@@ -42,6 +49,7 @@ export function ProductSearchField({
   onValueChange,
   onSelect,
   onDeviceSelect,
+  onFrequentSelect,
   suggestionsEnabled = true,
   filters,
   id,
@@ -77,7 +85,11 @@ export function ProductSearchField({
   );
   const showFrequent = suggestionsEnabled && focused && !dismissed && value.trim().length === 0;
   const items = showFrequent
-    ? FREQUENT_SEARCHES.map((name) => ({ id: name, kind: 'frequent' as const, name }))
+    ? FREQUENT_SEARCHES.map((device) => ({
+        ...device,
+        id: device.model_key,
+        kind: 'frequent' as const,
+      }))
     : ready
       ? [
           ...(onDeviceSelect
@@ -101,7 +113,9 @@ export function ProductSearchField({
     setDismissed(true);
     setActiveIndex(-1);
     if (item.kind === 'device') onDeviceSelect?.(item);
-    else onSelect(item.kind === 'product' ? item.canonical_name : item.name);
+    else if (item.kind === 'frequent' && onFrequentSelect) {
+      onFrequentSelect({ label: item.name, model_key: item.model_key });
+    } else onSelect(item.kind === 'product' ? item.canonical_name : item.name);
   };
   return (
     <div className={cn('relative min-w-0', className)}>

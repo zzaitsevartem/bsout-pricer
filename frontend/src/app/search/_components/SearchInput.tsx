@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { SearchIcon } from '@/shared/ui/IconSVG';
 import { ProductSearchField } from '@/widgets/ProductSearch/ui/ProductSearchField';
@@ -21,12 +22,18 @@ export function SearchInput({
   suggestionsEnabled = false,
   filters,
 }: SearchInputProps) {
+  const router = useRouter();
   const [text, setText] = useState(query);
   const committed = useRef(query);
   const choose = (value: string) => {
     committed.current = value;
     setText(value);
     onQueryChange(value);
+  };
+  const openDevice = (modelKey: string) => {
+    committed.current = '';
+    setText('');
+    router.push(`/devices/${encodeURIComponent(modelKey)}`);
   };
 
   useEffect(() => {
@@ -66,6 +73,7 @@ export function SearchInput({
             setText('');
             onDeviceSelect(device);
           } : undefined}
+          onFrequentSelect={(device) => openDevice(device.model_key)}
           suggestionsEnabled={suggestionsEnabled}
           filters={filters}
           label="Поиск по модели устройства или запчасти"

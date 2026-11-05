@@ -1,0 +1,15 @@
+2026-11-05 21:30:39,073 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-11-05 21:30:39,073 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-11-05 21:30:39,073 INFO sqlalchemy.engine.Engine select current_schema()
+2026-11-05 21:30:39,073 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-11-05 21:30:39,074 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-11-05 21:30:39,074 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-11-05 21:30:39,074 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-11-05 21:30:39,076 INFO sqlalchemy.engine.Engine SELECT users.id 
+FROM users 
+WHERE users.is_active IS true ORDER BY users.id 
+ LIMIT $1::INTEGER
+2026-11-05 21:30:39,076 INFO sqlalchemy.engine.Engine [generated in 0.00006s] (1,)
+2026-11-05 21:30:39,077 INFO sqlalchemy.engine.Engine ROLLBACK
+Product: Защитная плёнка Apple iPhone 15 (Чёрный); retail: 7.00; store: Профи (profi); URL: https://siriust.ru/aksessuary/zaschitnye-plenki/plenka-iphone/zaschitnaya-plenka-dlya-iphone-15-6.1-dyuyma-ceramics-hd-chernaya-ramka/; offers: 1
+PASS: authenticated live catalog source matches cheapest detail offer

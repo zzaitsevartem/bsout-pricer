@@ -22,6 +22,12 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
     onSubmitted?.();
   };
 
+  const openDevice = (modelKey: string) => {
+    setValue('');
+    router.push(`/devices/${encodeURIComponent(modelKey)}`);
+    onSubmitted?.();
+  };
+
   return (
     <form
       role="search"
@@ -39,11 +45,8 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
           id={inputId}
           value={value}
           onValueChange={setValue}
-          onDeviceSelect={(device) => {
-            setValue('');
-            router.push(`/devices/${encodeURIComponent(device.model_key)}`);
-            onSubmitted?.();
-          }}
+          onDeviceSelect={(device) => openDevice(device.model_key)}
+          onFrequentSelect={(device) => openDevice(device.model_key)}
           onSelect={(selected) => {
             setValue(selected);
             search(selected);

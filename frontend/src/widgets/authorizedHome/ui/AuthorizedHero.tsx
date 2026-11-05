@@ -39,6 +39,11 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
     router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
   };
 
+  const openDevice = (modelKey: string) => {
+    setQuery('');
+    router.push(`/devices/${encodeURIComponent(modelKey)}`);
+  };
+
   const hasTracked = typeof used === 'number' && used > 0;
   const hasUnread = typeof unread === 'number' && unread > 0;
 
@@ -87,10 +92,8 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
                 id="home-search"
                 value={query}
                 onValueChange={setQuery}
-            onDeviceSelect={(device) => {
-              setQuery('');
-              router.push(`/devices/${encodeURIComponent(device.model_key)}`);
-            }}
+            onDeviceSelect={(device) => openDevice(device.model_key)}
+            onFrequentSelect={(device) => openDevice(device.model_key)}
                 onSelect={(selected) => {
                   setQuery(selected);
                   search(selected);

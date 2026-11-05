@@ -1,0 +1,8 @@
+2026-11-05T21:23:31.577Z dispatch ready-1 opened: leaf-1.1.1, leaf-1.2.1
+2026-11-05T21:24:07.753Z dispatch ready-1 started leaf-1.1.1 as /root/read_sources
+2026-11-05T21:24:07.788Z dispatch ready-1 started leaf-1.2.1 as /root/terra_tests
+2026-11-05T21:24:07.821Z dispatch ready-1 sealed
+ready-1 sealed; Luna diagnoses screenshot source regression, Terra prepares runnable current-runtime checks; leaf ledgers will gain inspected command oracles before execution
+2026-11-05T21:36:35.698Z dispatch ready-1 returned leaf-1.1.1
+2026-11-05T21:36:35.738Z dispatch ready-1 returned leaf-1.2.1
+Both native agents returned. Coordinator reviewed only reports. Runtime API corrected and verified by Terra; Luna report accepted. leaf-1.1.1 verified and exact lease released; leaf-1.2.1 settled ABANDONED on visual handoff and exact lease released. Branch 1.2 remains handoff, no full completion claim.

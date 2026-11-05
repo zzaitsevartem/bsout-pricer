@@ -75,6 +75,33 @@ def _offer_conditions(
     return filters
 
 
+def _offer_source_subquery(
+    store_slug: str | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
+    in_stock: bool | None = None,
+):
+    return (
+        select(
+            StoreOffer.product_id.label("product_id"),
+            StoreOffer.id.label("source_offer_id"),
+            StoreOffer.store_id.label("source_store_id"),
+            Store.name.label("source_store_name"),
+            Store.slug.label("source_store_slug"),
+            StoreOffer.url.label("source_url"),
+            func.row_number()
+            .over(
+                partition_by=StoreOffer.product_id,
+                order_by=(StoreOffer.price_retail.asc(), StoreOffer.id.asc()),
+            )
+            .label("source_rank"),
+        )
+        .join(Store, Store.id == StoreOffer.store_id)
+        .where(*_offer_conditions(store_slug, min_price, max_price, in_stock))
+        .subquery()
+    )
+
+
 def _offer_aggregate_subquery(
     store_slug: str | None = None,
     min_price: Decimal | None = None,
@@ -167,6 +194,17 @@ def _catalog_item(row) -> dict:
         "stores_count": row.stores_count or 0,
         "store_slugs": sorted(row.store_slugs or []),
         "stock_status": row.stock_status or "unknown",
+        "source": (
+            {
+                "offer_id": row.source_offer_id,
+                "store_id": row.source_store_id,
+                "store_name": row.source_store_name,
+                "store_slug": row.source_store_slug,
+                "url": row.source_url,
+            }
+            if row.source_offer_id is not None
+            else None
+        ),
     }
 
 
@@ -329,6 +367,7 @@ class ComparisonService:
         fuzzy: bool = False,
     ) -> tuple[list[dict], int]:
         agg = _offer_aggregate_subquery(store_slug, min_price, max_price, in_stock)
+        source = _offer_source_subquery(store_slug, min_price, max_price, in_stock)
         filtered_offers = any(
             value is not None for value in (store_slug, min_price, max_price, in_stock)
         )
@@ -360,6 +399,11 @@ class ComparisonService:
                 agg.c.store_slugs,
                 agg.c.stock_status,
                 agg.c.image_url,
+                source.c.source_offer_id,
+                source.c.source_store_id,
+                source.c.source_store_name,
+                source.c.source_store_slug,
+                source.c.source_url,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
@@ -368,6 +412,10 @@ class ComparisonService:
             .outerjoin(Device, Device.id == Cluster.device_id)
             .outerjoin(PartType, PartType.id == Cluster.part_type_id)
             .outerjoin(agg, agg.c.product_id == Product.id)
+            .outerjoin(
+                source,
+                (source.c.product_id == Product.id) & (source.c.source_rank == 1),
+            )
         )
         if filtered_offers:
             stmt = stmt.where(agg.c.product_id.is_not(None))
@@ -446,6 +494,7 @@ class ComparisonService:
     @staticmethod
     async def _load_product_row(db: AsyncSession, product_id: int):
         agg = _offer_aggregate_subquery()
+        source = _offer_source_subquery()
         stmt = (
             select(
                 Product,
@@ -461,6 +510,11 @@ class ComparisonService:
                 agg.c.store_slugs,
                 agg.c.stock_status,
                 agg.c.image_url,
+                source.c.source_offer_id,
+                source.c.source_store_id,
+                source.c.source_store_name,
+                source.c.source_store_slug,
+                source.c.source_url,
             )
             .select_from(Product)
             .outerjoin(Cluster, Cluster.id == Product.cluster_id)
@@ -469,6 +523,10 @@ class ComparisonService:
             .outerjoin(Device, Device.id == Cluster.device_id)
             .outerjoin(PartType, PartType.id == Cluster.part_type_id)
             .outerjoin(agg, agg.c.product_id == Product.id)
+            .outerjoin(
+                source,
+                (source.c.product_id == Product.id) & (source.c.source_rank == 1),
+            )
             .where(Product.id == product_id)
         )
         return (await db.execute(stmt)).first()

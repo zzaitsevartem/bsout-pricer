@@ -1,16 +1,21 @@
 import { fireEvent, render, screen, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SearchInput } from './SearchInput';
-const { suggestions } = vi.hoisted(() => ({
+const { suggestions, push } = vi.hoisted(() => ({
   suggestions: vi.fn(() => ({ data: [] as { id: number; canonical_name: string }[] })),
+  push: vi.fn(),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('effector-react', () => ({ useUnit: () => true }));
 vi.mock('@/models/catalog', () => ({
   useCatalogSuggestions: suggestions,
   useCatalogDevices: () => ({ data: [] }),
 }));
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks();
+});
 describe('isolated search input', () => {
   it('keeps typing local and commits once after the debounce', () => {
     vi.useFakeTimers();
@@ -53,6 +58,40 @@ describe('isolated search input', () => {
 });
 
 describe('catalog suggestions', () => {
+  it.each(
+    [15, 14, 13, 12, 11].flatMap((model, index) =>
+      ['click', 'keyboard'].map((method) => ({ model, index, method })),
+    ),
+  )(
+    'opens iPhone $model by $method without committing a text search',
+    ({ model, index, method }) => {
+      vi.useFakeTimers();
+      const commit = vi.fn();
+      const onDeviceSelect = vi.fn();
+      render(
+        <SearchInput
+          query=""
+          onQueryChange={commit}
+          onDeviceSelect={onDeviceSelect}
+          suggestionsEnabled
+        />,
+      );
+      const input = screen.getByRole('combobox');
+      fireEvent.focus(input);
+      if (method === 'click')
+        fireEvent.click(screen.getByRole('option', { name: `iPhone ${model}` }));
+      else {
+        for (let i = 0; i <= index; i++) fireEvent.keyDown(input, { key: 'ArrowDown' });
+        fireEvent.keyDown(input, { key: 'Enter' });
+      }
+      act(() => vi.advanceTimersByTime(350));
+      expect(push).toHaveBeenCalledTimes(1);
+      expect(push).toHaveBeenCalledWith(`/devices/apple-iphone-${model}`);
+      expect(commit).not.toHaveBeenCalled();
+      expect(onDeviceSelect).not.toHaveBeenCalled();
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    },
+  );
   it('waits for focused debounced text, carries filters and supports keyboard selection', () => {
     vi.useFakeTimers();
     suggestions.mockReturnValue({

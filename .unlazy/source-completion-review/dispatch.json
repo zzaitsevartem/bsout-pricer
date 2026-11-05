@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "waves": {
+    "ready-1": {
+      "leaves": [
+        "leaf-1.1.1",
+        "leaf-1.2.1"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T21:23:31.570Z",
+      "started": {
+        "leaf-1.1.1": {
+          "handle": "/root/read_sources",
+          "at": "2026-11-05T21:24:07.749Z"
+        },
+        "leaf-1.2.1": {
+          "handle": "/root/terra_tests",
+          "at": "2026-11-05T21:24:07.783Z"
+        }
+      },
+      "returned": {
+        "leaf-1.1.1": {
+          "at": "2026-11-05T21:36:35.689Z"
+        },
+        "leaf-1.2.1": {
+          "at": "2026-11-05T21:36:35.730Z"
+        }
+      },
+      "sealedAt": "2026-11-05T21:24:07.816Z",
+      "completedAt": "2026-11-05T21:36:35.730Z"
+    }
+  }
+}

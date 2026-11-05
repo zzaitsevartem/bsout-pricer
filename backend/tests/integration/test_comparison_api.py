@@ -207,6 +207,7 @@ async def test_catalog_returns_product_without_offers_with_null_prices(client, d
     assert item["offers_count"] == 0
     assert item["stores_count"] == 0
     assert item["store_slugs"] == []
+    assert item["source"] is None
 
 
 async def test_catalog_aggregates_offers_from_three_stores(client, db_session):
@@ -219,8 +220,8 @@ async def test_catalog_aggregates_offers_from_three_stores(client, db_session):
     store_a = await _make_store(db_session, "store-a")
     store_b = await _make_store(db_session, "store-b")
     store_c = await _make_store(db_session, "store-c")
-    await _make_offer(db_session, store_a, product, "A1", "5000.00", "4500.00")
-    await _make_offer(db_session, store_b, product, "B1", "4200.00", "3900.00")
+    await _make_offer(db_session, store_a, product, "A1", "5000.00", "3000.00")
+    offer_b = await _make_offer(db_session, store_b, product, "B1", "4200.00", "3900.00")
     await _make_offer(db_session, store_c, product, "C1", "6100.00")
 
     resp = await client.get("/api/products/catalog", headers=_auth(token))
@@ -230,7 +231,11 @@ async def test_catalog_aggregates_offers_from_three_stores(client, db_session):
     assert item["id"] == product.id
     assert item["canonical_key"] == "apple-iphone-13|display|copy|-"
     assert item["min_price_retail"] == "4200.00"
-    assert item["min_price_opt"] == "3900.00"
+    assert item["min_price_opt"] == "3000.00"
+    assert item["source"] == {
+        "offer_id": offer_b.id, "store_id": store_b.id, "store_name": store_b.name,
+        "store_slug": store_b.slug, "url": offer_b.url,
+    }
     assert item["offers_count"] == 3
     assert item["stores_count"] == 3
     assert item["store_slugs"] == ["store-a", "store-b", "store-c"]
@@ -238,6 +243,24 @@ async def test_catalog_aggregates_offers_from_three_stores(client, db_session):
     assert item["device"]["model_key"] == "apple-iphone-13"
     assert item["part_type"]["code"] == "display"
     assert item["quality_tier"]["code"] == "copy"
+
+
+async def test_catalog_source_breaks_equal_price_ties_by_offer_id(client, db_session):
+    _, token = await _make_user(db_session)
+    refs = await _make_dictionaries(db_session)
+    product = await _make_product(db_session, refs, refs["tier_copy"], "copy", "Display")
+    first_store = await _make_store(db_session, "store-z")
+    second_store = await _make_store(db_session, "store-a")
+    first = await _make_offer(db_session, first_store, product, "Z1", "100")
+    await _make_offer(db_session, second_store, product, "A1", "100")
+
+    response = await client.get("/api/products/catalog", headers=_auth(token))
+
+    assert response.status_code == 200, response.text
+    assert response.json()["results"][0]["source"] == {
+        "offer_id": first.id, "store_id": first_store.id, "store_name": first_store.name,
+        "store_slug": first_store.slug, "url": first.url,
+    }
 
 
 async def test_catalog_ignores_inactive_and_unlinked_offers(client, db_session):
@@ -616,7 +639,7 @@ async def test_catalog_offer_filters_share_offer_and_filter_aggregates(client, d
         await _make_product(db_session, refs, refs["tier_copy"], str(i), f"Display {i}")
         for i in range(5)
     ]
-    await _make_offer(db_session, store_a, products[0], "A0", "100", "90")
+    offer_a = await _make_offer(db_session, store_a, products[0], "A0", "100", "90")
     await _make_offer(db_session, store_a, products[0], "A1", "200", "180", stock_status="low")
     await _make_offer(db_session, store_b, products[0], "B0", "50", "40")
     await _make_offer(db_session, store_a, products[0], "A2", "150", stock_status="out")
@@ -634,6 +657,10 @@ async def test_catalog_offer_filters_share_offer_and_filter_aggregates(client, d
     item = body["results"][0]
     assert item["min_price_retail"] == "100.00"
     assert item["min_price_opt"] == "90.00"
+    assert item["source"] == {
+        "offer_id": offer_a.id, "store_id": store_a.id, "store_name": store_a.name,
+        "store_slug": store_a.slug, "url": offer_a.url,
+    }
     assert item["offers_count"] == 2
     assert item["stores_count"] == 1
     assert item["store_slugs"] == ["store-a"]
@@ -648,6 +675,8 @@ async def test_catalog_offer_filters_share_offer_and_filter_aggregates(client, d
     detail = await client.get(f"/api/products/catalog/{products[0].id}", headers=_auth(token))
     assert detail.json()["stats"]["offers_count"] == 4
     assert detail.json()["stats"]["min_price_retail"] == "50.00"
+    assert detail.json()["product"]["source"]["store_id"] == store_b.id
+    assert detail.json()["product"]["source"]["url"].endswith("/B0")
     missing = await client.get(
         "/api/products/catalog", params={"store": "missing"}, headers=_auth(token)
     )

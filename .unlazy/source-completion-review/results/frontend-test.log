@@ -1,0 +1,15 @@
+
+> bscout-frontend@0.1.0 test
+> vitest run src/app/search/_components/CatalogResultCard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /Users/zzaitsevartem/Desktop/projects/bscout/frontend
+
+ ✓ |component| src/app/search/_components/CatalogResultCard.test.tsx (5 tests) 67ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  00:18:47
+   Duration  803ms (transform 33ms, setup 138ms, collect 81ms, tests 67ms, environment 316ms, prepare 42ms)
+

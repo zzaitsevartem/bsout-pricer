@@ -49,8 +49,25 @@ export function CatalogResultCard({ item }: { item: CatalogItemResponse }) {
 
       <div className="text-right flex-shrink-0">
         <div className="text-lg font-bold text-slate">
-          {item.min_price_retail === null ? 'Нет цены' : `от ${formatPrice(item.min_price_retail)}`}
-        </div>
+            {item.min_price_retail === null ? 'Нет цены' : `от ${formatPrice(item.min_price_retail)}`}
+          </div>
+          <div className="ml-auto max-w-48 break-words text-sm text-body-muted">
+            {item.source ? (
+              <>
+                Источник цены:{' '}
+                <a
+                  href={item.source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-words underline underline-offset-2 hover:text-slate"
+                >
+                  {item.source.store_name}
+                </a>
+              </>
+            ) : (
+              'Источник недоступен'
+            )}
+          </div>
         {item.min_price_opt && (
           <div className="text-[14px] text-body-muted">опт от {formatPrice(item.min_price_opt)}</div>
         )}

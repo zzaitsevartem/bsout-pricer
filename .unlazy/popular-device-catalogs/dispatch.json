@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "waves": {
+    "research": {
+      "leaves": [
+        "leaf-1.1"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T21:29:54.472Z",
+      "started": {
+        "leaf-1.1": {
+          "handle": "/root/luna_reader",
+          "at": "2026-11-05T21:30:12.683Z"
+        }
+      },
+      "returned": {
+        "leaf-1.1": {
+          "at": "2026-11-05T21:36:25.983Z"
+        }
+      },
+      "sealedAt": "2026-11-05T21:30:12.720Z",
+      "completedAt": "2026-11-05T21:36:25.983Z"
+    },
+    "tests": {
+      "leaves": [
+        "leaf-1.2"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T21:36:26.189Z",
+      "started": {
+        "leaf-1.2": {
+          "handle": "/root/terra_tests",
+          "at": "2026-11-05T21:36:45.546Z"
+        }
+      },
+      "returned": {
+        "leaf-1.2": {
+          "at": "2026-11-05T21:38:45.626Z"
+        }
+      },
+      "sealedAt": "2026-11-05T21:36:45.595Z",
+      "completedAt": "2026-11-05T21:38:45.626Z"
+    },
+    "report": {
+      "leaves": [
+        "leaf-1.3"
+      ],
+      "state": "complete",
+      "openedAt": "2026-11-05T21:40:18.061Z",
+      "started": {
+        "leaf-1.3": {
+          "handle": "/root/luna_reader",
+          "at": "2026-11-05T21:40:18.098Z"
+        }
+      },
+      "returned": {
+        "leaf-1.3": {
+          "at": "2026-11-05T21:45:19.784Z"
+        }
+      },
+      "sealedAt": "2026-11-05T21:40:18.131Z",
+      "completedAt": "2026-11-05T21:45:19.784Z"
+    }
+  }
+}

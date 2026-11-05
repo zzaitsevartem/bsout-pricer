@@ -51,7 +51,16 @@ class ClusterRef(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CatalogSourceResponse(BaseModel):
+    offer_id: int
+    store_id: int
+    store_name: str
+    store_slug: str
+    url: str
+
+
 class CatalogItemResponse(BaseModel):
+    source: CatalogSourceResponse | None = None
     image_url: str | None = None
     id: int
     canonical_key: str

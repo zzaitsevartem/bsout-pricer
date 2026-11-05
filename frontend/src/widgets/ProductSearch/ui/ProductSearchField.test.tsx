@@ -42,22 +42,78 @@ describe('shared product search entry points', () => {
     });
   });
 
-  it.each(['click', 'keyboard'])('selects a frequent search by %s', (method) => {
+  it.each(
+    ['header', 'home'].flatMap((host) =>
+      [15, 14, 13, 12, 11].flatMap((model, index) =>
+        ['click', 'keyboard'].map((method) => ({ host, model, index, method })),
+      ),
+    ),
+  )('$host opens iPhone $model by $method', ({ host, model, index, method }) => {
     query.mockReturnValue({ data: [] });
-    render(<HeaderSearch />);
+    const onSubmitted = vi.fn();
+    render(host === 'header' ? <HeaderSearch onSubmitted={onSubmitted} /> : <AuthorizedHero />);
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
-    if (method === 'click') fireEvent.click(screen.getByRole('option', { name: 'iPhone 15' }));
+    if (method === 'click')
+      fireEvent.click(screen.getByRole('option', { name: `iPhone ${model}` }));
     else {
-      fireEvent.keyDown(input, { key: 'ArrowDown' });
-      expect(screen.getByRole('option', { name: 'iPhone 15' })).toHaveAttribute(
+      for (let i = 0; i <= index; i++) fireEvent.keyDown(input, { key: 'ArrowDown' });
+      expect(screen.getByRole('option', { name: `iPhone ${model}` })).toHaveAttribute(
         'aria-selected',
         'true',
       );
       fireEvent.keyDown(input, { key: 'Enter' });
     }
-    expect(push).toHaveBeenCalledWith('/search?q=iPhone%2015');
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith(`/devices/apple-iphone-${model}`);
+    expect(onSubmitted).toHaveBeenCalledTimes(host === 'header' ? 1 : 0);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('passes only label and model key to the frequent callback', () => {
+    query.mockReturnValue({ data: [] });
+    const onFrequentSelect = vi.fn();
+    const onDeviceSelect = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <ProductSearchField
+        value=""
+        onValueChange={vi.fn()}
+        onSelect={onSelect}
+        onDeviceSelect={onDeviceSelect}
+        onFrequentSelect={onFrequentSelect}
+        label="Search"
+      />,
+    );
+    fireEvent.focus(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByRole('option', { name: 'iPhone 13' }));
+    expect(onFrequentSelect).toHaveBeenCalledTimes(1);
+    expect(onFrequentSelect).toHaveBeenCalledWith({
+      label: 'iPhone 13',
+      model_key: 'apple-iphone-13',
+    });
+    expect(onDeviceSelect).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the text callback when no frequent callback is supplied', () => {
+    query.mockReturnValue({ data: [] });
+    const onSelect = vi.fn();
+    const onDeviceSelect = vi.fn();
+    render(
+      <ProductSearchField
+        value=""
+        onValueChange={vi.fn()}
+        onSelect={onSelect}
+        onDeviceSelect={onDeviceSelect}
+        label="Search"
+      />,
+    );
+    fireEvent.focus(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByRole('option', { name: 'iPhone 13' }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith('iPhone 13');
+    expect(onDeviceSelect).not.toHaveBeenCalled();
   });
 
   it('dismisses and reopens frequent searches, transitions on typing and clear', () => {

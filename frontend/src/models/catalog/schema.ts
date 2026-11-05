@@ -42,7 +42,16 @@ export const clusterRefSchema = z.object({
   min_price_opt: z.string().nullable(),
 });
 
+export const catalogSourceSchema = z.object({
+  offer_id: z.number(),
+  store_id: z.number(),
+  store_name: z.string(),
+  store_slug: z.string(),
+  url: z.string(),
+});
+
 export const catalogItemResponseSchema = z.object({
+  source: catalogSourceSchema.nullable().default(null),
   image_url: z.string().nullable().optional(),
   id: z.number(),
   canonical_key: z.string(),
