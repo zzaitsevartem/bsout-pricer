@@ -12,6 +12,7 @@ from src.modules.auth.controller import auth_router
 from src.modules.auth.service.security import validate_security_settings
 from src.modules.broadcast.controller import broadcast_router
 from src.modules.cache.service.redis_cache import close_redis
+from src.modules.catalog.controller.devices import router as devices_router
 from src.modules.categories.controller import categories_router
 from src.modules.export.controller import export_router
 from src.modules.feedback.controller import feedback_router
@@ -68,6 +69,7 @@ app.include_router(users_router)
 app.include_router(stores_router)
 app.include_router(categories_router)
 app.include_router(products_router)
+app.include_router(devices_router)
 app.include_router(search_router)
 app.include_router(payment_router)
 app.include_router(admin_router)

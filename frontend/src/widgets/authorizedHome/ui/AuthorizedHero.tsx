@@ -89,7 +89,7 @@ const AuthorizedHero: React.FC<AuthorizedHeroProps> = ({ me, used, unread }) => 
                 onValueChange={setQuery}
             onDeviceSelect={(device) => {
               setQuery('');
-              router.push(`/search?device_id=${device.id}`);
+              router.push(`/devices/${encodeURIComponent(device.model_key)}`);
             }}
                 onSelect={(selected) => {
                   setQuery(selected);

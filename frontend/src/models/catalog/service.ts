@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { api } from '@/shared/api/axios';
 import {
-  facetOptionSchema,
+  deviceSuggestionSchema,
   catalogListResponseSchema,
   catalogFacetsSchema,
   catalogSuggestionsSchema,
@@ -30,8 +30,8 @@ function checkContract(schema: z.ZodType, data: unknown, source: string): void {
 
 export const catalogApi = {
   devices: (params: { q: string; limit?: number }, signal?: AbortSignal) =>
-    api.get<z.infer<typeof facetOptionSchema>[]>('/products/catalog/devices', { params, signal }).then((response) => {
-      checkContract(z.array(facetOptionSchema), response.data, 'GET /products/catalog/devices');
+    api.get<z.infer<typeof deviceSuggestionSchema>[]>('/products/catalog/devices', { params, signal }).then((response) => {
+      checkContract(z.array(deviceSuggestionSchema), response.data, 'GET /products/catalog/devices');
       return response;
     }),
   facets: (params: CatalogSearchParams) =>

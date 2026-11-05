@@ -11,7 +11,7 @@ type ProductSearchFieldProps = {
   value: string;
   onValueChange: (value: string) => void;
   onSelect: (value: string) => void;
-  onDeviceSelect?: (device: { id: number; label: string }) => void;
+  onDeviceSelect?: (device: { id: number; label: string; model_key: string }) => void;
   suggestionsEnabled?: boolean;
   filters?: CatalogSearchParams;
   id?: string;
@@ -75,11 +75,17 @@ export function ProductSearchField({
   );
   const items = ready
     ? [
-        ...(onDeviceSelect ? (devices.data ?? []).map((device) => ({
-          ...device, kind: 'device' as const, name: device.label,
-        })) : []),
+        ...(onDeviceSelect
+          ? (devices.data ?? []).map((device) => ({
+              ...device,
+              kind: 'device' as const,
+              name: device.label,
+            }))
+          : []),
         ...(suggestions.data ?? []).map((product) => ({
-          ...product, kind: 'product' as const, name: product.canonical_name,
+          ...product,
+          kind: 'product' as const,
+          name: product.canonical_name,
         })),
       ]
     : [];
@@ -154,7 +160,16 @@ export function ProductSearchField({
           className="absolute top-full left-0 right-0 z-30 mt-2 max-h-[min(60vh,24rem)] overflow-y-auto rounded-2xl border border-border-light-subtle bg-search-surface p-2 shadow-lg"
         >
           {items.map((item, index) => (
-            <li key={`${item.kind}-${item.id}`} role="presentation" className="border-b border-border-light-subtle last:border-b-0">
+            <li
+              key={`${item.kind}-${item.id}`}
+              role="presentation"
+              className="border-b border-border-light-subtle last:border-b-0"
+            >
+              {(index === 0 || items[index - 1].kind !== item.kind) && (
+                <span className="block px-3 pt-3 pb-2 text-xs font-semibold text-slate">
+                  {item.kind === 'device' ? 'Поиск по моделям' : 'Поиск по запчастям'}
+                </span>
+              )}
               <button
                 type="button"
                 role="option"
@@ -174,7 +189,9 @@ export function ProductSearchField({
                   <HighlightedName name={item.name} query={value} />
                 </span>
                 {item.kind === 'device' && (
-                  <span className="block text-xs text-body-subtle">Все запчасти для устройства</span>
+                  <span className="block text-xs text-body-subtle">
+                    Все запчасти для устройства
+                  </span>
                 )}
               </button>
             </li>

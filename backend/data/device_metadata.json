@@ -1,0 +1,40 @@
+[
+  {
+    "model_key": "apple-iphone-13-mini",
+    "release_year": 2021,
+    "model_codes": [
+      "A2481",
+      "A2626",
+      "A2629",
+      "A2630",
+      "A2628"
+    ],
+    "metadata_source_url": "https://support.apple.com/en-ie/108044",
+    "images": [
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/8/8b/IPhone_13_Mini_Gr%C3%BCn_Freigestellt.png",
+        "source_name": "Wikimedia Commons",
+        "source_url": "https://commons.wikimedia.org/wiki/File:IPhone_13_Mini_Gr%C3%BCn_Freigestellt.png",
+        "license": "CC BY-SA 4.0",
+        "attribution": "DYVER / Holy-DYVR"
+      }
+    ]
+  },
+  {
+    "model_key": "samsung-galaxy-s23",
+    "release_year": 2023,
+    "model_codes": [
+      "SM-S911"
+    ],
+    "metadata_source_url": "https://api.samsungmobilepress.com/press-releases/samsung-announces-global-launch-of-the-galaxy-s23-series",
+    "images": [
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/a/af/Galaxy_s23.jpg",
+        "source_name": "Wikimedia Commons",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Galaxy_s23.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Questions and"
+      }
+    ]
+  }
+]

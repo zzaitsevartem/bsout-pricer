@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +34,11 @@ class Device(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+    release_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    model_codes: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
+    images: Mapped[list[dict]] = mapped_column(JSON, default=list, server_default="[]")
+    metadata_source_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     brand: Mapped["Brand"] = relationship("Brand", back_populates="devices")
     aliases: Mapped[list["DeviceAlias"]] = relationship(

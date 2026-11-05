@@ -1,5 +1,7 @@
 'use client';
 
+import type { Device } from '@/models/device';
+import { DeviceOverview } from '@/app/devices/[model_key]/DeviceOverview';
 import React, { useMemo, useState } from 'react';
 import { useCatalogFacets, useCatalogSearch } from '@/models/catalog';
 import type { CatalogSearchParams } from '@/models/catalog';
@@ -26,11 +28,12 @@ import {
 import type { SearchControls, SearchUrlState } from '@/app/search/_components/lib';
 
 type CatalogSearchViewProps = {
+  device?: Device;
   state: SearchUrlState;
   controls: SearchControls;
 };
 
-export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
+export function CatalogSearchView({ state, controls, device }: CatalogSearchViewProps) {
   const params = useMemo<CatalogSearchParams>(
     () => ({
       q: state.q || undefined,
@@ -104,8 +107,16 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
       page: 1,
       per_page: OFFERS_PER_PAGE,
     }),
-    [state.q, state.device_id, state.part_type_id, state.quality_tier_id,
-      state.store, state.min_price, state.max_price, state.in_stock],
+    [
+      state.q,
+      state.device_id,
+      state.part_type_id,
+      state.quality_tier_id,
+      state.store,
+      state.min_price,
+      state.max_price,
+      state.in_stock,
+    ],
   );
   const offersQuery = useProductSearch(offersParams, { enabled: offersExpanded });
 
@@ -115,8 +126,12 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
     () => ({
       ...(facetsQuery.data
         ? {
-            devices: [...facetsQuery.data.devices].sort((a, b) => a.label.localeCompare(b.label, 'ru')),
-            partTypes: [...facetsQuery.data.part_types].sort((a, b) => a.label.localeCompare(b.label, 'ru')),
+            devices: [...facetsQuery.data.devices].sort((a, b) =>
+              a.label.localeCompare(b.label, 'ru'),
+            ),
+            partTypes: [...facetsQuery.data.part_types].sort((a, b) =>
+              a.label.localeCompare(b.label, 'ru'),
+            ),
             qualityTiers: facetsQuery.data.quality_tiers,
           }
         : EMPTY_FACETS),
@@ -246,23 +261,63 @@ export function CatalogSearchView({ state, controls }: CatalogSearchViewProps) {
   );
 
   return (
-    <SearchLayout
-      suggestionsEnabled
-      state={state}
-      controls={controls}
-      facets={facets}
-      summary={summary}
-      actions={
-        <ExportCsvButton
-          mutation={exportCatalog}
-          params={exportParams}
-          disabled={!hasResults || results.isFetching}
+    <>
+      {device && (
+        <DeviceOverview
+          device={device}
+          categories={
+            <div className="flex flex-wrap gap-2" aria-label="Категории запчастей">
+              <button
+                type="button"
+                className={cn('btn-sm', !state.part_type_id ? 'btn-primary' : 'btn-secondary')}
+                aria-pressed={!state.part_type_id}
+                onClick={() => controls.onFilterChange('part_type_id', null)}
+              >
+                Все {facetsQuery.data?.total ?? '…'}
+              </button>
+              {facets.partTypes.map((category) => (
+                <button
+                  type="button"
+                  key={category.id}
+                  className={cn('btn-sm', state.part_type_id === category.id ? 'btn-primary' : 'btn-secondary')}
+                  aria-pressed={state.part_type_id === category.id}
+                  onClick={() => controls.onFilterChange('part_type_id', category.id)}
+                >
+                  {category.label} {category.count ?? 0}
+                </button>
+              ))}
+              {facetsQuery.isError && (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => facetsQuery.refetch()}
+                >
+                  Повторить загрузку категорий
+                </button>
+              )}
+            </div>
+          }
         />
-      }
-    >
-      {exportCatalog.error && <ExportNotice error={exportCatalog.error} />}
-      {content}
-      {offersSection}
-    </SearchLayout>
+      )}
+      <SearchLayout
+        deviceMode={Boolean(device)}
+        suggestionsEnabled
+        state={state}
+        controls={controls}
+        facets={facets}
+        summary={summary}
+        actions={
+          <ExportCsvButton
+            mutation={exportCatalog}
+            params={exportParams}
+            disabled={!hasResults || results.isFetching}
+          />
+        }
+      >
+        {exportCatalog.error && <ExportNotice error={exportCatalog.error} />}
+        {content}
+        {offersSection}
+      </SearchLayout>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation';
 import React, { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import type { CatalogSortOption } from '@/models/catalog';
@@ -18,6 +19,7 @@ function labelFor(options: FilterOption[], id: number): string {
 }
 
 type SearchLayoutProps = {
+  deviceMode?: boolean;
   state: SearchUrlState;
   controls: SearchControls;
   facets: CatalogFacets;
@@ -35,10 +37,12 @@ export function SearchLayout({
   actions,
   children,
   suggestionsEnabled = false,
+  deviceMode = false,
 }: SearchLayoutProps) {
+  const router = useRouter();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const chips: { key: FilterKey; label: string }[] = [];
-  if (state.device_id !== undefined) {
+  if (!deviceMode && state.device_id !== undefined) {
     chips.push({ key: 'device_id', label: labelFor(facets.devices, state.device_id) });
   }
   if (state.part_type_id !== undefined) {
@@ -83,8 +87,8 @@ export function SearchLayout({
               className={cn('mt-4 lg:mt-0 lg:block', !filtersOpen && 'hidden')}
             >
               <SearchFilters
-                facets={facets}
-                state={state}
+                facets={deviceMode ? { ...facets, devices: [] } : facets}
+                state={deviceMode ? { ...state, device_id: undefined } : state}
                 onFilterChange={controls.onFilterChange}
                 onPriceChange={controls.onPriceChange}
                 onReset={controls.onReset}
@@ -94,22 +98,26 @@ export function SearchLayout({
           </div>
         </div>
 
-        <main>
-          <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
-            <Link
-              href="/"
-              className="text-body-subtle no-underline hover:text-slate hover:underline"
-            >
-              Главная
-            </Link>
-            <span className="text-body-muted">/</span>
-            <span>Поиск</span>
-          </div>
+        <main className="min-w-0">
+          {!deviceMode && (
+            <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
+              <Link
+                href="/"
+                className="text-body-subtle no-underline hover:text-slate hover:underline"
+              >
+                Главная
+              </Link>
+              <span className="text-body-muted">/</span>
+              <span>Поиск</span>
+            </div>
+          )}
 
           <SearchInput
             query={state.q}
             onQueryChange={controls.onQueryChange}
-            onDeviceSelect={(device) => controls.onFilterChange('device_id', device.id)}
+            onDeviceSelect={(device) =>
+              router.push(`/devices/${encodeURIComponent(device.model_key)}`)
+            }
             suggestionsEnabled={suggestionsEnabled}
             filters={{
               store: state.store,

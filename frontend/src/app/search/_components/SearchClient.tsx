@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useUnit } from 'effector-react';
 import { $authReady, $isAuth } from '@/shared/config/store';
+import type { Device } from '@/models/device';
+import { DeviceOverview } from '@/app/devices/[model_key]/DeviceOverview';
 import type { CatalogSortOption } from '@/models/catalog';
 import { SearchLayout } from '@/app/search/_components/SearchLayout';
 import { CatalogSearchView } from '@/app/search/_components/CatalogSearchView';
@@ -28,7 +30,7 @@ const subscribeToHydration = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 
-export function SearchClient() {
+export function SearchClient({ device }: { device?: Device }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, clientSnapshot, serverSnapshot);
   const router = useRouter();
   const pathname = usePathname();
@@ -36,12 +38,12 @@ export function SearchClient() {
   const isAuth = useUnit($isAuth);
   const authReady = useUnit($authReady);
 
-  const q = searchParams.get('q') ?? '';
+  const q = device ? '' : (searchParams.get('q') ?? '');
 
   const state = useMemo<SearchUrlState>(
     () => ({
       q,
-      device_id: parseId(searchParams.get('device_id')),
+      device_id: device?.id ?? parseId(searchParams.get('device_id')),
       part_type_id: parseId(searchParams.get('part_type_id')),
       quality_tier_id: parseId(searchParams.get('quality_tier_id')),
       store: searchParams.get('store') || undefined,
@@ -51,12 +53,16 @@ export function SearchClient() {
       sort_by: parseSort(searchParams.get('sort_by')),
       page: parsePage(searchParams.get('page')),
     }),
-    [q, searchParams],
+    [q, searchParams, device?.id],
   );
 
   const commit = useCallback(
     (patch: Record<string, FilterValue>) => {
       const next = new URLSearchParams(searchParams.toString());
+      if (device) {
+        next.delete('q');
+        next.delete('device_id');
+      }
       Object.entries(patch).forEach(([key, value]) => {
         if (value === null || value === '') {
           next.delete(key);
@@ -65,28 +71,41 @@ export function SearchClient() {
         }
       });
       const queryString = next.toString();
-      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+      const url = queryString ? `${pathname}?${queryString}` : pathname;
+      if (device) router.push(url, { scroll: false });
+      else router.replace(url, { scroll: false });
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams, device],
   );
 
   const onQueryChange = useCallback(
     (value: string) => {
+      if (device) {
+        router.push(value ? `/search?q=${encodeURIComponent(value)}` : '/search');
+        return;
+      }
       if (value === q) return;
       commit({
-        q: value || null, device_id: null, part_type_id: null, quality_tier_id: null, page: null,
+        q: value || null,
+        device_id: null,
+        part_type_id: null,
+        quality_tier_id: null,
+        page: null,
       });
     },
-    [commit, q],
+    [commit, q, device, router],
   );
 
   const onFilterChange = useCallback(
     (key: FilterKey, value: FilterValue) => {
-      commit(key === 'device_id'
-        ? { device_id: value, q: null, part_type_id: null, quality_tier_id: null, page: null }
-        : { [key]: value, page: null });
+      if (device && key === 'device_id') return;
+      commit(
+        key === 'device_id'
+          ? { device_id: value, q: null, part_type_id: null, quality_tier_id: null, page: null }
+          : { [key]: value, page: null },
+      );
     },
-    [commit],
+    [commit, device],
   );
 
   const onPriceChange = useCallback(
@@ -140,39 +159,52 @@ export function SearchClient() {
 
   if (!hydrated || !authReady) {
     return (
-      <SearchLayout state={state} controls={controls} facets={EMPTY_FACETS} summary="Загрузка…">
-        <ResultsSkeleton />
-      </SearchLayout>
+      <>
+        {device && <DeviceOverview device={device} />}
+        <SearchLayout
+          deviceMode={Boolean(device)}
+          state={state}
+          controls={controls}
+          facets={EMPTY_FACETS}
+          summary="Загрузка…"
+        >
+          <ResultsSkeleton />
+        </SearchLayout>
+      </>
     );
   }
 
   if (!isAuth) {
     return (
-      <SearchLayout
-        state={state}
-        controls={controls}
-        facets={EMPTY_FACETS}
-        summary="Поиск доступен после входа"
-      >
-        <div className="rounded-[24px] bg-ivory-elevated p-8 text-center">
-          <p className="text-base font-semibold text-slate mb-2">
-            Войдите, чтобы искать по каталогу
-          </p>
-          <p className="text-[15px] text-body-subtle mb-6">
-            Сравнение цен между магазинами доступно авторизованным пользователям.
-          </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/login" className="btn-primary">
-              Войти
-            </Link>
-            <Link href="/register" className="btn-secondary">
-              Регистрация
-            </Link>
+      <>
+        {device && <DeviceOverview device={device} />}
+        <SearchLayout
+          deviceMode={Boolean(device)}
+          state={state}
+          controls={controls}
+          facets={EMPTY_FACETS}
+          summary="Поиск доступен после входа"
+        >
+          <div className="rounded-[24px] bg-ivory-elevated p-8 text-center">
+            <p className="text-base font-semibold text-slate mb-2">
+              Войдите, чтобы искать по каталогу
+            </p>
+            <p className="text-[15px] text-body-subtle mb-6">
+              Сравнение цен между магазинами доступно авторизованным пользователям.
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link href="/login" className="btn-primary">
+                Войти
+              </Link>
+              <Link href="/register" className="btn-secondary">
+                Регистрация
+              </Link>
+            </div>
           </div>
-        </div>
-      </SearchLayout>
+        </SearchLayout>
+      </>
     );
   }
 
-  return <CatalogSearchView state={state} controls={controls} />;
+  return <CatalogSearchView key={device?.id} device={device} state={state} controls={controls} />;
 }

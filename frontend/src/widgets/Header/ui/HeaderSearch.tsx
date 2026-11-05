@@ -41,7 +41,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) =
           onValueChange={setValue}
           onDeviceSelect={(device) => {
             setValue('');
-            router.push(`/search?device_id=${device.id}`);
+            router.push(`/devices/${encodeURIComponent(device.model_key)}`);
             onSubmitted?.();
           }}
           onSelect={(selected) => {

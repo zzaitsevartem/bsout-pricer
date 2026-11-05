@@ -165,7 +165,7 @@ class ComparisonService:
             .exists()
         )
         rows = await db.execute(
-            select(Device.id, Device.name, func.count(Product.id).label("count"))
+            select(Device.id, Device.name, Device.model_key, func.count(Product.id).label("count"))
             .join(Brand, Brand.id == Device.brand_id)
             .join(Cluster, Cluster.device_id == Device.id)
             .join(Product, Product.cluster_id == Cluster.id)
@@ -181,7 +181,10 @@ class ComparisonService:
             )
             .limit(limit)
         )
-        return [{"id": row.id, "label": row.name, "count": row.count} for row in rows]
+        return [
+            {"id": row.id, "label": row.name, "model_key": row.model_key, "count": row.count}
+            for row in rows
+        ]
 
     @staticmethod
     async def catalog_facets(
@@ -229,6 +232,7 @@ class ComparisonService:
             .order_by(Device.name, Device.id)
         )
         products = matching_products("part_type")
+        total = await db.scalar(select(func.count()).select_from(products))
         part_rows = await db.execute(
             select(PartType.id, PartType.name_ru, func.count(products.c.id).label("count"))
             .outerjoin(products, products.c.part_type_id == PartType.id)
@@ -248,6 +252,7 @@ class ComparisonService:
             .order_by(QualityTier.rank, QualityTier.id)
         )
         return {
+            "total": total or 0,
             "devices": [
                 {"id": row.id, "label": row.name, "count": row.count} for row in device_rows
             ],

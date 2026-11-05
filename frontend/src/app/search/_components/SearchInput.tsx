@@ -9,7 +9,7 @@ import type { CatalogSearchParams } from '@/models/catalog';
 type SearchInputProps = {
   query: string;
   onQueryChange: (value: string) => void;
-  onDeviceSelect?: (device: { id: number; label: string }) => void;
+  onDeviceSelect?: (device: { id: number; label: string; model_key: string }) => void;
   suggestionsEnabled?: boolean;
   filters?: CatalogSearchParams;
 };

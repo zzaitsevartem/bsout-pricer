@@ -83,7 +83,14 @@ class CatalogFacetOption(BaseModel):
     count: int = 0
 
 
+class DeviceSuggestion(CatalogFacetOption):
+    model_key: str
+
+    model_config = {"protected_namespaces": ()}
+
+
 class CatalogFacetsResponse(BaseModel):
+    total: int = 0
     devices: list[CatalogFacetOption]
     part_types: list[CatalogFacetOption]
     quality_tiers: list[CatalogFacetOption]

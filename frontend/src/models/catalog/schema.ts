@@ -71,7 +71,10 @@ export const catalogListResponseSchema = z.object({
 export const facetOptionSchema = z.object({
   id: z.number(), label: z.string(), count: z.number().int().nonnegative().optional(),
 });
+export const deviceSuggestionSchema = facetOptionSchema.extend({ model_key: z.string() });
+export type DeviceSuggestion = z.infer<typeof deviceSuggestionSchema>;
 export const catalogFacetsSchema = z.object({
+  total: z.number().int().nonnegative(),
   devices: z.array(facetOptionSchema),
   part_types: z.array(facetOptionSchema),
   quality_tiers: z.array(facetOptionSchema),

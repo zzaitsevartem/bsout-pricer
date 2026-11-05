@@ -6,11 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.middleware.subscription_guard import is_fuzzy_enabled, require_active_subscription
 from src.modules.products.schema.comparison import (
-    CatalogFacetOption,
     CatalogFacetsResponse,
     CatalogListResponse,
     CatalogSuggestion,
     ComparisonDetailResponse,
+    DeviceSuggestion,
     ProductPriceHistoryResponse,
 )
 from src.modules.products.schema.product import (
@@ -187,7 +187,7 @@ async def catalog_facets(
     )
 
 
-@router.get("/catalog/devices", response_model=list[CatalogFacetOption])
+@router.get("/catalog/devices", response_model=list[DeviceSuggestion])
 async def catalog_devices(
     q: str = Query(min_length=2, max_length=500),
     limit: int = Query(default=6, ge=1, le=8),

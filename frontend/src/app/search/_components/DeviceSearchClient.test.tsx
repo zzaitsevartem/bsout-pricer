@@ -1,30 +1,36 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SearchControls } from './lib';
+import type { Device } from '@/models/device';
 import { SearchClient } from './SearchClient';
 
-const { replace, location } = vi.hoisted(() => ({
+const { replace, push, location } = vi.hoisted(() => ({
   replace: vi.fn(),
+  push: vi.fn(),
   location: { query: '' },
 }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push }),
   usePathname: () => '/search',
   useSearchParams: () => new URLSearchParams(location.query),
 }));
 vi.mock('effector-react', () => ({ useUnit: () => true }));
 vi.mock('./CatalogSearchView', () => ({
-  CatalogSearchView: ({ controls }: { controls: SearchControls }) => <div>
-    <button onClick={() => controls.onFilterChange('device_id', 13)}>model</button>
-    <button onClick={() => controls.onQueryChange('samsung a52')}>query</button>
-    <button onClick={() => controls.onQueryChange('')}>submit unchanged</button>
-    <button onClick={() => controls.onFilterChange('part_type_id', 2)}>category</button>
-  </div>,
+  CatalogSearchView: ({ controls }: { controls: SearchControls }) => (
+    <div>
+      <button onClick={() => controls.onFilterChange('device_id', 13)}>model</button>
+      <button onClick={() => controls.onQueryChange('samsung a52')}>query</button>
+      <button onClick={() => controls.onQueryChange('')}>submit unchanged</button>
+      <button onClick={() => controls.onFilterChange('part_type_id', 2)}>category</button>
+    </div>
+  ),
 }));
 
 beforeEach(() => {
   replace.mockClear();
-  location.query = 'q=ip13&device_id=7&part_type_id=1&quality_tier_id=3&page=4&store=liberti&in_stock=true';
+  push.mockClear();
+  location.query =
+    'q=ip13&device_id=7&part_type_id=1&quality_tier_id=3&page=4&store=liberti&in_stock=true';
 });
 
 function changedParams() {
@@ -37,7 +43,8 @@ describe('device search URL state', () => {
     fireEvent.click(screen.getByText('model'));
     const params = changedParams();
     expect(params.get('device_id')).toBe('13');
-    for (const key of ['q', 'part_type_id', 'quality_tier_id', 'page']) expect(params.has(key)).toBe(false);
+    for (const key of ['q', 'part_type_id', 'quality_tier_id', 'page'])
+      expect(params.has(key)).toBe(false);
     expect(params.get('store')).toBe('liberti');
     expect(params.get('in_stock')).toBe('true');
   });
@@ -47,7 +54,8 @@ describe('device search URL state', () => {
     fireEvent.click(screen.getByText('query'));
     const params = changedParams();
     expect(params.get('q')).toBe('samsung a52');
-    for (const key of ['device_id', 'part_type_id', 'quality_tier_id', 'page']) expect(params.has(key)).toBe(false);
+    for (const key of ['device_id', 'part_type_id', 'quality_tier_id', 'page'])
+      expect(params.has(key)).toBe(false);
     expect(params.get('store')).toBe('liberti');
   });
 
@@ -66,4 +74,24 @@ describe('device search URL state', () => {
     fireEvent.click(screen.getByText('submit unchanged'));
     expect(replace).not.toHaveBeenCalled();
   });
+});
+
+const device: Device = {
+  id: 99,
+  model_key: 'samsung',
+  name: 'Samsung',
+  brand: { id: 1, name: 'Samsung', slug: 'samsung' },
+  aliases: [],
+  model_codes: [],
+  images: [],
+  release_year: null,
+  metadata_source_url: null,
+};
+it('device page restores URL category and records category changes for back navigation', () => {
+  render(<SearchClient device={device} />);
+  fireEvent.click(screen.getByText('category'));
+  const params = new URL(push.mock.calls[0][0], 'https://bscout.test').searchParams;
+  expect(params.get('part_type_id')).toBe('2');
+  expect(params.has('page')).toBe(false);
+  expect(params.get('store')).toBe('liberti');
 });

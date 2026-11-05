@@ -517,3 +517,40 @@ async def test_catalog_exports_apply_offer_filters(client, db_session, monkeypat
     assert rows[0][5] == "5600,00"
     assert rows[0][7:9] == ["1", "1"]
     assert rows[0][9] == "Дивизион"
+
+
+async def test_catalog_csv_combined_filters_match_catalog_on_the_same_offer(client, db_session):
+    refs = await _seed_catalog(db_session)
+    _, token = await _make_user(db_session, "combined-export@example.com")
+    store = await _make_store(db_session, "selected", "Selected")
+    other_store = await _make_store(db_session, "excluded", "Excluded")
+    valid = refs["copy_product"]
+    await _make_offer(db_session, store, valid, "valid-1", "5500", None)
+    await _make_offer(db_session, store, valid, "valid-2", "5600", None)
+    split = await _make_product(db_session, refs, refs["tier_copy"], "split", "Split offers")
+    await _make_offer(db_session, store, split, "split-expensive", "9000", None)
+    await _make_offer(db_session, other_store, split, "split-other-store", "5500", None)
+    unavailable = await _make_offer(db_session, store, split, "split-out", "5500", None)
+    unavailable.stock_status = "out"
+    await db_session.flush()
+    params = {
+        "device_id": refs["device"].id,
+        "part_type_id": refs["part_type"].id,
+        "quality_tier_id": refs["tier_copy"].id,
+        "store": store.slug,
+        "min_price": "5500",
+        "max_price": "5600",
+        "in_stock": "true",
+    }
+    catalog = await client.get("/api/products/catalog", params=params, headers=_auth(token))
+    exported = await client.get(CATALOG_URL, params=params, headers=_auth(token))
+    assert catalog.status_code == 200, catalog.text
+    assert exported.status_code == 200, exported.text
+    body = catalog.json()
+    assert body["total"] == 1
+    assert [item["id"] for item in body["results"]] == [valid.id]
+    rows = _parse_csv(exported.content)[1:]
+    assert int(exported.headers["x-export-rows"]) == body["total"] == len(rows)
+    assert [row[0] for row in rows] == [item["canonical_name"] for item in body["results"]]
+    assert rows[0][5] == "5500,00"
+    assert rows[0][7:10] == ["1", "2", "Selected"]

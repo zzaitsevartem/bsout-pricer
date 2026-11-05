@@ -9,6 +9,7 @@ const { catalog, facets, offers, exportButton } = vi.hoisted(() => ({
   offers: vi.fn(),
   exportButton: vi.fn(),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/models/catalog', () => ({
   useCatalogSearch: catalog,
   useCatalogFacets: facets,
@@ -103,4 +104,25 @@ describe('catalog filtered requests', () => {
     expect(screen.getByText('OEM')).toBeInTheDocument();
     expect(screen.getByText('Оригинал')).toBeInTheDocument();
   });
+});
+
+it('keeps visible All/category counts and distinguishes empty results from retry errors', () => {
+  const refetch = vi.fn();
+  catalog.mockReturnValue({ data: { results: [], total: 0 }, isLoading: false });
+  facets.mockReturnValue({ data: { total: 23, devices: [], part_types: [{ id: 2, label: 'Камеры', count: 8 }], quality_tiers: [] } });
+  offers.mockReturnValue({ data: { results: [], total: 0 } });
+  const controls: SearchControls = { onQueryChange: vi.fn(), onFilterChange: vi.fn(), onPriceChange: vi.fn(), onSortChange: vi.fn(), onPageChange: vi.fn(), onReset: vi.fn() };
+  const device = { id: 7, model_key: 'xiaomi', name: 'Redmi', brand: { id: 1, name: 'Xiaomi', slug: 'xiaomi' }, aliases: [], model_codes: [], images: [], release_year: null, metadata_source_url: null };
+  const props = { device, state: { q: '', device_id: 7, part_type_id: 2, sort_by: 'min_price_asc' as const, page: 4 }, controls };
+  const { rerender } = render(<CatalogSearchView {...props} />);
+  expect(screen.getByRole('button', { name: 'Все 23' })).toBeVisible();
+  expect(screen.getAllByRole('button', { name: 'Камеры 8', pressed: true })[0]).toHaveClass('btn-primary');
+  fireEvent.click(screen.getByRole('button', { name: 'Все 23' }));
+  expect(controls.onFilterChange).toHaveBeenCalledWith('part_type_id', null);
+  expect(screen.getByText('Ничего не найдено')).toBeVisible();
+  catalog.mockReturnValue({ isError: true, refetch });
+  rerender(<CatalogSearchView {...props} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Повторить' }));
+  expect(refetch).toHaveBeenCalledOnce();
+  expect(screen.queryByText('Ничего не найдено')).not.toBeInTheDocument();
 });

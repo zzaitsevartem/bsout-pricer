@@ -17,7 +17,7 @@ vi.mock('@/models/catalog', () => ({
 afterEach(() => { vi.useRealTimers(); vi.clearAllMocks(); });
 
 function enableDevices() {
-  devices.mockReturnValue({ data: [{ id: 7, label: 'iPhone 13', count: 2 }] });
+  devices.mockReturnValue({ data: [{ id: 7, label: 'iPhone 13', model_key: 'apple-iphone-13', count: 2 }] });
 }
 
 describe('device-first search', () => {
@@ -29,6 +29,8 @@ describe('device-first search', () => {
       onDeviceSelect={onDeviceSelect} label="Устройство" />);
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
+    expect(screen.getByText('Поиск по моделям')).toBeInTheDocument();
+    expect(screen.getByText('Поиск по запчастям')).toBeInTheDocument();
     expect(screen.getAllByRole('option')[0]).toHaveTextContent('iPhone 13');
     expect(screen.getAllByRole('option')[1]).toHaveTextContent('Дисплей iPhone 13');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
@@ -53,7 +55,7 @@ describe('device-first search', () => {
     expect(onQueryChange).not.toHaveBeenCalled();
   });
 
-  it('navigates from the header with the device id and closes its containing menu', () => {
+  it('navigates from the header with the stable model key and closes its containing menu', () => {
     vi.useFakeTimers();
     enableDevices();
     const onSubmitted = vi.fn();
@@ -63,7 +65,7 @@ describe('device-first search', () => {
     fireEvent.change(input, { target: { value: 'айфон 13' } });
     act(() => vi.advanceTimersByTime(250));
     fireEvent.click(screen.getByRole('option', { name: /^iPhone 13/ }));
-    expect(push).toHaveBeenCalledWith('/search?device_id=7');
+    expect(push).toHaveBeenCalledWith('/devices/apple-iphone-13');
     expect(onSubmitted).toHaveBeenCalledOnce();
     expect(input).toHaveValue('');
   });
