@@ -118,7 +118,7 @@ export function offersLabel(count: number): string {
 }
 
 export function foundLabel(total: number): string {
-  return `Найдено: ${total} ${pluralRu(total, 'товар', 'товара', 'товаров')}`;
+  return `Найдено: ${total} ${pluralRu(total, 'товарная позиция', 'товарные позиции', 'товарных позиций')}`;
 }
 
 export function withSelected(

@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,39 @@ def dicts() -> Dictionaries:
     return _build_dictionaries()
 
 
+def test_play_without_dictionary_entry_does_not_fall_back_to_hot30(dicts):
+    play_id = next(
+        key for key, value in dicts.device_model_key.items() if value == "infinix-hot-30-play"
+    )
+    without_play = replace(
+        dicts,
+        device_by_alias={
+            alias: key for alias, key in dicts.device_by_alias.items() if key != play_id
+        },
+    )
+    assert extract("Дисплей Infinix Hot 30", without_play).device_id is not None
+    assert extract("Дисплей Infinix Hot 30 Play", without_play).device_id is None
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Дисплей Infinix Hot 30", 1),
+        ("Дисплей Infinix HOT30PLAY", 2),
+        ("Дисплей Infinix Hot 30 Play (X6835)", 2),
+        ("Дисплей Infinix Hot 30i (X669D)", 3),
+    ],
+)
+def test_hot30_models_with_independent_dictionary(dicts, title, expected):
+    isolated = replace(
+        dicts,
+        device_by_alias={"infinix hot 30": 1, "infinix hot 30 play": 2, "infinix hot 30i": 3},
+        device_model_key={1: "infinix-hot-30", 2: "infinix-hot-30-play", 3: "infinix-hot-30i"},
+        device_brand={1: 1, 2: 1, 3: 1},
+    )
+    assert extract(title, isolated).device_id == expected
+
+
 def _codes(
     title: str, dicts: Dictionaries
 ) -> tuple[str | None, str | None, str | None, str | None]:
@@ -154,6 +188,10 @@ LONGEST_DEVICE_CASES = [
     ("Дисплей Samsung Galaxy S21 Ultra копия", "samsung-galaxy-s21-ultra"),
     ("Дисплей Xiaomi Redmi 10 копия", "xiaomi-redmi-10"),
     ("Дисплей Xiaomi Redmi Note 10 копия", "xiaomi-redmi-note-10"),
+    ("Нижняя плата Infinix Hot 30 (X6831)", "infinix-hot-30"),
+    ("Шлейф Infinix Hot 30 Play (X6835B)", "infinix-hot-30-play"),
+    ("Нижняя плата Infinix Hot 30i", "infinix-hot-30i"),
+    ("Шлейф для INFINIX HOT 30 PLAY X6835B", "infinix-hot-30-play"),
 ]
 
 

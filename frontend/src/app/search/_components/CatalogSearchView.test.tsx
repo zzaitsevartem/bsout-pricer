@@ -78,7 +78,7 @@ describe('catalog filtered requests', () => {
     expect(exportButton).toHaveBeenCalledWith(
       expect.objectContaining({ params: expect.objectContaining(filters) }),
     );
-    expect(screen.getByText('Найдено: 21 товар')).toBeInTheDocument();
+    expect(screen.getByText('Найдено: 21 товарная позиция')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
     expect(screen.getByLabelText('Магазин')).toHaveValue('liberti');
   });

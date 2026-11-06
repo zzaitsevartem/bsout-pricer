@@ -15,7 +15,7 @@ _FUZZY_FACTOR = 0.9
 _FUZZY_MIN_LEN = 6
 _FUZZY_MAX_DISTANCE = 1
 _MODEL_SUFFIXES = frozenset(
-    {"v", "x", "s", "hd", "pro", "max", "plus", "mini", "lite", "ultra", "neo"}
+    {"v", "x", "s", "hd", "pro", "max", "plus", "mini", "lite", "ultra", "neo", "play"}
 )
 _MODEL_NUMBER_UNITS = frozenset(
     {"pin", "пин", "контактов", "контакта", "шт", "mah", "мач", "я", "ая", "категория", "категории"}

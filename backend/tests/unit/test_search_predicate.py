@@ -7,25 +7,40 @@ from src.modules.products.service.search_predicate import search_predicate, sear
 pytestmark = pytest.mark.unit
 
 
-def test_aliases_and_layout_are_advanced_only():
-    assert search_terms("экран", False) == [["экран"]]
-    assert "дисплей" in search_terms("dsiplay", True)[0]
-    assert "дисплей" in search_terms("lb cgktq".replace(" ", ""), True)[0]
-    assert "iphone" in search_terms("шзрщту", True)[0]
+def test_layout_transliteration_and_fuzzy_policy():
+    assert [row[1] for row in search_terms("ddjlt yf lheujv zpsrt", False)] == [
+        "вводе",
+        "на",
+        "другом",
+        "языке",
+    ]
+    for latin, cyrillic in (
+        ("plenka", "пленка"),
+        ("shleyf", "шлейф"),
+        ("shleif", "шлейф"),
+        ("steklo", "стекло"),
+        ("iphone", "айфон"),
+    ):
+        assert cyrillic in search_terms(latin, False)[0]
+        assert latin in search_terms(cyrillic, False)[0]
+    assert "дисплей" not in search_terms("dsplay", False)[0]
     assert "дисплей" in search_terms("dsplay", True)[0]
     assert "samsung" in search_terms("самсунк", True)[0]
     assert "s22" in search_terms("С22", True)[0]
 
 
-def test_predicate_fuzzy_is_per_word_and_never_changes_model_digits():
-    compiled = search_predicate(column("title"), "Nokia a53 13", True).compile(
+def test_boundaries_budget_and_sql_operators():
+    for token in ("se", "xr", "gt", "pro", "sm-a525", "sku_123"):
+        assert all(len(row) == 1 for row in search_terms(token, True))
+    terms = search_terms(" ".join(["экран"] * 100), True)
+    assert all(row[0] == "экран" and len(row) <= 12 for row in terms)
+    assert sum(len(row) - 1 for row in terms) <= 64
+    compiled = search_predicate(column("title"), "плёнка iPhone 15 Pro", False).compile(
         dialect=postgresql.dialect()
     )
-    sql = str(compiled)
-    assert sql.count("strict_word_similarity(") == 3
-    assert "AND" in sql and " OR " in sql
-    values = list(compiled.params.values())
-    assert any("a[[:space:]-]*53" in str(value) for value in values)
-    assert any("(^|[^0-9])13" in str(value) for value in values)
-    assert "%nokia%" in values
-    assert "strict_word_similarity" not in str(search_predicate(column("title"), "Nokai", False))
+    assert " AND " in str(compiled) and " OR " in str(compiled)
+    assert "пл[её]нка" in compiled.params.values()
+    assert any("(^|[^0-9])15" in str(value) for value in compiled.params.values())
+    assert "strict_word_similarity" not in str(compiled)
+    fuzzy = str(search_predicate(column("title"), "Nokia a53 13", True))
+    assert "strict_word_similarity" in fuzzy

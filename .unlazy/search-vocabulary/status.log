@@ -1,0 +1,19 @@
+2026-11-06T15:44:11.118Z dispatch ready-1 opened: leaf-1.1, leaf-1.2
+2026-11-06T15:44:48.148Z dispatch ready-1 started leaf-1.1 as /root/coder
+2026-11-06T15:44:48.183Z dispatch ready-1 started leaf-1.2 as /root/terra
+2026-11-06T15:44:48.220Z dispatch ready-1 sealed
+Contract v1; mirrors checked equal to OWNS; production and tests claimed; wave ready-1 sealed
+Contract v2: explicit model negatives authorize narrow boundary safety correction for SE/XR/GT/Pro and SKU segments; baseline removals require tests
+Ownership amendment: Terra checks/** added, mirror equality checked, existing lease released and expanded lease claimed before helper writes
+2026-11-06T15:48:14.873Z dispatch ready-1 returned leaf-1.1
+Coder returned production patch for Terra verification and Luna independent review; not yet verified
+Dispatch amendment: Luna source review starts independently after coder return; final review still requires all Terra evidence. Python3.11 repo venv absent; isolated fallback required.
+2026-11-06T15:48:28.393Z dispatch ready-2 opened: leaf-1.3
+2026-11-06T15:48:50.653Z dispatch ready-2 started leaf-1.3 as /root/luna
+2026-11-06T15:48:50.686Z dispatch ready-2 sealed
+leaf-1.1 parent reviewed independent Luna source findings and Terra tests; manual gates reverified, exact lease released
+2026-11-06T16:15:59.897Z dispatch ready-1 returned leaf-1.2
+2026-11-06T16:15:59.932Z dispatch ready-2 returned leaf-1.3
+Terra returned with 5met/1abandoned G4; parent-directed reverify3/3 passed; Luna review parent-verified; both exact leases released; C8 handoff surfaced in audit63 and live plan
+Root N1 rerun by Terra failed as expected on child G4; N1 explicitly abandoned, no full completion claim; final scope verification precedes cleanup
+Final scope reverify by Terra:9met0unmet2abandoned,3runnable PASS,2complete waves;3owned temporary containers removed, backend healthy, rollback retained

@@ -922,6 +922,12 @@ DEVICES: list[tuple[str, str, str, list[str]]] = [
     ("Infinix", "Hot 12", "infinix-hot-12", ["hot 12", "infinix hot 12"]),
     ("Infinix", "Hot 20", "infinix-hot-20", ["hot 20", "infinix hot 20"]),
     ("Infinix", "Hot 30", "infinix-hot-30", ["hot 30", "infinix hot 30"]),
+    (
+        "Infinix",
+        "Hot 30 Play",
+        "infinix-hot-30-play",
+        ["hot 30 play", "infinix hot 30 play"],
+    ),
     ("Infinix", "Hot 30i", "infinix-hot-30i", ["hot 30i", "infinix hot 30i"]),
     ("Infinix", "Hot 40", "infinix-hot-40", ["hot 40", "infinix hot 40"]),
     ("Infinix", "Smart 7", "infinix-smart-7", ["infinix smart 7", "smart 7"]),
