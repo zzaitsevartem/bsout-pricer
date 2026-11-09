@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const branch = 'bscout/animations';
+assert.equal(git('branch', '--show-current'), branch);
+const head = git('rev-parse', 'HEAD');
+const remote = git('ls-remote', '--exit-code', 'origin', `refs/heads/${branch}`).split(/\s+/)[0];
+assert.equal(remote, head);
+const paths = git('diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD').split('\n');
+assert(paths.some(path => path.startsWith('frontend/src/')));
+assert(paths.includes('gptaudits/69.md'));
+assert(paths.includes('docs/plan/MASTERPLAN.md'));
+assert(paths.every(path => path.startsWith('frontend/src/') || path === 'gptaudits/69.md' || path === 'docs/plan/MASTERPLAN.md' || path.startsWith('gptaudits/assets/animations-2026-11-09/')));
+console.log(`REMOTE_COMMIT_VERIFIED ${head}`);
