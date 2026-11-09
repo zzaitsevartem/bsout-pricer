@@ -32,6 +32,7 @@ describe('PageTransition', () => {
     fireEvent.click(button);
     view.rerender(<PageTransition><StatefulChild /></PageTransition>);
     expect(animate).toHaveBeenCalledTimes(1);
+    expect(animate).toHaveBeenCalledWith([{ opacity: 0 }, { opacity: 1 }], expect.any(Object));
     expect(screen.getByRole('button')).toBe(button);
     expect(button).toHaveFocus();
     expect(button).toHaveTextContent('1');

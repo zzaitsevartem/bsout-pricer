@@ -9,7 +9,7 @@
   :root {
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-    --motion-page-duration: 160ms;
+    --motion-page-duration: 180ms;
     --motion-menu-open: 220ms;
     --motion-menu-close: 160ms;
     --motion-tooltip-duration: 120ms;
@@ -335,20 +335,8 @@
     opacity: 1;
     transition: none;
   }
-  .partner-carousel .partner-track {
-    animation-play-state: paused;
-  }
-  .partner-carousel[data-running='true'] .partner-track {
-    animation-play-state: running;
-  }
-  .partner-carousel:focus-within .partner-track {
-    animation-play-state: paused;
-  }
 }
 @media (hover: hover) and (pointer: fine) {
-  .partner-carousel:hover .partner-track {
-    animation-play-state: paused;
-  }
   .tooltip-trigger:hover .tooltip-fade {
     opacity: 1;
   }
@@ -370,19 +358,4 @@
   .animate-pulse {
     animation: none;
   }
-}
-
-/* Pausing exposes every original link, including while traversing with Tab. */
-.partner-carousel[data-paused='true'] .partner-track,
-.partner-carousel:focus-within .partner-track {
-  animation: none;
-  transform: none;
-  width: 100%;
-  padding-right: 0;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.partner-carousel[data-paused='true'] [data-partner-copy],
-.partner-carousel:focus-within [data-partner-copy] {
-  display: none;
 }

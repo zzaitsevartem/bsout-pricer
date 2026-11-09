@@ -17,7 +17,7 @@ export function PageTransition({ children, ...props }: ComponentPropsWithoutRef<
     const cancel = () => animation?.cancel();
     if (!preference.matches && !document.hidden) {
       const tokens = getComputedStyle(document.documentElement);
-      animation = element.animate([{ opacity: 0.9 }, { opacity: 1 }], {
+      animation = element.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: Number.parseFloat(tokens.getPropertyValue('--motion-page-duration')),
         easing: tokens.getPropertyValue('--ease-out').trim(),
       });

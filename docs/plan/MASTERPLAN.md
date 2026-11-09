@@ -27,6 +27,7 @@
 | Hot 30 Play, 2026-11-07 | Отдельная модель и исправление 17 ошибочных привязок; один оффер остался в review, мультимодельный сохранён. 67 unit-тестов и Ruff прошли; runtime-обновление временное, browser QA не проводился. Подробности — `gptaudits/67.md`. |
 | Браузерный autocomplete, 2026-11-07 | `autoComplete="off"` на всех 34 input и 4 textarea приложения; Luna — правки, Terra — AST regression. 128 component tests + новый unit, lint и изолированная production build прошли. Ветка `bscout/disable-input-autocomplete-2026-11-07-01-00`, без коммита; browser popup вручную не проверялся. См. `gptaudits/68.md`. |
 | Анимации интерфейса, 2026-11-09 | Реализованы короткий переход содержимого маршрутов и reduced-motion состояния меню, tooltip и карусели; Vitest, lint, изолированная production build и ручные browser/API проверки пройдены на ветке `bscout/animations`. Authenticated страницы не проверялись; детали — `gptaudits/69.md`. |
+| Анимации, исправление 2026-11-10 | Непрерывная CSS-карусель восстановлена, fade страниц усилен до 0→1/180ms; Vitest/lint/tsc и browser sampling прошли; reduced motion fallback покрыт unit/CSS, не browser emulation. Подробности: `gptaudits/70.md`. |
 
 ## Легенда статусов
 
