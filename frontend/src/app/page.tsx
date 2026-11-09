@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import { useUnit } from 'effector-react';
 import { $isAuth } from '@/shared/config/store';
 import { Header } from '@/widgets/Header/ui/Header';
@@ -13,7 +14,9 @@ export default function Home() {
   return (
     <div className="home-palette relative z-10">
       <Header />
-      {isAuth ? <AuthorizedHome /> : <HomeWidget />}
+      <PageTransition>
+        {isAuth ? <AuthorizedHome /> : <HomeWidget />}
+      </PageTransition>
       <Footer />
     </div>
   );

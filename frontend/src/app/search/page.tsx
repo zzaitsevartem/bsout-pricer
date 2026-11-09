@@ -1,3 +1,4 @@
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React, { Suspense } from 'react';
 import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
@@ -8,9 +9,11 @@ export default function SearchPage() {
   return (
     <>
       <Header />
-      <Suspense fallback={<SearchFallback />}>
-        <SearchClient />
-      </Suspense>
+      <PageTransition>
+        <Suspense fallback={<SearchFallback />}>
+          <SearchClient />
+        </Suspense>
+      </PageTransition>
       <Footer />
     </>
   );

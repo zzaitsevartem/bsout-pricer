@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React from 'react';
 import Link from 'next/link';
 import { Header } from '@/widgets/Header/ui/Header';
@@ -21,7 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header />
-      <div className="max-w-[1200px] mx-auto px-6 py-8 pb-16">{children}</div>
+      <PageTransition className="max-w-[1200px] mx-auto px-6 py-8 pb-16">{children}</PageTransition>
       <Footer />
     </>
   );
@@ -48,7 +49,7 @@ function Breadcrumbs({ current }: { current: string }) {
 
 function NotFoundState() {
   return (
-    <Shell>
+    <>
       <Breadcrumbs current="Товар не найден" />
       <div className="rounded-[24px] border border-border-light bg-ivory-elevated p-10 text-center">
         <h1 className="text-[32px] font-bold text-slate mb-3">Товар не найден</h1>
@@ -60,13 +61,13 @@ function NotFoundState() {
           Перейти к поиску
         </Link>
       </div>
-    </Shell>
+    </>
   );
 }
 
 function LoadingState() {
   return (
-    <Shell>
+    <>
       <Breadcrumbs current="Загрузка…" />
       <div className="h-8 w-2/3 bg-ivory-elevated animate-pulse mb-4 rounded-[8px]" />
       <div className="h-5 w-1/3 bg-ivory-elevated animate-pulse mb-8 rounded-[8px]" />
@@ -77,11 +78,11 @@ function LoadingState() {
         ))}
       </div>
       <div className="h-[280px] bg-ivory-elevated animate-pulse rounded-[24px]" />
-    </Shell>
+    </>
   );
 }
 
-export default function ProductComparisonPage({ params }: { params: { id: string } }) {
+function ProductContent({ params }: { params: { id: string } }) {
   const productId = parseProductId(params.id);
   const comparison = useCatalogProduct(productId ?? 0);
 
@@ -99,7 +100,7 @@ export default function ProductComparisonPage({ params }: { params: { id: string
     }
 
     return (
-      <Shell>
+      <>
         <Breadcrumbs current="Ошибка" />
         <div className="rounded-[24px] border border-border-light bg-ivory-elevated p-10 text-center">
           <h1 className="text-[24px] font-semibold text-slate mb-3">
@@ -112,7 +113,7 @@ export default function ProductComparisonPage({ params }: { params: { id: string
             Повторить
           </button>
         </div>
-      </Shell>
+      </>
     );
   }
 
@@ -125,7 +126,7 @@ export default function ProductComparisonPage({ params }: { params: { id: string
   const { product, stats, offers, alternatives } = data;
 
   return (
-    <Shell>
+    <>
       <Breadcrumbs current={product.canonical_name} />
 
       <header className="mb-8">
@@ -161,6 +162,10 @@ export default function ProductComparisonPage({ params }: { params: { id: string
       <PriceHistory productId={productId} />
 
       <Alternatives alternatives={alternatives} currentMinPrice={stats.min_price_retail} />
-    </Shell>
+    </>
   );
+}
+
+export default function ProductComparisonPage({ params }: { params: { id: string } }) {
+  return <Shell><ProductContent params={params} /></Shell>;
 }

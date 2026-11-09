@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React from 'react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/widgets/Header/ui/Header';
@@ -17,7 +18,7 @@ function AdminDashboard() {
   const fetching = useIsFetching({ queryKey: ['admin'] });
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <PageTransition className="flex min-h-[calc(100vh-64px)]">
       <AdminSidebar />
 
       <main id="dashboard" className="flex-1 p-8 overflow-x-hidden max-lg:p-6 max-md:p-4">
@@ -45,7 +46,7 @@ function AdminDashboard() {
         <ParsersTable />
         <MailingsSection />
       </main>
-    </div>
+    </PageTransition>
   );
 }
 

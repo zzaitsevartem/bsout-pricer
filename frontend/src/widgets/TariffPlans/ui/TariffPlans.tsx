@@ -123,7 +123,7 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                 )}
 
                 <div className="absolute top-[24px] right-[24px] z-10 max-lg:relative max-lg:top-0 max-lg:right-0 max-lg:float-right max-lg:-mt-[28px]">
-                  <div className="relative group">
+                  <div className="relative tooltip-trigger">
                     <button
                       type="button"
                       className={`p-1 rounded-full transition-colors cursor-pointer ${
@@ -136,8 +136,8 @@ export const TariffPlans: React.FC<TariffPlansProps> = ({
                     </button>
 
                     <div
-                      className={`absolute right-0 top-full mt-2 w-[280px] p-3 rounded-xl text-[13px] leading-[1.5] shadow-lg border pointer-events-none opacity-0 scale-95 transition-all duration-200 origin-top-right group-hover:opacity-100 group-hover:scale-100 ${
-                        activeTooltip === plan.plan ? '!opacity-100 !scale-100' : ''
+                      className={`absolute right-0 top-full mt-2 w-[280px] p-3 rounded-xl text-[13px] leading-[1.5] shadow-lg border pointer-events-none opacity-0 tooltip-fade ${
+                        activeTooltip === plan.plan ? '!opacity-100' : ''
                       } bg-ivory text-body border-border-light`}
                       role="tooltip"
                     >

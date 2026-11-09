@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -262,7 +263,7 @@ function SettingsContent() {
 
   return (
     <>
-      <div className="max-w-[1200px] mx-auto px-6">
+      <PageTransition className="max-w-[1200px] mx-auto px-6">
         <div className="grid grid-cols-[264px_1fr] gap-8 py-8 min-h-[calc(100vh-64px)] max-md:grid-cols-1">
           <AccountSidebar />
 
@@ -352,7 +353,7 @@ function SettingsContent() {
             </div>
           </main>
         </div>
-      </div>
+      </PageTransition>
       <Footer />
     </>
   );

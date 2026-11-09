@@ -111,16 +111,19 @@ const Header: React.FC = () => {
             aria-label={isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
             aria-expanded={isMenuOpen}
           >
-            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
-            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`} />
-            <span className={`block w-6 h-[2px] bg-slate transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+            <span className={`block w-6 h-[2px] bg-slate mobile-menu-line ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+            <span className={`block w-6 h-[2px] bg-slate mobile-menu-line ${isMenuOpen ? 'opacity-0' : ''}`} />
+            <span className={`block w-6 h-[2px] bg-slate mobile-menu-line ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
           </button>
         </div>
 
         <div className={cn(
-          'fixed inset-0 z-40 bg-ivory transition-transform duration-300 lg:hidden',
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full',
+          'fixed inset-0 z-40 bg-ivory mobile-menu-panel lg:hidden',
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none',
         )}
+          data-open={isMenuOpen}
+          aria-hidden={!isMenuOpen}
+          ref={(element) => { if (element) element.inert = !isMenuOpen; }}
         >
           <div className="flex flex-col items-center justify-center h-full gap-8 px-8">
             <HeaderSearch className="w-full max-w-[320px]" onSubmitted={closeMenu} />
@@ -167,7 +170,7 @@ const Header: React.FC = () => {
         </div>
 
         <div
-          className={`fixed inset-0 bg-black/50 z-30 transition-opacity duration-300 lg:hidden
+          className={`fixed inset-0 bg-black/50 z-30 mobile-menu-overlay lg:hidden
             ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           onClick={closeMenu}
         />

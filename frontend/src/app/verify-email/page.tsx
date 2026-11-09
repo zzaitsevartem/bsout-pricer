@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -145,11 +146,11 @@ export default function VerifyEmailPage() {
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-64px)] flex flex-col">
+      <PageTransition className="min-h-[calc(100vh-64px)] flex flex-col">
         <Suspense fallback={null}>
           <VerifyEmailContent />
         </Suspense>
-      </div>
+      </PageTransition>
     </>
   );
 }

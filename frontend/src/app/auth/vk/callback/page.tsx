@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React, { Suspense, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -78,11 +79,11 @@ export default function VkCallbackPage() {
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-64px)] flex flex-col">
+      <PageTransition className="min-h-[calc(100vh-64px)] flex flex-col">
         <Suspense fallback={null}>
           <VkCallbackContent />
         </Suspense>
-      </div>
+      </PageTransition>
     </>
   );
 }

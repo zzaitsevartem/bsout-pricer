@@ -7,6 +7,12 @@
 
 @layer base {
   :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --motion-page-duration: 160ms;
+    --motion-menu-open: 220ms;
+    --motion-menu-close: 160ms;
+    --motion-tooltip-duration: 120ms;
     --color-ivory: #ffffff;
     --color-ivory-elevated: #ffffff;
     --color-ivory-warm: #ffffff;
@@ -305,4 +311,78 @@
   :root:not(.dark) .quick-access-card:is(:hover, :focus-visible) {
     transform: none;
   }
+}
+
+@layer components {
+  .mobile-menu-panel {
+    transition: transform var(--motion-menu-close) var(--ease-out);
+  }
+  .mobile-menu-panel[data-open='true'] {
+    transition-duration: var(--motion-menu-open);
+    transition-timing-function: var(--ease-drawer);
+  }
+  .mobile-menu-line {
+    transition: transform var(--motion-menu-close) var(--ease-out),
+      opacity var(--motion-menu-close) var(--ease-out);
+  }
+  .mobile-menu-overlay {
+    transition: opacity var(--motion-menu-close) var(--ease-out);
+  }
+  .tooltip-fade {
+    transition: opacity var(--motion-tooltip-duration) var(--ease-out);
+  }
+  .tooltip-trigger:focus-within .tooltip-fade {
+    opacity: 1;
+    transition: none;
+  }
+  .partner-carousel .partner-track {
+    animation-play-state: paused;
+  }
+  .partner-carousel[data-running='true'] .partner-track {
+    animation-play-state: running;
+  }
+  .partner-carousel:focus-within .partner-track {
+    animation-play-state: paused;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .partner-carousel:hover .partner-track {
+    animation-play-state: paused;
+  }
+  .tooltip-trigger:hover .tooltip-fade {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-panel, .mobile-menu-line, .mobile-menu-overlay, .tooltip-fade {
+    transition: none;
+  }
+  .partner-track {
+    animation: none;
+    transform: none;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .partner-track [data-partner-copy] {
+    display: none;
+  }
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* Pausing exposes every original link, including while traversing with Tab. */
+.partner-carousel[data-paused='true'] .partner-track,
+.partner-carousel:focus-within .partner-track {
+  animation: none;
+  transform: none;
+  width: 100%;
+  padding-right: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.partner-carousel[data-paused='true'] [data-partner-copy],
+.partner-carousel:focus-within [data-partner-copy] {
+  display: none;
 }

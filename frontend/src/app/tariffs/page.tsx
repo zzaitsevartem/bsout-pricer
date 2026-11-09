@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React from 'react';
 import Link from 'next/link';
 import { useUnit } from 'effector-react';
@@ -63,7 +64,7 @@ export default function TariffsPage() {
   return (
     <>
       <Header />
-      <div className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
+      <PageTransition className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">Главная</a>
           <span className="text-body-muted">/</span>
@@ -150,7 +151,7 @@ export default function TariffsPage() {
         <p className="text-center text-[14px] text-body-muted max-w-[500px] mx-auto">
           Скидка 20% на первый платёж любого платного тарифа. Отмена подписки в любой момент — доступ сохраняется до конца оплаченного периода.
         </p>
-      </div>
+      </PageTransition>
       <Footer />
     </>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTransition } from '@/shared/ui/PageTransition';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -71,7 +72,7 @@ export default function RegisterPage() {
   return (
     <>
       <Header />
-      <div className="flex min-h-[calc(100vh-64px)]">
+      <PageTransition className="flex min-h-[calc(100vh-64px)]">
         <div className="flex-1 bg-[url('/auth.webp')] bg-cover bg-center border-r border-border-light max-md:hidden" />
         <div className="flex-1 flex items-center justify-center px-10 py-12 bg-ivory max-md:flex-none max-md:w-full max-md:px-5">
           <div className="w-full max-w-[480px] bg-ivory border border-border-light rounded-[24px] p-12 max-md:p-8">
@@ -125,7 +126,7 @@ export default function RegisterPage() {
                   <label htmlFor="username" className="block text-[15px] font-medium text-slate">
                     Логин <span className="text-body-muted font-normal">(опционально)</span>
                   </label>
-                  <div className="relative group">
+                  <div className="relative tooltip-trigger">
                     <button
                       type="button"
                       onClick={() => setShowUsernameHint((v) => !v)}
@@ -136,8 +137,8 @@ export default function RegisterPage() {
                     </button>
 
                     <div
-                      className={`absolute left-0 top-full mt-1 w-[280px] p-3 rounded-xl text-[13px] leading-[1.5] shadow-lg border pointer-events-none opacity-0 scale-95 transition-all duration-200 origin-top-left group-hover:opacity-100 group-hover:scale-100 ${
-                        showUsernameHint ? '!opacity-100 !scale-100' : ''
+                      className={`absolute left-0 top-full mt-1 w-[280px] p-3 rounded-xl text-[13px] leading-[1.5] shadow-lg border pointer-events-none opacity-0 tooltip-fade ${
+                        showUsernameHint ? '!opacity-100' : ''
                       } bg-ivory text-body border-border-light z-50`}
                       role="tooltip"
                     >
@@ -294,7 +295,7 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
-      </div>
+      </PageTransition>
     </>
   );
 }

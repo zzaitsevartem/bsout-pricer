@@ -1,3 +1,4 @@
+import { PageTransition } from '@/shared/ui/PageTransition';
 import type { Metadata } from 'next';
 import { Header } from '@/widgets/Header/ui/Header';
 import { Footer } from '@/widgets/Footer/ui/Footer';
@@ -57,7 +58,7 @@ export default function PrivacyPage() {
   return (
     <>
       <Header />
-      <div className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
+      <PageTransition className="max-w-[1200px] mx-auto px-6 py-12 pb-16">
         <div className="flex items-center gap-2 text-[14px] text-body-muted mb-4 flex-wrap">
           <a href="/" className="text-body-subtle no-underline hover:text-slate hover:underline">
             Главная
@@ -83,7 +84,7 @@ export default function PrivacyPage() {
             </section>
           ))}
         </div>
-      </div>
+      </PageTransition>
       <Footer />
     </>
   );
