@@ -48,6 +48,7 @@ export default function LoginPage() {
                   type="text"
                   id="identifier"
                   {...register('identifier')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Логин или email"
                 />
@@ -63,6 +64,7 @@ export default function LoginPage() {
                   type="password"
                   id="password"
                   {...register('password')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Введите пароль"
                 />

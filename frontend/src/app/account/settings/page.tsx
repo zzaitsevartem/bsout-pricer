@@ -58,6 +58,7 @@ function LoginSection({ me }: { me: NonNullable<ReturnType<typeof useMe>['data']
             Новый логин
           </label>
           <input
+            autoComplete="off"
             type="text"
             id="new_username"
             value={username}
@@ -200,6 +201,7 @@ function EmailSection({ me }: { me: NonNullable<ReturnType<typeof useMe>['data']
             Новый адрес
           </label>
           <input
+            autoComplete="off"
             type="email"
             id="new_email"
             value={newEmail}
@@ -284,6 +286,7 @@ function SettingsContent() {
                       type="text"
                       id="full_name"
                       {...register('full_name')}
+                      autoComplete="off"
                       className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                       placeholder="Имя и фамилия"
                     />
@@ -302,6 +305,7 @@ function SettingsContent() {
                       type="tel"
                       id="phone"
                       {...register('phone')}
+                      autoComplete="off"
                       className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                       placeholder="+7 (999) 123-45-67"
                     />
@@ -320,6 +324,7 @@ function SettingsContent() {
                       type="text"
                       id="company"
                       {...register('company')}
+                      autoComplete="off"
                       className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                       placeholder="Название организации"
                     />

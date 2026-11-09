@@ -120,6 +120,7 @@ export function ProductSearchField({
   return (
     <div className={cn('relative min-w-0', className)}>
       <input
+        autoComplete="off"
         type="search"
         maxLength={500}
         value={value}

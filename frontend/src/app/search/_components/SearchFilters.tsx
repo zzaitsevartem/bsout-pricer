@@ -39,6 +39,7 @@ function FilterGroup({ title, options, selectedId, onSelect }: FilterGroupProps)
       <h4 className="text-[15px] font-semibold text-slate mb-3">{title}</h4>
       {searchable && (
         <input
+          autoComplete="off"
           type="search"
           aria-label={`Найти: ${title.toLocaleLowerCase('ru')}`}
           placeholder="Найти…"
@@ -217,6 +218,7 @@ function PriceRange({
           <label className="min-w-0 flex-1 text-[14px] text-body-subtle">
             От
             <input
+              autoComplete="off"
               name="min_price"
               type="number"
               min="0"
@@ -232,6 +234,7 @@ function PriceRange({
           <label className="min-w-0 flex-1 text-[14px] text-body-subtle">
             До
             <input
+              autoComplete="off"
               name="max_price"
               type="number"
               min="0"

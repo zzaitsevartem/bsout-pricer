@@ -74,6 +74,7 @@ function RunScopeControls({
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
+            autoComplete="off"
             type="checkbox"
             checked={fullSync}
             disabled={disabled}
@@ -102,6 +103,7 @@ function RunScopeControls({
         <label className="inline-flex items-center gap-2">
           <span className="text-[14px] text-body">Лимит позиций</span>
           <input
+            autoComplete="off"
             type="number"
             min={1}
             max={MAX_RUN_LIMIT}
@@ -117,6 +119,7 @@ function RunScopeControls({
         <label className="inline-flex items-center gap-2">
           <span className="text-[14px] text-body">Раздел</span>
           <input
+            autoComplete="off"
             type="text"
             value={sectionInput}
             disabled={disabled}

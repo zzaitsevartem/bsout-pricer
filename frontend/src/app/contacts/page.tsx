@@ -50,6 +50,7 @@ function FeedbackForm() {
           type="text"
           id="name"
           {...register('name')}
+          autoComplete="off"
           placeholder="Ваше имя"
           className={inputClassName}
         />
@@ -63,6 +64,7 @@ function FeedbackForm() {
           type="email"
           id="email"
           {...register('email')}
+          autoComplete="off"
           placeholder="your@email.com"
           className={inputClassName}
         />
@@ -76,6 +78,7 @@ function FeedbackForm() {
           type="text"
           id="subject"
           {...register('subject')}
+          autoComplete="off"
           placeholder="Чем мы можем помочь?"
           className={inputClassName}
         />
@@ -89,6 +92,7 @@ function FeedbackForm() {
           id="message"
           rows={5}
           {...register('message')}
+          autoComplete="off"
           placeholder="Ваше сообщение..."
           className="block w-full rounded-3xl px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default resize-y min-h-[96px]"
         />

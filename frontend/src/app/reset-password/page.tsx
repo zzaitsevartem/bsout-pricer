@@ -64,6 +64,7 @@ function RequestForm() {
             type="email"
             id="email"
             {...register('email')}
+            autoComplete="off"
             placeholder="your@email.com"
             className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
           />
@@ -130,6 +131,7 @@ function ConfirmForm({ token }: { token: string }) {
             type="password"
             id="new_password"
             {...register('new_password')}
+            autoComplete="off"
             placeholder="Минимум 12 символов"
             className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
           />
@@ -149,6 +151,7 @@ function ConfirmForm({ token }: { token: string }) {
             type="password"
             id="confirm_password"
             {...register('confirm_password')}
+            autoComplete="off"
             placeholder="Повторите пароль"
             className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
           />

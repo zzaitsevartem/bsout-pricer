@@ -161,6 +161,7 @@ function CandidateRow({
           ) : (
             <div className="flex items-center gap-2">
               <input
+                autoComplete="off"
                 type="number"
                 min={1}
                 value={linkValue}

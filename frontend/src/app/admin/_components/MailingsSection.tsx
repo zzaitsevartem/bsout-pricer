@@ -285,6 +285,7 @@ export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
             Название
           </label>
           <input
+            autoComplete="off"
             id="broadcast-name"
             type="text"
             value={name}
@@ -309,6 +310,7 @@ export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
                 )}
               >
                 <input
+                  autoComplete="off"
                   type="radio"
                   name="broadcast-audience"
                   value={option.value}
@@ -335,6 +337,7 @@ export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
               Адреса получателей
             </label>
             <textarea
+              autoComplete="off"
               id="broadcast-emails"
               value={emails}
               onChange={(event) => setEmails(event.target.value)}
@@ -371,6 +374,7 @@ export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
             Тема письма
           </label>
           <input
+            autoComplete="off"
             id="broadcast-subject"
             type="text"
             value={subject}
@@ -386,6 +390,7 @@ export function BroadcastFormModal({ onClose }: { onClose: () => void }) {
             Текст письма
           </label>
           <textarea
+            autoComplete="off"
             id="broadcast-text"
             value={text}
             onChange={(event) => setText(event.target.value)}

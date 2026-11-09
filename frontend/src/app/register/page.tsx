@@ -92,6 +92,7 @@ export default function RegisterPage() {
                   type="text"
                   id="full_name"
                   {...register('full_name')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Имя и фамилия"
                 />
@@ -107,6 +108,7 @@ export default function RegisterPage() {
                   type="email"
                   id="email"
                   {...register('email')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="user@company.com"
                 />
@@ -156,6 +158,7 @@ export default function RegisterPage() {
                   type="text"
                   id="username"
                   {...register('username')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Ваш логин"
                 />
@@ -173,6 +176,7 @@ export default function RegisterPage() {
                   type="tel"
                   id="phone"
                   {...register('phone')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="+7 (999) 123-45-67"
                 />
@@ -188,6 +192,7 @@ export default function RegisterPage() {
                   type="text"
                   id="company"
                   {...register('company')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Название организации"
                 />
@@ -200,6 +205,7 @@ export default function RegisterPage() {
                   type="password"
                   id="password"
                   {...register('password')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Не менее 6 символов"
                 />
@@ -220,6 +226,7 @@ export default function RegisterPage() {
                   type="password"
                   id="confirmPassword"
                   {...register('confirmPassword')}
+                  autoComplete="off"
                   className="block w-full rounded-full px-3 py-[10px] text-[15px] text-slate bg-ivory border border-border-input transition-colors focus:outline-none focus:border-border-default"
                   placeholder="Введите пароль ещё раз"
                 />
@@ -230,7 +237,7 @@ export default function RegisterPage() {
 
               <div className="mb-6">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" {...register('terms')} className="hidden peer" />
+                  <input type="checkbox" {...register('terms')} autoComplete="off" className="hidden peer" />
                   <span className="w-[18px] h-[18px] rounded-full border border-body-muted bg-ivory flex items-center justify-center flex-shrink-0 peer-checked:bg-accent peer-checked:border-accent dark:peer-checked:bg-slate dark:peer-checked:border-slate transition-colors">
                     <svg
                       width="12"

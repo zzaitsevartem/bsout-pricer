@@ -106,6 +106,7 @@ function TargetPriceEditor({ item }: { item: TrackedProductResponse }) {
   return (
     <div className="flex items-center gap-2">
       <input
+        autoComplete="off"
         type="text"
         inputMode="decimal"
         value={value}

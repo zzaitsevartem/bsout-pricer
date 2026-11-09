@@ -62,6 +62,7 @@ export function OfferImportSection() {
         </div>
         <div className="flex gap-3">
           <input
+            autoComplete="off"
             ref={fileInputRef}
             type="file"
             accept="application/json,.json"
@@ -85,6 +86,7 @@ export function OfferImportSection() {
           Данные офферов
         </label>
         <textarea
+          autoComplete="off"
           id="offer-import-payload"
           value={text}
           onChange={(event) => handleTextChange(event.target.value)}
