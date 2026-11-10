@@ -9,22 +9,23 @@ import { CloseIcon, SearchIcon } from '@/shared/ui/IconSVG';
 type HeaderSearchProps = {
   className?: string;
   onSubmitted?: () => void;
+  guestHome?: boolean;
 };
 
-const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted }) => {
+const HeaderSearch: React.FC<HeaderSearchProps> = ({ className, onSubmitted, guestHome = false }) => {
   const [value, setValue] = useState('');
   const inputId = useId();
   const router = useRouter();
 
   const search = (value: string) => {
     const query = value.trim();
-    router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
+    router.push(guestHome ? '/register' : query ? `/search?q=${encodeURIComponent(query)}` : '/search');
     onSubmitted?.();
   };
 
   const openDevice = (modelKey: string) => {
     setValue('');
-    router.push(`/devices/${encodeURIComponent(modelKey)}`);
+    router.push(guestHome ? '/register' : `/devices/${encodeURIComponent(modelKey)}`);
     onSubmitted?.();
   };
 

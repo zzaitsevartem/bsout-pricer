@@ -7,7 +7,20 @@ import vkStatic from '@/shared/assets/images/icons/logo-vk-static.svg';
 import vkHover from '@/shared/assets/images/icons/logo-vk-hover.webp';
 import { HoverIcon } from '@/shared/ui/HoverIcon';
 
-const Footer: React.FC = () => {
+const Footer: React.FC<{ variant?: 'guest-home' }> = ({ variant }) => {
+  if (variant === 'guest-home') {
+    return <footer id="footer" className="relative min-h-[70svh] border-t border-border-light-subtle bg-ivory py-20 text-slate">
+      <div className="mx-auto flex min-h-[55svh] max-w-[1200px] flex-col justify-between px-6">
+        <div className="grid gap-12 md:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div><Link href="/" className="inline-flex items-center"><Image src="/Logo.svg" alt="BScout" width={160} height={55} className="h-14 w-auto dark:invert" /></Link><p className="mt-5 max-w-[34ch] text-body-subtle">Поиск и сравнение предложений запчастей для электроники в магазинах Ставрополя.</p></div>
+          <div><h2 className="mb-5 font-semibold">Продукт</h2><nav className="flex flex-col gap-3 text-sm text-body-subtle"><Link href="/register">Начать поиск</Link><Link href="/tariffs">Тарифы</Link><a href="/#how-it-works">Как это работает</a></nav></div>
+          <div><h2 className="mb-5 font-semibold">Информация</h2><nav className="flex flex-col gap-3 text-sm text-body-subtle"><Link href="/faq">FAQ</Link><Link href="/contacts">Контакты</Link><Link href="/privacy">Политика данных</Link><Link href="/terms">Условия использования</Link></nav></div>
+          <div><h2 className="mb-5 font-semibold">Связаться</h2><div className="flex flex-col gap-3 text-sm text-body-subtle"><a href="mailto:hello@bscout.ru">hello@bscout.ru</a><a href="mailto:support@bscout.ru">support@bscout.ru</a></div></div>
+        </div>
+        <div className="mt-16 flex flex-wrap justify-between gap-4 border-t border-border-light-subtle pt-6 text-sm text-body-muted"><span>© {new Date().getFullYear()} BScout</span><div className="flex gap-5"><Link href="/terms">Условия использования</Link><Link href="/privacy">Политика данных</Link></div></div>
+      </div>
+    </footer>;
+  }
   return (
     <footer className="bg-ivory border-t border-border-light-subtle py-[61px] pb-8 max-md:py-12 max-md:pb-6">
       <div className="max-w-[1200px] mx-auto px-6">

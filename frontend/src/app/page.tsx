@@ -12,12 +12,12 @@ export default function Home() {
   const isAuth = useUnit($isAuth);
 
   return (
-    <div className="home-palette relative z-10">
+    <div className={`${isAuth ? 'home-palette' : 'guest-home-shell'} relative z-10`}>
       <Header />
       <PageTransition>
         {isAuth ? <AuthorizedHome /> : <HomeWidget />}
       </PageTransition>
-      <Footer />
+      <Footer variant={isAuth ? undefined : 'guest-home'} />
     </div>
   );
 }

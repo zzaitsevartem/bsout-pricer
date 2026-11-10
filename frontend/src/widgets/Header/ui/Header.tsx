@@ -78,7 +78,7 @@ const Header: React.FC = () => {
           ))}
         </nav>
 
-        <HeaderSearch className="hidden min-w-0 max-w-[480px] flex-1 lg:block" />
+        <HeaderSearch guestHome={pathname === '/' && !isAuth} className="hidden min-w-0 max-w-[480px] flex-1 lg:block" />
 
         <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex">
           <ThemeToggle />
@@ -96,7 +96,7 @@ const Header: React.FC = () => {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1 lg:hidden">
-          <Link href="/search" className="btn-icon rounded-full hover:bg-transparent" aria-label="Поиск запчастей" title="Поиск запчастей">
+          <Link href={pathname === '/' && !isAuth ? '/register' : '/search'} className="btn-icon rounded-full hover:bg-transparent" aria-label="Поиск запчастей" title="Поиск запчастей">
             <SearchIcon width={20} height={20} />
           </Link>
           <Link href="/faq" className="btn-icon rounded-full" aria-label="Частые вопросы" title="Частые вопросы">
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
           ref={(element) => { if (element) element.inert = !isMenuOpen; }}
         >
           <div className="flex flex-col items-center justify-center h-full gap-8 px-8">
-            <HeaderSearch className="w-full max-w-[320px]" onSubmitted={closeMenu} />
+            <HeaderSearch guestHome={pathname === '/' && !isAuth} className="w-full max-w-[320px]" onSubmitted={closeMenu} />
             <nav>
               <ul className="flex flex-col items-center gap-8 list-none p-0">
                 {[...navItems, { href: '/faq', label: 'FAQ' }].map((item) => (
