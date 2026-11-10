@@ -222,24 +222,18 @@
 .guest-home-shell .btn-primary:hover { background-color: var(--color-accent-hover); border-color: var(--color-accent-hover); color: white; }
 .guest-home { --guest-section-space: clamp(5rem, 9vw, 9rem); background: #fff; }
 .guest-section { min-height: 100svh; scroll-margin-top: 72px; scroll-snap-align: start; }
-.guest-spray { pointer-events: none; opacity: .1; }
-.guest-mascot { position: relative; width: min(100%, 470px); aspect-ratio: 2 / 3; perspective: 900px; }
-.guest-mascot-mirrored { scale: -1 1; }
-.guest-mascot-body, .guest-mascot-head { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.guest-mascot-body { mask-image: linear-gradient(to bottom, transparent 0%, transparent 23%, #000 30%); }
-.guest-mascot-head { mask-image: linear-gradient(to bottom, #000 0%, #000 23%, transparent 30%); transform-origin: 44% 28%; transition: transform 200ms var(--ease-out); }
-.guest-mascot-eyelids { position: absolute; left: 37%; top: 18%; width: 18%; height: 2.5%; opacity: 0; border-radius: 50%; background: #eee5db; transform: rotate(-7deg); pointer-events: none; }
-.guest-mascot-eyelids::after { content: ''; position: absolute; left: 130%; top: -13%; width: 95%; height: 100%; border-radius: inherit; background: inherit; transform: rotate(11deg); }
-.guest-mascot-eyelids[data-blinking='true'] { opacity: 1; }
-.guest-glass { background: linear-gradient(140deg, rgba(255,255,255,.86), rgba(255,255,255,.55)); border: 1px solid rgba(255,255,255,.95); box-shadow: 0 18px 48px rgba(16,30,23,.13), inset 0 1px 0 rgba(255,255,255,.95); backdrop-filter: blur(20px); }
-.guest-home .guest-tariffs .tariff-home-card { background: linear-gradient(145deg, rgba(255,255,255,.88), rgba(235,249,242,.62)); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 20px 50px rgba(17,39,28,.14), inset 0 1px 0 white; backdrop-filter: blur(22px); }
+.guest-spray { pointer-events: none; opacity: .85; filter: saturate(1.5) contrast(1.15); }
+.guest-mascot { position: relative; width: min(100%, 470px); aspect-ratio: 2 / 3; }
+.guest-mascot-canvas { display: block; width: 100%; height: 100%; }
+.guest-glass { background: linear-gradient(135deg, rgba(255,255,255,.8), rgba(222,250,236,.45)); border: 1px solid rgba(255,255,255,.95); box-shadow: 0 20px 55px rgba(0,59,35,.14), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(0,192,120,.16); backdrop-filter: blur(24px) saturate(1.2); }
+.guest-tariffs::before { content: ''; position: absolute; left: 12%; right: 12%; top: 34%; height: 48%; background: radial-gradient(ellipse at 50% 50%, rgba(0,192,120,.2), transparent 72%); filter: blur(36px); pointer-events: none; }
+.guest-home .guest-tariffs .tariff-home-card { background: linear-gradient(145deg, rgba(255,255,255,.77), rgba(215,250,231,.52)); border: 1px solid rgba(255,255,255,.98); box-shadow: 0 24px 60px rgba(0,68,39,.18), inset 0 1px 0 white, inset 0 -1px 0 rgba(0,192,120,.18); backdrop-filter: blur(28px) saturate(1.25); }
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   html:has(.guest-home) { scroll-snap-type: y proximity; scroll-behavior: smooth; }
 }
 @media (max-width: 1023px), (pointer: coarse), (prefers-reduced-motion: reduce) {
   html:has(.guest-home) { scroll-snap-type: none; scroll-behavior: auto; }
 }
-@media (prefers-reduced-motion: reduce) { .guest-mascot-head { transition: none; } }
 
 /* White surfaces and green actions are shared by every light-theme route. */
 @layer components {

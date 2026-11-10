@@ -15,7 +15,8 @@ export default function Hero() {
 
   return (
     <section id="home" className="guest-section relative isolate flex items-center overflow-hidden bg-ivory">
-      <Image src="/redesign/spray-corner.png" alt="" aria-hidden="true" width={1536} height={1024} unoptimized className="guest-spray absolute -right-40 -top-24 w-[650px] rotate-180" />
+      <Image src="/redesign/spray-corner.png" alt="" aria-hidden="true" width={1536} height={1024} unoptimized className="guest-spray absolute -right-36 -top-20 w-[750px] rotate-180" />
+      <Image src="/redesign/spray-wide.png" alt="" aria-hidden="true" width={2172} height={724} unoptimized className="guest-spray absolute -bottom-24 -left-72 w-[1050px]" />
       <div className="relative mx-auto grid w-full max-w-[1280px] items-center gap-6 px-6 pb-16 pt-12 lg:grid-cols-[1.1fr_.9fr] lg:pb-24 lg:pt-16">
         <div className="relative z-10 max-w-[720px]">
           <p className="mb-6 text-sm font-semibold uppercase tracking-[.16em] text-positive">Поиск запчастей в Ставрополе</p>
