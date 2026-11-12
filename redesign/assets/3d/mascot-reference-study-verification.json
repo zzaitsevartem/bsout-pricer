@@ -1,0 +1,45 @@
+{
+  "source": {
+    "objects": 923,
+    "packed_images": [
+      "mascot-hero.png",
+      "Packed cotton micro-weave normal"
+    ],
+    "has_head_pivot": true,
+    "normal_sample": [
+      0.41960787773132324,
+      0.3803921937942505,
+      0.9803922176361084,
+      1.0
+    ]
+  },
+  "reimport": {
+    "mesh_objects": 34,
+    "vertices": 1090367,
+    "triangles": 1055825,
+    "has_root": true,
+    "has_head_pivot": true
+  },
+  "limitations": [
+    "Independent reference-led reconstruction; does not match the reference 1:1.",
+    "Facial expression, fur groom, garment drape and pose differ visibly.",
+    "Back geometry inferred; no back-view reference supplied.",
+    "No skeletal rig, no facial blendshapes or animation clips.",
+    "High-detail geometry intended for review; not integrated or performance-tested in website."
+  ],
+  "glb": {
+    "bytes": 38746752,
+    "nodes": 36,
+    "meshes": 34,
+    "materials": 25,
+    "embedded_images": 1,
+    "external_uris": [],
+    "normal_mapped_materials": 9
+  },
+  "renders": [
+    "mascot-reference-study-hero.png",
+    "mascot-reference-study-face.png",
+    "mascot-reference-study-glb-front.png",
+    "mascot-reference-study-glb-back.png"
+  ]
+}

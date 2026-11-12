@@ -42,3 +42,6 @@ yarn-error.log*
 .claude/worktrees/
 
 # Project-local Codex defaults and skills are versioned with the repository.
+
+# Local design checks and browser profiles must never be published.
+/.taste-skill/

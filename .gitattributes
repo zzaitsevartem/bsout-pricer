@@ -1,0 +1,4 @@
+redesign/assets/3d/*.blend filter=lfs diff=lfs merge=lfs -text
+redesign/assets/3d/*.blend1 filter=lfs diff=lfs merge=lfs -text
+redesign/assets/3d/*.glb filter=lfs diff=lfs merge=lfs -text
+redesign/assets/3d/*.ply filter=lfs diff=lfs merge=lfs -text
