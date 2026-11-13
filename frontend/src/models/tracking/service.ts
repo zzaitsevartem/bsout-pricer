@@ -20,11 +20,17 @@ function checkContract(schema: z.ZodType, data: unknown, source: string): void {
   }
   const result = schema.safeParse(data);
   if (!result.success) {
-    console.warn(`[models/tracking] ${source}: response does not match schema`, result.error.issues);
+    console.warn(
+      `[models/tracking] ${source}: response does not match schema`,
+      result.error.issues,
+    );
   }
 }
 
 export const trackingApi = {
+  devices: () => api.get<import('./schema').TrackedDevice[]>('/tracking/devices'),
+  addDevice: (id: number) => api.put(`/tracking/devices/${id}`),
+  removeDevice: (id: number) => api.delete(`/tracking/devices/${id}`),
   usage: () =>
     api.get<TrackingUsageResponse>('/tracking/usage').then((response) => {
       checkContract(trackingUsageResponseSchema, response.data, 'GET /tracking/usage');

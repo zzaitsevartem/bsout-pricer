@@ -34,3 +34,5 @@ export {
   useUntrackProduct,
 } from './hooks';
 export type { TrackingGate } from './hooks';
+
+export { useTrackedDevices, useDeviceTrackingMutation } from './hooks';

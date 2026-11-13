@@ -13,7 +13,7 @@ const PREVIEW_SIZE = 4;
 
 function deltaClass(tracked: TrackedProductResponse): string {
   const delta = parseMoney(tracked.price_delta);
-  if (delta === null) {
+  if (delta === null || delta === 0) {
     return 'text-body-muted';
   }
   return delta < 0 ? 'text-olive font-bold' : 'text-clay';
@@ -22,8 +22,9 @@ function deltaClass(tracked: TrackedProductResponse): string {
 function deltaLabel(tracked: TrackedProductResponse): string {
   const delta = parseMoney(tracked.price_delta);
   if (delta === null) {
-    return 'без изменений';
+    return parseMoney(tracked.current_price) === null ? 'нет данных' : 'нет данных для сравнения';
   }
+  if (delta === 0) return 'без изменений';
   const sign = delta > 0 ? '+' : '';
   const pct =
     typeof tracked.price_delta_pct === 'number'
@@ -34,7 +35,7 @@ function deltaLabel(tracked: TrackedProductResponse): string {
 
 function barColor(tracked: TrackedProductResponse): string {
   const delta = parseMoney(tracked.price_delta);
-  if (delta === null) {
+  if (delta === null || delta === 0) {
     return 'bg-border-subtle';
   }
   return delta < 0 ? 'bg-slate' : 'bg-clay';
@@ -82,9 +83,13 @@ function TrackedCard({ items }: { items: TrackedProductResponse[] }) {
       </div>
       {items.map((tracked) => (
         <div key={tracked.id} className="flex items-center gap-3 bg-ivory p-3">
-          <span className="flex-1 truncate text-[14px] text-slate" title={tracked.canonical_name}>
+          <Link
+            href={`/product/${tracked.product_id}`}
+            className="flex-1 truncate text-[14px] text-slate hover:underline"
+            title={tracked.canonical_name}
+          >
             {tracked.canonical_name}
-          </span>
+          </Link>
           <div className="flex flex-1 gap-1" aria-hidden="true">
             {[0, 1, 2, 3].map((i) => (
               <span key={i} className={cn('h-2 flex-1', barColor(tracked))} />
@@ -124,8 +129,8 @@ const TrackingOverview: React.FC = () => {
             Всё под контролем
           </h2>
           <p className="mb-4 max-w-[64ch] text-lg leading-[1.4] text-body">
-            Ваши позиции проверяются автоматически: самое дешёвое предложение выделяется, о снижении
-            цены приходит уведомление.
+            Здесь показаны последние доступные цены и их изменение с момента добавления. Уведомления
+            о снижении цены доступны на тарифе «Продвинутый».
           </p>
           <Link href="/account/tracking" className="btn-arrow">
             Управлять отслеживанием
@@ -136,6 +141,10 @@ const TrackingOverview: React.FC = () => {
           LOADING_STATE
         ) : isGate ? (
           <SubscriptionGateCard message={trackingGate(error)?.message ?? ''} />
+        ) : error ? (
+          <p role="alert" className="text-body-muted">
+            Не удалось загрузить отслеживание. Попробуйте обновить страницу.
+          </p>
         ) : total === 0 ? (
           EMPTY_STATE
         ) : (

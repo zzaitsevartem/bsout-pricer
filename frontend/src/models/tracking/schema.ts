@@ -73,3 +73,11 @@ export type TrackedProductCreateRequest = z.infer<typeof trackedProductCreateReq
 export type TrackedProductUpdateRequest = z.infer<typeof trackedProductUpdateRequestSchema>;
 export type TrackingListParams = z.infer<typeof trackingListParamsSchema>;
 export type TrackingLimitDetail = z.infer<typeof trackingLimitDetailSchema>;
+
+export const trackedDeviceSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  model_key: z.string(),
+  brand: z.string(),
+});
+export type TrackedDevice = z.infer<typeof trackedDeviceSchema>;

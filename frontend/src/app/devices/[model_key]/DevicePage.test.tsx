@@ -4,6 +4,7 @@ import { DeviceClient } from './DeviceClient';
 import { DeviceOverview } from './DeviceOverview';
 import type { Device } from '@/models/device';
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
+vi.mock('@/widgets/authorizedHome/ui/DeviceTrackButton', () => ({ DeviceTrackButton: () => null }));
 vi.mock('@/models/device', () => ({ useDevice: query }));
 vi.mock('@/app/search/_components/SearchClient', () => ({
   SearchClient: ({ device }: { device: Device }) => <p>Каталог {device.name}</p>,

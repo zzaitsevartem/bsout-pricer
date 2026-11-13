@@ -619,3 +619,93 @@ async def test_deactivated_tracking_frees_usage_counter(client, db_session):
     assert before.json()["used"] == 2
     assert after.json()["used"] == 1
     assert after.json()["remaining"] == 9
+
+
+async def test_device_tracking_baseline_matching_and_entitlements(client, db_session):
+    from src.modules.tracking.service.device_tracking import DeviceTrackingService
+
+    user, token = await _make_user(db_session, "device-advanced@example.com", PlanEnum.advanced)
+    _, other = await _make_user(db_session, "device-other@example.com", PlanEnum.advanced)
+    _, basic = await _make_user(db_session, "device-basic@example.com", PlanEnum.basic)
+    _, expired = await _make_user(db_session, "device-expired@example.com", PlanEnum.advanced, -1)
+    refs = await _make_dictionaries(db_session)
+    device_id = refs["cluster"].device_id
+    store = await _make_store(db_session, "device-store")
+    old = await _make_product(db_session, refs, "old")
+    await _make_offer(db_session, store, old, "old", "100")
+    for denied in (basic, expired):
+        assert (await client.get("/api/tracking/devices", headers=_auth(denied))).status_code == 403
+        assert (
+            await client.put(f"/api/tracking/devices/{device_id}", headers=_auth(denied))
+        ).status_code == 403
+    headers = _auth(token)
+    assert (
+        await client.put(f"/api/tracking/devices/{device_id}", headers=headers)
+    ).status_code == 200
+    assert (
+        await client.put(f"/api/tracking/devices/{device_id}", headers=headers)
+    ).status_code == 200
+    assert len((await client.get("/api/tracking/devices", headers=headers)).json()) == 1
+    assert (await client.get("/api/tracking/devices", headers=_auth(other))).json() == []
+    assert (
+        await client.delete(f"/api/tracking/devices/{device_id}", headers=_auth(other))
+    ).status_code == 204
+    assert len((await client.get("/api/tracking/devices", headers=headers)).json()) == 1
+    assert await DeviceTrackingService.scan(db_session) == []
+    later = await _make_product(db_session, refs, "later")
+    later.cluster_id = None
+    await _make_offer(db_session, store, later, "later", "200")
+    assert await DeviceTrackingService.scan(db_session) == []
+    later.cluster_id = refs["cluster"].id
+    await db_session.flush()
+    created = await DeviceTrackingService.scan(db_session)
+    assert len(created) == 1 and created[0].product_id == later.id
+    assert "iPhone 13" in created[0].body
+    assert await DeviceTrackingService.scan(db_session) == []
+    subscription = (
+        await db_session.execute(select(Subscription).where(Subscription.user_id == user.id))
+    ).scalar_one()
+    subscription.plan = PlanEnum.basic
+    await db_session.flush()
+    unseen = await _make_product(db_session, refs, "downgraded")
+    await _make_offer(db_session, store, unseen, "downgraded", "300")
+    assert await DeviceTrackingService.scan(db_session) == []
+    assert (
+        await client.delete(f"/api/tracking/devices/{device_id}", headers=headers)
+    ).status_code == 403
+    subscription.plan = PlanEnum.advanced
+    await db_session.flush()
+    assert len(await DeviceTrackingService.scan(db_session)) == 1
+    assert (
+        await client.delete(f"/api/tracking/devices/{device_id}", headers=headers)
+    ).status_code == 204
+    assert (
+        await client.delete(f"/api/tracking/devices/{device_id}", headers=headers)
+    ).status_code == 204
+
+
+async def test_device_tracking_concurrent_scans_notify_once(db_engine):
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from src.modules.tracking.service.device_tracking import DeviceTrackingService
+
+    factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    async with factory() as db:
+        user, _ = await _make_user(db, "device-concurrency@example.com", PlanEnum.advanced)
+        refs = await _make_dictionaries(db)
+        store = await _make_store(db, "device-concurrency")
+        device_id = refs["cluster"].device_id
+        await DeviceTrackingService.add(db, user.id, device_id)
+        product = await _make_product(db, refs, "concurrent")
+        await _make_offer(db, store, product, "concurrent", "500")
+        await db.commit()
+
+    async def scan():
+        async with factory() as db:
+            rows = await DeviceTrackingService.scan(db)
+            await db.commit()
+            return len(rows)
+
+    assert sorted(await asyncio.gather(scan(), scan())) == [0, 1]

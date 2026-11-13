@@ -8,6 +8,7 @@ import { useTrackingUsage } from '@/models/tracking';
 import { useUnreadNotificationCount } from '@/models/notification';
 import { AuthorizedHero } from './AuthorizedHero';
 import { TariffStrip } from './TariffStrip';
+import { DeviceTracking } from './DeviceTracking';
 import { TrackingOverview } from './TrackingOverview';
 import { QuickAccess } from './QuickAccess';
 import { NotificationsFeed } from './NotificationsFeed';
@@ -23,6 +24,7 @@ export const AuthorizedHome: React.FC = () => {
       <AuthorizedHero me={me} used={usage?.used} unread={unread?.unread_count} />
       <TariffStrip />
       <TrackingOverview />
+      {usage?.plan === 'advanced' && <DeviceTracking />}
       <QuickAccess used={usage?.used} />
       <NotificationsFeed />
     </>

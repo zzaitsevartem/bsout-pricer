@@ -152,3 +152,20 @@ export function useUntrackProduct() {
     },
   });
 }
+
+export function useTrackedDevices(enabled: boolean) {
+  return useQuery({
+    queryKey: ['tracking', 'devices'],
+    queryFn: () => trackingApi.devices().then((r) => r.data),
+    enabled,
+    retry: false,
+  });
+}
+export function useDeviceTrackingMutation() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, remove }: { id: number; remove?: boolean }) =>
+      remove ? trackingApi.removeDevice(id) : trackingApi.addDevice(id),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['tracking', 'devices'] }),
+  });
+}

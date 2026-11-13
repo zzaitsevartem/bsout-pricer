@@ -66,3 +66,16 @@ class TrackingUsageResponse(BaseModel):
     limit: int
     remaining: int
     plan: PlanEnum | None = None
+
+
+class TrackedDeviceResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
+    id: int
+    name: str
+    model_key: str
+    brand: str
+
+
+class TrackedDeviceMutationResponse(BaseModel):
+    device_id: int

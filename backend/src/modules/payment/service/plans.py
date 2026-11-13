@@ -14,6 +14,7 @@ class PlanDefinition:
     stores: int
     fuzzy_search: bool
     price_alerts: bool
+    device_tracking: bool
     export_reports: bool
     support_ru: str
     featured: bool
@@ -30,6 +31,7 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         stores=5,
         fuzzy_search=False,
         price_alerts=False,
+        device_tracking=False,
         export_reports=False,
         support_ru="—",
         featured=False,
@@ -44,6 +46,7 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         stores=5,
         fuzzy_search=False,
         price_alerts=False,
+        device_tracking=False,
         export_reports=False,
         support_ru="Рабочие часы",
         featured=False,
@@ -58,6 +61,7 @@ PLANS: dict[PlanEnum, PlanDefinition] = {
         stores=5,
         fuzzy_search=True,
         price_alerts=True,
+        device_tracking=True,
         export_reports=True,
         support_ru="24/7",
         featured=True,

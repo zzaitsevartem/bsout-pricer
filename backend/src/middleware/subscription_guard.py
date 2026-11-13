@@ -18,6 +18,7 @@ SUBSCRIPTION_REQUIRED_MESSAGE = (
 
 GATED_FEATURES: dict[str, str] = {
     "fuzzy_search": "Нечёткий поиск",
+    "device_tracking": "Отслеживание устройств",
     "price_alerts": "Оповещения о снижении цены",
     "export_reports": "Экспорт отчётов",
 }

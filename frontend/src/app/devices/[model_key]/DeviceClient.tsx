@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import axios from 'axios';
 import { useDevice } from '@/models/device';
+import { DeviceTrackButton } from '@/widgets/authorizedHome/ui/DeviceTrackButton';
 import { SearchClient } from '@/app/search/_components/SearchClient';
 export function DeviceClient({ modelKey }: { modelKey: string }) {
   const device = useDevice(modelKey);
@@ -34,5 +35,12 @@ export function DeviceClient({ modelKey }: { modelKey: string }) {
       </main>
     );
   }
-  return <SearchClient key={device.data.id} device={device.data} />;
+  return (
+    <>
+      <div className="mx-auto max-w-[1200px] px-6">
+        <DeviceTrackButton id={device.data.id} name={device.data.name} />
+      </div>
+      <SearchClient key={device.data.id} device={device.data} />
+    </>
+  );
 }

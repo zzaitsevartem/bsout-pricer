@@ -15,6 +15,7 @@ from src.modules.broadcast.service.broadcast_service import BroadcastService
 from src.modules.parser.service.parser_service import FULL_SYNC_LOCK_TTL, parser_service
 from src.modules.parser.service.parsers import register_default_parsers
 from src.modules.tracking.service.alert_service import AlertService
+from src.modules.tracking.service.device_tracking import DeviceTrackingService
 from src.modules.tracking.service.price_refresh import refresh_tracked_offers
 from src.modules.tracking.service.retention import run_retention
 
@@ -77,6 +78,7 @@ async def _sync_prices() -> dict:
     async with async_session_factory() as db:
         stats = await refresh_tracked_offers(db)
         notifications = await AlertService.scan_for_drops(db)
+        notifications += await DeviceTrackingService.scan(db)
         await db.commit()
     stats["notifications"] = len(notifications)
     logger.info("sync_prices: %s", stats)

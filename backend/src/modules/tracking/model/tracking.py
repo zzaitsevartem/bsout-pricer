@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
-NOTIFICATION_TYPES = ("price_drop", "back_in_stock", "target_reached")
+NOTIFICATION_TYPES = ("price_drop", "back_in_stock", "target_reached", "new_device_product")
 NOTIFICATION_CHANNELS = ("in_app", "email", "telegram")
 NOTIFICATION_STATUSES = ("pending", "sent", "failed", "skipped")
 
@@ -52,7 +52,8 @@ class Notification(Base):
     __tablename__ = "notifications"
     __table_args__ = (
         CheckConstraint(
-            "type IN ('price_drop', 'back_in_stock', 'target_reached')", name="type_allowed"
+            "type IN ('price_drop', 'back_in_stock', 'target_reached', 'new_device_product')",
+            name="type_allowed",
         ),
         CheckConstraint(
             "status IN ('pending', 'sent', 'failed', 'skipped')", name="notification_status_allowed"
@@ -84,3 +85,27 @@ class Notification(Base):
     )
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class TrackedDevice(Base):
+    __tablename__ = "tracked_devices"
+    __table_args__ = (UniqueConstraint("user_id", "device_id", name="uq_tracked_user_device"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    device_id: Mapped[int] = mapped_column(
+        ForeignKey("devices.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class TrackedDeviceProduct(Base):
+    __tablename__ = "tracked_device_products"
+    tracked_device_id: Mapped[int] = mapped_column(
+        ForeignKey("tracked_devices.id", ondelete="CASCADE"), primary_key=True
+    )
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )

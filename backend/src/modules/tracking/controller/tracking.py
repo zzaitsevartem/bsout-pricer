@@ -5,6 +5,7 @@ from src.database import get_db
 from src.middleware.subscription_guard import (
     get_current_plan,
     require_active_subscription,
+    require_feature,
     tracked_products_limit_for,
 )
 from src.modules.auth.model.user import Subscription, User
@@ -12,12 +13,15 @@ from src.modules.payment.service.plans import get_plan
 from src.modules.shared import get_current_user
 from src.modules.tracking.schema.tracking import (
     TRACKING_LIMIT_REACHED_CODE,
+    TrackedDeviceMutationResponse,
+    TrackedDeviceResponse,
     TrackedProductCreateRequest,
     TrackedProductListResponse,
     TrackedProductResponse,
     TrackedProductUpdateRequest,
     TrackingUsageResponse,
 )
+from src.modules.tracking.service.device_tracking import DeviceTrackingService
 from src.modules.tracking.service.tracking_service import TrackingService
 
 router = APIRouter(prefix="/api/tracking", tags=["tracking"])
@@ -40,6 +44,46 @@ def _limit_reached_detail(plan, limit: int, used: int) -> dict:
             f"Перейдите на более высокий тариф, чтобы отслеживать больше позиций."
         ),
     }
+
+
+@router.get(
+    "/devices",
+    response_model=list[TrackedDeviceResponse],
+    dependencies=[Depends(require_feature("device_tracking"))],
+)
+async def list_tracked_devices(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    return await DeviceTrackingService.list_for_user(db, current_user.id)
+
+
+@router.put(
+    "/devices/{device_id}",
+    response_model=TrackedDeviceMutationResponse,
+    dependencies=[Depends(require_feature("device_tracking"))],
+)
+async def track_device(
+    device_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await DeviceTrackingService.add(db, current_user.id, device_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return result
+
+
+@router.delete(
+    "/devices/{device_id}",
+    status_code=204,
+    dependencies=[Depends(require_feature("device_tracking"))],
+)
+async def untrack_device(
+    device_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await DeviceTrackingService.remove(db, current_user.id, device_id)
 
 
 @router.get("/usage", response_model=TrackingUsageResponse)

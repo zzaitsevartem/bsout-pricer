@@ -16,6 +16,7 @@ const PER_PAGE = 20;
 
 const TYPE_LABELS: Record<string, string> = {
   price_drop: 'Цена снизилась',
+  new_device_product: 'Новая запчасть',
   target_reached: 'Достигнута целевая цена',
 };
 
