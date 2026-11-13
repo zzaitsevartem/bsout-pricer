@@ -46,6 +46,7 @@ async def list_plans():
             stores=definition.stores,
             fuzzy_search=definition.fuzzy_search,
             price_alerts=definition.price_alerts,
+            device_tracking=definition.device_tracking,
             export_reports=definition.export_reports,
             support_ru=definition.support_ru,
             featured=definition.featured,

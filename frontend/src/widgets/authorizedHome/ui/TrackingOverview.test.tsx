@@ -36,6 +36,15 @@ describe('tracking overview', () => {
     expect(screen.getByText('нет данных')).toHaveClass('text-body-muted');
     expect(screen.getByText(/\+10/)).toHaveClass('text-clay');
     expect(screen.getByText(/−10|-10/)).toHaveClass('text-olive');
+    for (const [name, color] of [
+      ['Ноль', 'bg-slate'],
+      ['Нет', 'bg-border-subtle'],
+      ['Рост', 'bg-clay'],
+      ['Падение', 'bg-olive'],
+    ]) {
+      const row = screen.getByRole('link', { name }).parentElement;
+      expect(row?.querySelectorAll(`.${color}`)).toHaveLength(4);
+    }
   });
   it('does not claim prices are unchanged when the baseline is missing', () => {
     query.mockReturnValue({

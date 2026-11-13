@@ -121,6 +121,9 @@ async def test_plans_expose_prices_limits_and_features(client):
     assert by_plan["basic"]["tracked_products"] == 100
     assert by_plan["advanced"]["tracked_products"] == 500
     assert by_plan["advanced"]["fuzzy_search"] is True
+    assert by_plan["advanced"]["device_tracking"] is True
+    assert by_plan["basic"]["device_tracking"] is False
+    assert by_plan["trial"]["device_tracking"] is False
     assert by_plan["advanced"]["price_alerts"] is True
     assert by_plan["advanced"]["export_reports"] is True
     assert by_plan["basic"]["fuzzy_search"] is False

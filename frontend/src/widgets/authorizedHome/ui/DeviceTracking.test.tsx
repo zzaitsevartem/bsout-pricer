@@ -19,6 +19,17 @@ vi.mock('@/models/catalog', () => ({
 describe('device tracking', () => {
   it('adds selected devices and links/removes tracked devices', () => {
     render(<DeviceTracking />);
+    const header = screen.getByText('Устройство').parentElement;
+    const card = header?.parentElement;
+    expect(header).toHaveClass('bg-slate', 'p-3', 'text-ivory');
+    expect(card).toHaveClass('min-h-[340px]', 'gap-4', 'rounded-[24px]', 'bg-ivory-warm', 'p-6');
+    expect(screen.getByText('Действие')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Apple iPhone 15' }).parentElement).toHaveClass(
+      'min-h-[58px]',
+      'bg-ivory',
+      'p-3',
+    );
+    expect(card).not.toContainElement(screen.getByLabelText('Найти устройство'));
     expect(screen.getByRole('link', { name: 'Apple iPhone 15' })).toHaveAttribute(
       'href',
       '/devices/apple-iphone-15',

@@ -42,6 +42,7 @@ class PlanResponse(BaseModel):
     stores: int
     fuzzy_search: bool
     price_alerts: bool
+    device_tracking: bool
     export_reports: bool
     support_ru: str
     featured: bool

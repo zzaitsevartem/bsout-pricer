@@ -32,6 +32,9 @@ export function planFeatures(plan: PlanResponse): string[] {
   if (plan.priceAlerts) {
     features.push('Уведомления о снижении цен');
   }
+  if (plan.deviceTracking) {
+    features.push('Отслеживание новых запчастей устройств');
+  }
   if (plan.exportReports) {
     features.push('Экспорт отчётов PDF/CSV');
   }
@@ -45,6 +48,9 @@ function planTooltip(plan: PlanResponse): string[] {
   const items = [...planFeatures(plan)];
   if (!plan.priceAlerts) {
     items.push('Без уведомлений о снижении цен');
+  }
+  if (!plan.deviceTracking) {
+    items.push('Без отслеживания новых запчастей устройств');
   }
   if (!plan.exportReports) {
     items.push('Без экспорта отчётов');

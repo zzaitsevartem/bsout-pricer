@@ -35,6 +35,7 @@ const plan = {
   stores: 5,
   fuzzy_search: false,
   price_alerts: true,
+  device_tracking: false,
   export_reports: false,
   support_ru: 'email',
   featured: false,
@@ -50,9 +51,7 @@ function mockApi(usage: { used: number; limit: number; remaining: number }) {
     http.get('*/api/users/me/subscription', () => HttpResponse.json(subscription)),
     http.get('*/api/payment/plans', () => HttpResponse.json([plan])),
     http.get('*/api/payment/history', () => HttpResponse.json([])),
-    http.get('*/api/tracking/usage', () =>
-      HttpResponse.json({ ...usage, plan: 'basic' }),
-    ),
+    http.get('*/api/tracking/usage', () => HttpResponse.json({ ...usage, plan: 'basic' })),
   );
 }
 

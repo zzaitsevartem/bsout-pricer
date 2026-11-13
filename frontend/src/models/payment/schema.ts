@@ -37,6 +37,7 @@ export const planSchema = z.preprocess(
     stores: z.number(),
     fuzzySearch: z.boolean(),
     priceAlerts: z.boolean(),
+    deviceTracking: z.boolean(),
     exportReports: z.boolean(),
     supportRu: z.string(),
     featured: z.boolean(),

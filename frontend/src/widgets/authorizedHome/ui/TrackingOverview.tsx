@@ -8,6 +8,7 @@ import { isTrackingGateStatus, trackingGate, useTrackedProducts } from '@/models
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import type { TrackedProductResponse } from '@/models/tracking';
 import { cn } from '@/shared/lib/utils';
+import { TrackingPreviewCard, TrackingPreviewRow } from './TrackingPreviewCard';
 
 const PREVIEW_SIZE = 4;
 
@@ -35,10 +36,9 @@ function deltaLabel(tracked: TrackedProductResponse): string {
 
 function barColor(tracked: TrackedProductResponse): string {
   const delta = parseMoney(tracked.price_delta);
-  if (delta === null || delta === 0) {
-    return 'bg-border-subtle';
-  }
-  return delta < 0 ? 'bg-slate' : 'bg-clay';
+  if (delta === null) return 'bg-border-subtle';
+  if (delta === 0) return 'bg-slate';
+  return delta < 0 ? 'bg-olive' : 'bg-clay';
 }
 
 const EMPTY_STATE = (
@@ -75,14 +75,17 @@ function SubscriptionGateCard({ message }: { message: string }) {
 
 function TrackedCard({ items }: { items: TrackedProductResponse[] }) {
   return (
-    <div className="flex min-h-[340px] flex-col gap-4 rounded-[24px] border border-border-light bg-ivory-warm p-6">
-      <div className="flex items-center gap-3 bg-slate p-3 text-ivory">
-        <span className="flex-1 text-[13px] font-semibold">Товар</span>
-        <span className="h-2 w-[60px] flex-none bg-slate" />
-        <span className="w-20 text-right font-montserrat text-[13px]">Цена</span>
-      </div>
+    <TrackingPreviewCard
+      header={
+        <>
+          <span className="flex-1 text-[13px] font-semibold">Товар</span>
+          <span className="h-2 w-[60px] flex-none bg-slate" />
+          <span className="w-20 text-right font-montserrat text-[13px]">Цена</span>
+        </>
+      }
+    >
       {items.map((tracked) => (
-        <div key={tracked.id} className="flex items-center gap-3 bg-ivory p-3">
+        <TrackingPreviewRow key={tracked.id}>
           <Link
             href={`/product/${tracked.product_id}`}
             className="flex-1 truncate text-[14px] text-slate hover:underline"
@@ -101,9 +104,9 @@ function TrackedCard({ items }: { items: TrackedProductResponse[] }) {
               {deltaLabel(tracked)}
             </small>
           </span>
-        </div>
+        </TrackingPreviewRow>
       ))}
-    </div>
+    </TrackingPreviewCard>
   );
 }
 
@@ -120,7 +123,7 @@ const TrackingOverview: React.FC = () => {
 
   return (
     <section className="py-[84px] max-md:py-[61px] max-[480px]:py-[48px]">
-      <div className="mx-auto grid max-w-[1200px] grid-cols-[55%_45%] items-center gap-12 px-6 max-md:grid-cols-1 max-md:gap-8">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-[minmax(0,55fr)_minmax(0,45fr)] items-center gap-12 px-6 max-md:grid-cols-1 max-md:gap-8">
         <div>
           <p className="font-montserrat text-xs uppercase tracking-[0.04em] text-body-muted mb-2">
             Отслеживание цен
@@ -131,6 +134,9 @@ const TrackingOverview: React.FC = () => {
           <p className="mb-4 max-w-[64ch] text-lg leading-[1.4] text-body">
             Здесь показаны последние доступные цены и их изменение с момента добавления. Уведомления
             о снижении цены доступны на тарифе «Продвинутый».
+          </p>
+          <p className="mb-4 text-sm text-body-muted">
+            Зелёный — цена снизилась, красный — выросла, тёмный — без изменений.
           </p>
           <Link href="/account/tracking" className="btn-arrow">
             Управлять отслеживанием
