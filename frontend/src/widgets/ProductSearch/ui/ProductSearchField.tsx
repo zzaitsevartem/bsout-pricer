@@ -22,6 +22,7 @@ type ProductSearchFieldProps = {
   onDeviceSelect?: (device: { id: number; label: string; model_key: string }) => void;
   onFrequentSelect?: (device: { label: string; model_key: string }) => void;
   suggestionsEnabled?: boolean;
+  deviceOnly?: boolean;
   filters?: CatalogSearchParams;
   id?: string;
   label: string;
@@ -51,6 +52,7 @@ export function ProductSearchField({
   onDeviceSelect,
   onFrequentSelect,
   suggestionsEnabled = true,
+  deviceOnly = false,
   filters,
   id,
   label,
@@ -77,7 +79,7 @@ export function ProductSearchField({
     value.trim().length >= 2;
   const suggestions = useCatalogSuggestions(
     { ...filters, q: suggestionText, limit: 6 },
-    { enabled: ready },
+    { enabled: ready && !deviceOnly },
   );
   const devices = useCatalogDevices(
     { q: suggestionText, limit: 6 },
@@ -99,7 +101,7 @@ export function ProductSearchField({
                 name: device.label,
               }))
             : []),
-          ...(suggestions.data ?? []).map((product) => ({
+          ...(deviceOnly ? [] : (suggestions.data ?? [])).map((product) => ({
             ...product,
             kind: 'product' as const,
             name: product.display_name ?? product.canonical_name,
@@ -172,6 +174,14 @@ export function ProductSearchField({
         className={inputClassName}
         placeholder={placeholder}
       />
+      {deviceOnly && ready && devices.isError && (
+        <p role="alert" className="mt-2 text-sm text-body-muted">
+          Не удалось найти устройства.
+        </p>
+      )}
+      {deviceOnly && ready && devices.isSuccess && devices.data?.length === 0 && (
+        <p className="mt-2 text-sm text-body-muted">Устройства не найдены.</p>
+      )}
       {expanded && (
         <ul
           id={listId}

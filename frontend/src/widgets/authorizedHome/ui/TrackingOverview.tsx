@@ -1,13 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useUnit } from 'effector-react';
 import { $isAuth } from '@/shared/config/store';
-import { isTrackingGateStatus, trackingGate, useTrackedProducts } from '@/models/tracking';
+import {
+  isTrackingGateStatus,
+  trackingGate,
+  useTrackedProducts,
+  useUntrackProduct,
+} from '@/models/tracking';
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import type { TrackedProductResponse } from '@/models/tracking';
 import { cn } from '@/shared/lib/utils';
+import { RemoveTrackingDialog } from './RemoveTrackingDialog';
 import { TrackingPreviewCard, TrackingPreviewRow } from './TrackingPreviewCard';
 
 const PREVIEW_SIZE = 4;
@@ -74,39 +80,64 @@ function SubscriptionGateCard({ message }: { message: string }) {
 }
 
 function TrackedCard({ items }: { items: TrackedProductResponse[] }) {
+  const [removing, setRemoving] = useState<TrackedProductResponse | null>(null);
+  const mutation = useUntrackProduct();
   return (
-    <TrackingPreviewCard
-      header={
-        <>
-          <span className="flex-1 text-[13px] font-semibold">Товар</span>
-          <span className="h-2 w-[60px] flex-none bg-slate" />
-          <span className="w-20 text-right font-montserrat text-[13px]">Цена</span>
-        </>
-      }
-    >
-      {items.map((tracked) => (
-        <TrackingPreviewRow key={tracked.id}>
-          <Link
-            href={`/product/${tracked.product_id}`}
-            className="flex-1 truncate text-[14px] text-slate hover:underline"
-            title={tracked.canonical_name}
-          >
-            {tracked.canonical_name}
-          </Link>
-          <div className="flex flex-1 gap-1" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={cn('h-2 flex-1', barColor(tracked))} />
-            ))}
-          </div>
-          <span className="w-20 text-right font-montserrat text-[14px] leading-[1.3] text-slate">
-            {formatMoney(tracked.current_price)}
-            <small className={cn('block font-sans text-[12px]', deltaClass(tracked))}>
-              {deltaLabel(tracked)}
-            </small>
-          </span>
-        </TrackingPreviewRow>
-      ))}
-    </TrackingPreviewCard>
+    <>
+      <TrackingPreviewCard
+        header={
+          <>
+            <span className="flex-1 text-[13px] font-semibold">Товар</span>
+            <span className="flex-1" aria-hidden="true" />
+            <span className="w-20 text-right font-montserrat text-[13px]">Цена</span>
+              <span className="w-[76px] text-right font-montserrat text-[13px]">Действие</span>
+          </>
+        }
+      >
+        {items.map((tracked) => (
+          <TrackingPreviewRow key={tracked.id}>
+            <Link
+              href={`/product/${tracked.product_id}`}
+              className="flex-1 truncate text-[14px] text-slate transition-colors hover:text-olive"
+              title={tracked.canonical_name}
+            >
+              {tracked.canonical_name}
+            </Link>
+            <div className="flex flex-1 gap-1" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={cn('h-2 flex-1', barColor(tracked))} />
+              ))}
+            </div>
+            <span className="w-20 text-right font-montserrat text-[14px] leading-[1.3] text-slate">
+              {formatMoney(tracked.current_price)}
+              <small className={cn('block font-sans text-[12px]', deltaClass(tracked))}>
+                {deltaLabel(tracked)}
+              </small>
+            </span>
+            <button
+              type="button"
+              aria-label={`Удалить ${tracked.canonical_name} из отслеживания`}
+              className="w-[76px] flex-none rounded-lg px-2 py-2 text-right text-[14px] font-semibold text-clay transition-colors hover:bg-status-danger hover:text-clay-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clay"
+              onClick={() => {
+                mutation.reset();
+                setRemoving(tracked);
+              }}
+            >
+              Удалить
+            </button>
+          </TrackingPreviewRow>
+        ))}
+      </TrackingPreviewCard>
+      {removing && (
+        <RemoveTrackingDialog
+          name={removing.canonical_name}
+          pending={mutation.isPending}
+          error={mutation.isError}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => mutation.mutate(removing.id, { onSuccess: () => setRemoving(null) })}
+        />
+      )}
+    </>
   );
 }
 

@@ -684,6 +684,55 @@ async def test_device_tracking_baseline_matching_and_entitlements(client, db_ses
     ).status_code == 204
 
 
+async def test_new_device_product_notification_is_visible_to_owner(client, db_session):
+    from src.modules.tracking.service.device_tracking import DeviceTrackingService
+
+    user, token = await _make_user(
+        db_session, "device-notification-owner@example.com", PlanEnum.advanced
+    )
+    _, stranger_token = await _make_user(
+        db_session, "device-notification-stranger@example.com", PlanEnum.advanced
+    )
+    refs = await _make_dictionaries(db_session)
+    device_id = refs["cluster"].device_id
+    store = await _make_store(db_session, "device-notification-store")
+    existing = await _make_product(db_session, refs, "existing")
+    await _make_offer(db_session, store, existing, "existing", "100")
+
+    assert await DeviceTrackingService.add(db_session, user.id, device_id) == {
+        "device_id": device_id
+    }
+    assert await DeviceTrackingService.scan(db_session) == []
+
+    added = await _make_product(db_session, refs, "added")
+    await _make_offer(db_session, store, added, "added", "200")
+    notifications = await DeviceTrackingService.scan(db_session)
+
+    assert len(notifications) == 1
+    notification = notifications[0]
+    assert notification.user_id == user.id
+    assert notification.product_id == added.id
+    assert notification.type == "new_device_product"
+    assert notification.status == "sent"
+    assert "iPhone 13" in notification.body
+    assert await DeviceTrackingService.scan(db_session) == []
+
+    owner_response = await client.get("/api/notifications?unread=true", headers=_auth(token))
+    assert owner_response.status_code == 200
+    payload = owner_response.json()
+    assert payload["total"] == 1
+    assert payload["results"][0]["id"] == notification.id
+    assert payload["results"][0]["product_id"] == added.id
+    assert payload["results"][0]["type"] == "new_device_product"
+    assert payload["results"][0]["is_read"] is False
+
+    stranger_response = await client.get(
+        "/api/notifications?unread=true", headers=_auth(stranger_token)
+    )
+    assert stranger_response.status_code == 200
+    assert stranger_response.json()["total"] == 0
+
+
 async def test_device_tracking_concurrent_scans_notify_once(db_engine):
     import asyncio
 

@@ -1,14 +1,47 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrackingOverview } from './TrackingOverview';
 
-const query = vi.hoisted(() => vi.fn());
+const { query, untrack } = vi.hoisted(() => ({
+  query: vi.fn(),
+  untrack: {
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    error: { current: false },
+  },
+}));
 vi.mock('effector-react', () => ({ useUnit: () => true }));
 vi.mock('@/models/tracking', () => ({
   useTrackedProducts: query,
+  useUntrackProduct: () => ({
+    mutate: untrack.mutate,
+    reset: untrack.reset,
+    isPending: false,
+    isError: untrack.error.current,
+  }),
   isTrackingGateStatus: () => false,
   trackingGate: () => null,
 }));
+
+afterEach(() => {
+  vi.clearAllMocks();
+  untrack.error.current = false;
+});
+
+beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value() {
+      this.setAttribute('open', '');
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value() {
+      this.removeAttribute('open');
+    },
+  });
+});
 
 describe('tracking overview', () => {
   it('links products and displays neutral, missing, rising and falling prices', () => {
@@ -69,5 +102,69 @@ describe('tracking overview', () => {
     query.mockReturnValue({ isPending: false, error: new Error('offline') });
     render(<TrackingOverview />);
     expect(screen.getByRole('alert')).toHaveTextContent('Не удалось загрузить');
+  });
+
+  it('cancels removal with the button or Escape and confirms the product id', () => {
+    query.mockReturnValue({
+      data: {
+        total: 1,
+        results: [
+          {
+            id: 81,
+            product_id: 42,
+            canonical_name: 'Дисплей iPhone 15',
+            current_price: '100',
+            price_delta: '0',
+          },
+        ],
+      },
+      isPending: false,
+    });
+    render(<TrackingOverview />);
+    const openDialog = () =>
+      fireEvent.click(screen.getByRole('button', { name: /Удалить Дисплей iPhone 15/ }));
+
+    openDialog();
+    let dialog = screen.getByRole('dialog', { name: 'Перестать отслеживать?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Отмена' }));
+    expect(untrack.mutate).not.toHaveBeenCalled();
+
+    openDialog();
+    dialog = screen.getByRole('dialog', { name: 'Перестать отслеживать?' });
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(untrack.mutate).not.toHaveBeenCalled();
+
+    openDialog();
+    dialog = screen.getByRole('dialog', { name: 'Перестать отслеживать?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Удалить' }));
+    expect(untrack.mutate).toHaveBeenCalledWith(81, expect.any(Object));
+  });
+
+  it('shows a removal error in the confirmation dialog', () => {
+    query.mockReturnValue({
+      data: {
+        total: 1,
+        results: [
+          {
+            id: 91,
+            product_id: 42,
+            canonical_name: 'Дисплей iPhone 15',
+            current_price: '100',
+            price_delta: '0',
+          },
+        ],
+      },
+      isPending: false,
+    });
+    const view = render(<TrackingOverview />);
+    fireEvent.click(screen.getByRole('button', { name: /Удалить Дисплей iPhone 15/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Перестать отслеживать?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Удалить' }));
+    untrack.error.current = true;
+    view.rerender(<TrackingOverview />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Не удалось удалить. Попробуйте ещё раз.');
   });
 });
