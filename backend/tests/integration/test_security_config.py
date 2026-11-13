@@ -98,10 +98,10 @@ def test_the_guarded_default_matches_the_one_shipped_in_config():
 
 def test_admin_credentials_accept_a_valid_trio():
     credentials = validate_admin_credentials(
-        email="Root@Example.com", password="s3cret-pass", full_name="Root"
+        email="Root@Example.com", password="s3cret-pass-valid", full_name="Root"
     )
 
-    assert credentials.password == "s3cret-pass"
+    assert credentials.password == "s3cret-pass-valid"
     assert credentials.full_name == "Root"
 
 
@@ -120,13 +120,17 @@ def test_admin_password_longer_than_the_registration_maximum_is_rejected():
 
 def test_admin_email_must_be_a_real_address():
     with pytest.raises(WeakCredentialsError) as exc_info:
-        validate_admin_credentials(email="not-an-email", password="s3cret-pass", full_name="Root")
+        validate_admin_credentials(
+            email="not-an-email", password="s3cret-pass-valid", full_name="Root"
+        )
 
     assert "email" in str(exc_info.value)
 
 
 def test_admin_full_name_cannot_be_blank():
     with pytest.raises(WeakCredentialsError) as exc_info:
-        validate_admin_credentials(email="root@example.com", password="s3cret-pass", full_name="")
+        validate_admin_credentials(
+            email="root@example.com", password="s3cret-pass-valid", full_name=""
+        )
 
     assert "full_name" in str(exc_info.value)

@@ -18,7 +18,7 @@ from src.modules.mail import PASSWORD_CHANGED_SUBJECT, PASSWORD_RESET_SUBJECT
 
 pytestmark = pytest.mark.integration
 
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 NEW_PASSWORD = "n3w-s3cret-pass"
 VICTIM = "victim@example.com"
 UNKNOWN = "nobody-here@example.com"
@@ -321,17 +321,19 @@ async def test_recheck_password_change_throttling_also_locks_out_login_from_the_
     )
 
 
-async def test_recheck_registration_still_accepts_six_char_password_that_change_rejects(
-    client, mailbox
-):
+async def test_recheck_registration_and_password_change_reject_short_password(client, mailbox):
     short = "s3cr3t"
     assert len(short) < MIN_PASSWORD_LENGTH
+    registration = await client.post(
+        "/api/auth/register",
+        json={"email": "shorty@example.com", "password": short, "full_name": "Short"},
+    )
+    assert registration.status_code == 422, registration.text
 
-    session = await _register(client, email="shorty@example.com", password=short)
-
-    resp = await client.post(
+    session = await _register(client, email="valid@example.com")
+    response = await client.post(
         CHANGE_URL,
-        json={"current_password": short, "new_password": "abcdef7"},
+        json={"current_password": PASSWORD, "new_password": short},
         headers=_auth(session["access_token"]),
     )
-    assert resp.status_code == 422, resp.text
+    assert response.status_code == 422, response.text

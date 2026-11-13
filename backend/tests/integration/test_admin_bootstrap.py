@@ -15,7 +15,7 @@ from src.modules.auth.service.security import WeakCredentialsError
 pytestmark = pytest.mark.integration
 
 EMAIL = "root@example.com"
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 
 
 class PasswordProvider:

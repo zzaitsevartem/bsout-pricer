@@ -19,7 +19,7 @@ from src.modules.auth.service.token_service import (
 
 pytestmark = pytest.mark.integration
 
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 
 
 def _auth(token: str) -> dict:

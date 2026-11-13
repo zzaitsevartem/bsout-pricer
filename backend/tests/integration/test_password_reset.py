@@ -28,7 +28,7 @@ from src.modules.mail import PASSWORD_CHANGED_SUBJECT
 
 pytestmark = pytest.mark.integration
 
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 NEW_PASSWORD = "n3w-s3cret-pass"
 EMAIL = "reset@example.com"
 

@@ -139,9 +139,7 @@ async def test_alias_lookup_is_case_insensitive(db_session):
 
 
 async def test_stores_seeded_with_expected_slugs(db_session):
-    db_session.add(
-        Store(slug="greenspark", name="ГринСпарк", website_url="https://green-spark.ru")
-    )
+    db_session.add(Store(slug="greenspark", name="ГринСпарк", website_url="https://green-spark.ru"))
     await db_session.flush()
     await seed_stores(db_session)
 
@@ -161,9 +159,7 @@ async def test_stores_seeded_with_expected_slugs(db_session):
     ).scalar()
     assert active == len(STORES)
     active_slugs = set(
-        (
-            await db_session.execute(select(Store.slug).where(Store.is_active))
-        ).scalars().all()
+        (await db_session.execute(select(Store.slug).where(Store.is_active))).scalars().all()
     )
     assert active_slugs == {slug for slug, _, _ in STORES}
     assert stores["greenspark"][0] == "ГринСпарк"

@@ -37,9 +37,9 @@ def _query_tokens(query: str) -> list[tuple[str, bool]]:
     tokens = []
     for match in re.finditer(r"[\w]+", text, flags=re.UNICODE):
         token = match.group()
-        adjacent_hyphen = (
-            match.start() > 0 and text[match.start() - 1] == "-"
-        ) or (match.end() < len(text) and text[match.end()] == "-")
+        adjacent_hyphen = (match.start() > 0 and text[match.start() - 1] == "-") or (
+            match.end() < len(text) and text[match.end()] == "-"
+        )
         protected = token in _MODEL_TOKENS or "_" in token or adjacent_hyphen
         tokens.append((token, protected))
     return tokens

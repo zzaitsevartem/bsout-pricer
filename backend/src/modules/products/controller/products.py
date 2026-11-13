@@ -181,9 +181,16 @@ async def catalog_facets(
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(status_code=422, detail="min_price must not exceed max_price")
     return await ComparisonService.catalog_facets(
-        db, q, await is_fuzzy_enabled(db, user.id),
-        device_id=device_id, part_type_id=part_type_id, quality_tier_id=quality_tier_id,
-        store_slug=store, min_price=min_price, max_price=max_price, in_stock=in_stock,
+        db,
+        q,
+        await is_fuzzy_enabled(db, user.id),
+        device_id=device_id,
+        part_type_id=part_type_id,
+        quality_tier_id=quality_tier_id,
+        store_slug=store,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
     )
 
 

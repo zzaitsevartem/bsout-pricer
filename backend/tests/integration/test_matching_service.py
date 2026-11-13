@@ -34,6 +34,15 @@ IPHONE_13_DISPLAY_TIERS = {
 
 async def _seed_and_import(db) -> int:
     await seed_all(db)
+    db.add(
+        Store(
+            name="GreenSpark fixture",
+            slug="greenspark",
+            website_url="https://example.invalid",
+            is_active=True,
+        )
+    )
+    await db.flush()
     rows = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     store_ids = {
         slug: store_id for slug, store_id in (await db.execute(select(Store.slug, Store.id))).all()

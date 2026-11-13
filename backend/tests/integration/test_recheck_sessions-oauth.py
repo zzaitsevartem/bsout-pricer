@@ -43,7 +43,7 @@ async def _tg_nonce(client, token: str) -> str:
 TELEGRAM_PREPARE_URL = "/api/auth/telegram/prepare"
 AUTHORIZE_URL = "/api/auth/vk/authorize"
 
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 NEW_PASSWORD = "n3w-s3cret-pass"
 BOT_TOKEN = "123456:AAF-test-bot-token"
 

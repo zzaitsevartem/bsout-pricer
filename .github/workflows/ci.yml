@@ -93,6 +93,7 @@ jobs:
       - name: Наполнение данными и матчинг
         run: |
           python -m src.cli seed
+          PGPASSWORD=bscout psql -h localhost -U bscout -d bscout -c "INSERT INTO stores (slug, name, website_url, is_active) VALUES ('greenspark', 'GreenSpark fixture', 'https://example.invalid', false) ON CONFLICT (slug) DO NOTHING"
           python -m src.cli import
           python -m src.cli match --all
 
@@ -182,4 +183,6 @@ jobs:
           TLS_CERT_PATH: /etc/nginx/certs/fullchain.pem
           TLS_KEY_PATH: /etc/nginx/certs/privkey.pem
           SMTP_FROM: BScout <no-reply@example.invalid>
-        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config >/dev/null
+        run: |
+          touch backend/.env
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml config >/dev/null

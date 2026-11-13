@@ -5,9 +5,7 @@ from src.main import app
 
 def test_cors_allows_only_api_methods_and_headers():
     cors = next(
-        middleware
-        for middleware in app.user_middleware
-        if middleware.cls is CORSMiddleware
+        middleware for middleware in app.user_middleware if middleware.cls is CORSMiddleware
     )
 
     assert set(cors.kwargs["allow_methods"]) == {

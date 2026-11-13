@@ -14,7 +14,7 @@ from src.modules.auth.service.auth import verify_password
 
 pytestmark = pytest.mark.integration
 
-PASSWORD = "s3cret-pass"
+PASSWORD = "s3cret-pass-valid"
 NEW_PASSWORD = "n3w-s3cret-pass"
 VICTIM = "victim@example.com"
 

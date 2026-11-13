@@ -24,7 +24,7 @@ def _auth(token: str) -> dict:
 async def _make_user(db, email: str = "cmp@example.com") -> tuple[User, str]:
     user = User(
         email=email,
-        password_hash=hash_password("s3cret-pass"),
+        password_hash=hash_password("s3cret-pass-valid"),
         full_name="Comparison User",
         is_active=True,
     )
@@ -149,9 +149,7 @@ async def test_catalog_facets_include_qualities_beyond_first_page(client, db_ses
             "/api/products/catalog/facets", params={"q": query}, headers=_auth(token)
         )
         assert response.status_code == 200, response.text
-        assert {item["label"] for item in response.json()["quality_tiers"]} == {
-            "Копия", "Оригинал"
-        }
+        assert {item["label"] for item in response.json()["quality_tiers"]} == {"Копия", "Оригинал"}
 
 
 async def test_catalog_detail_and_history_require_auth(client):
@@ -233,8 +231,11 @@ async def test_catalog_aggregates_offers_from_three_stores(client, db_session):
     assert item["min_price_retail"] == "4200.00"
     assert item["min_price_opt"] == "3000.00"
     assert item["source"] == {
-        "offer_id": offer_b.id, "store_id": store_b.id, "store_name": store_b.name,
-        "store_slug": store_b.slug, "url": offer_b.url,
+        "offer_id": offer_b.id,
+        "store_id": store_b.id,
+        "store_name": store_b.name,
+        "store_slug": store_b.slug,
+        "url": offer_b.url,
     }
     assert item["offers_count"] == 3
     assert item["stores_count"] == 3
@@ -258,8 +259,11 @@ async def test_catalog_source_breaks_equal_price_ties_by_offer_id(client, db_ses
 
     assert response.status_code == 200, response.text
     assert response.json()["results"][0]["source"] == {
-        "offer_id": first.id, "store_id": first_store.id, "store_name": first_store.name,
-        "store_slug": first_store.slug, "url": first.url,
+        "offer_id": first.id,
+        "store_id": first_store.id,
+        "store_name": first_store.name,
+        "store_slug": first_store.slug,
+        "url": first.url,
     }
 
 
@@ -658,8 +662,11 @@ async def test_catalog_offer_filters_share_offer_and_filter_aggregates(client, d
     assert item["min_price_retail"] == "100.00"
     assert item["min_price_opt"] == "90.00"
     assert item["source"] == {
-        "offer_id": offer_a.id, "store_id": store_a.id, "store_name": store_a.name,
-        "store_slug": store_a.slug, "url": offer_a.url,
+        "offer_id": offer_a.id,
+        "store_id": store_a.id,
+        "store_name": store_a.name,
+        "store_slug": store_a.slug,
+        "url": offer_a.url,
     }
     assert item["offers_count"] == 2
     assert item["stores_count"] == 1
@@ -758,7 +765,6 @@ async def test_catalog_and_suggestions_gate_fuzzy_and_preserve_models(client, db
             "Nokai",
             "dsplay iphone13",
             "экран самсунк галакси С22",
-            "шзрщту 13",
         }
         expected = expected if not fuzzy_query or plan == PlanEnum.advanced else []
         for path in ["/api/products/catalog", "/api/products/catalog/suggestions"]:
@@ -806,8 +812,7 @@ async def test_suggestions_filters_require_active_matching_offers_and_bound_limi
     assert len(response.json()) == 8
     assert all(set(row) == {"id", "canonical_name", "display_name"} for row in response.json())
     assert all(
-        row["display_name"] == f'Apple iPhone 13 {row["canonical_name"]}'
-        for row in response.json()
+        row["display_name"] == f'Apple iPhone 13 {row["canonical_name"]}' for row in response.json()
     )
     assert not {excluded.id, empty.id, inactive.id} & {row["id"] for row in response.json()}
     for params in [

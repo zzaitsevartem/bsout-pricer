@@ -103,7 +103,7 @@ def _auth(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def _make_user(db, email: str, *, password: str | None = "s3cret-pass"):
+async def _make_user(db, email: str, *, password: str | None = "s3cret-pass-valid"):
     user = User(
         email=email,
         password_hash=hash_password(password) if password else set_unusable_password(),
@@ -398,7 +398,7 @@ async def test_unusable_password_never_authenticates(db_session):
     from src.modules.auth.service.auth import verify_password
 
     stored = set_unusable_password()
-    for candidate in ["", "s3cret-pass", stored, "!"]:
+    for candidate in ["", "s3cret-pass-valid", stored, "!"]:
         assert verify_password(candidate, stored) is False
 
 
@@ -682,12 +682,13 @@ async def test_vk_only_account_can_set_a_password_and_then_unlink(
 
     confirmed = await client.post(
         PASSWORD_RESET_CONFIRM_URL,
-        json={"token": raw_token, "new_password": "vk-n3w-pass"},
+        json={"token": raw_token, "new_password": "vk-n3w-pass-valid"},
     )
     assert confirmed.status_code == 200, confirmed.text
 
     logged_in = await client.post(
-        "/api/auth/login", json={"identifier": "vk-locked@example.com", "password": "vk-n3w-pass"}
+        "/api/auth/login",
+        json={"identifier": "vk-locked@example.com", "password": "vk-n3w-pass-valid"},
     )
     assert logged_in.status_code == 200, logged_in.text
 
